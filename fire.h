@@ -3,43 +3,41 @@
 
 #include <string>
 #include <unordered_map>
+#include <cassert>
 
 namespace fire {
-    struct _Arguments {
-        static std::unordered_map<std::string, int> args;
+    std::unordered_map<std::string, std::string> _args;
 
-    public:
-        static void initArgs(int argc, char **argv) {
-            for (int i = 1; i < argc; i += 2) {
-                std::string name = argv[i];
-                int value = atoi(argv[i + 1]);
-                args[name] = value;
-            }
+    void _init_args(int argc, char **argv) {
+        for (int i = 1; i < argc; i += 2) {
+            std::string name = argv[i], value = argv[i + 1];
+            _args[name] = value;
         }
-    };
+    }
 
-    std::unordered_map<std::string, int> _Arguments::args;
 
     class Named {
         std::string name;
         std::optional<int> value;
 
     public:
-        explicit Named(const std::string &_name) : name(_name) {
+        explicit Named(std::string _name) : name(std::move(_name)) {
         }
 
-        Named(const std::string &_name, int _value) : name(_name), value(_value) {
+        Named(std::string _name, int _value) : name(std::move(_name)), value(std::move(_value)) {
         }
 
         operator int() const {
-            std::string __name = std::string("--") + name;
-            if (auto it = _Arguments::args.find(__name); it != _Arguments::args.end())
-                return it->second;
-            return value.value();
+            if(auto it = _args.find(name); it != _args.end())
+                return atoi(it->second.data());
+            if(value.has_value())
+                return value.value();
+            assert(false && "element not found in variables and no default value provided");
+            return 0;
         }
     };
 }
 
-#define FIRE(main_func) int main(int argc, char ** argv) { fire::_Arguments::initArgs(argc, argv); return main_func(); }
+#define FIRE(main_func) int main(int argc, char ** argv) { fire::_init_args(argc, argv); return main_func(); }
 
 #endif
