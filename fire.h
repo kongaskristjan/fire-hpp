@@ -18,20 +18,23 @@ namespace fire {
 
     class Named {
         std::string name;
-        std::optional<int> value;
+        int value;
+        bool assigned = false;
 
     public:
         explicit Named(std::string _name) : name(std::move(_name)) {
         }
 
-        Named(std::string _name, int _value) : name(std::move(_name)), value(std::move(_value)) {
+        Named(std::string _name, int _value) : name(std::move(_name)),
+            value(_value), assigned(true) {
         }
 
         operator int() const {
-            if(auto it = _args.find(name); it != _args.end())
+            auto it = _args.find(name);
+            if(it != _args.end())
                 return atoi(it->second.data());
-            if(value.has_value())
-                return value.value();
+            if(assigned)
+                return value;
             assert(false && "element not found in variables and no default value provided");
             return 0;
         }
