@@ -2,6 +2,7 @@
 
 ## Todo
 
+* Testable errors
 * Gathering arguments
     * Error when providing arguments that don't exist
     * Help generation

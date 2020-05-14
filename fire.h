@@ -8,7 +8,8 @@
 namespace fire {
     std::unordered_map<std::string, std::string> _args;
 
-    void _init_args(int argc, char **argv) {
+    void _init_args(int argc, const char ** argv) {
+        _args.clear();
         for (int i = 1; i < argc; i += 2) {
             std::string name = argv[i], value = argv[i + 1];
             _args[name] = value;
@@ -82,6 +83,6 @@ namespace fire {
     };
 }
 
-#define FIRE(main_func) int main(int argc, char ** argv) { fire::_init_args(argc, argv); return main_func(); }
+#define FIRE(main_func) int main(int argc, const char ** argv) { fire::_init_args(argc, argv); return main_func(); }
 
 #endif
