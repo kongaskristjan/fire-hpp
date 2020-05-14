@@ -1,8 +1,14 @@
 #include <iostream>
 #include "fire.h"
 
-int fire_main(int x = fire::Named("-x", 0), int y = fire::Named("-y", 0)) {
-    std::cout << x << " + " << y << " = " << x + y << std::endl;
+using namespace std;
+using namespace fire;
+
+int fire_main(
+        int i = Named("-i", 0),
+        double f = Named("-f", 0),
+        string s = Named("-s", "empty")) {
+    cout << "i: " << i << "    f: " << f << "    s: " << s << endl;
     return 0;
 }
 

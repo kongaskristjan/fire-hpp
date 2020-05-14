@@ -15,26 +15,67 @@ namespace fire {
         }
     }
 
+    using int_t = int;
+    using float_t = double;
+    using string_t = std::string;
 
     class Named {
+        enum class Type { unassigned, int_t, float_t, string_t };
+
         std::string name;
-        int value;
-        bool assigned = false;
+        Type assigned = Type::unassigned;
+
+        int_t value_int = 0;
+        float_t value_float = 0;
+        string_t value_string;
 
     public:
-        explicit Named(std::string _name) : name(std::move(_name)) {
+        explicit Named(std::string _name): name(std::move(_name)) {
         }
 
-        Named(std::string _name, int _value) : name(std::move(_name)),
-            value(_value), assigned(true) {
+        Named(std::string _name, int_t _value): name(std::move(_name)),
+            value_int(_value), assigned(Type::int_t) {
         }
 
-        operator int() const {
+        Named(std::string _name, float_t _value): name(std::move(_name)),
+            value_float(_value), assigned(Type::float_t) {
+        }
+
+        Named(std::string _name, string_t _value): name(std::move(_name)),
+            value_string(std::move(_value)), assigned(Type::string_t) {
+        }
+
+        operator int_t() const {
             auto it = _args.find(name);
             if(it != _args.end())
-                return atoi(it->second.data());
-            if(assigned)
-                return value;
+                return std::stoll(it->second.data());
+
+            if(assigned == Type::int_t)
+                return value_int;
+            assert(false && "element not found in variables and no default value provided");
+            return 0;
+        }
+
+        operator float_t() const {
+            auto it = _args.find(name);
+            if(it != _args.end())
+                return std::stold(it->second.data());
+
+            if(assigned == Type::int_t)
+                return value_int;
+            if(assigned == Type::float_t)
+                return value_float;
+            assert(false && "element not found in variables and no default value provided");
+            return 0;
+        }
+
+        operator string_t() const {
+            auto it = _args.find(name);
+            if(it != _args.end())
+                return it->second.data();
+
+            if(assigned == Type::string_t)
+                return value_string;
             assert(false && "element not found in variables and no default value provided");
             return 0;
         }
