@@ -2,15 +2,29 @@
 #define FIRE_H
 
 #include <string>
+#include <iostream>
 #include <unordered_map>
 #include <cassert>
+#include <cstdlib>
 
 namespace fire {
+    constexpr int _fire_failure_code = 1;
+
+    void _fire_assert(bool pass, const std::string &msg) {
+        if(pass)
+            return;
+
+        if(! msg.empty())
+            std::cerr << "Error: " << msg << std::endl;
+        exit(_fire_failure_code);
+    }
+
     std::unordered_map<std::string, std::string> _args;
 
     void _init_args(int argc, const char ** argv) {
+        _fire_assert(argc % 2 == 1, "All arguments don't have values");
         _args.clear();
-        for (int i = 1; i < argc; i += 2) {
+        for(int i = 1; i < argc; i += 2) {
             std::string name = argv[i], value = argv[i + 1];
             _args[name] = value;
         }
@@ -51,30 +65,39 @@ namespace fire {
             if(it != _args.end()) {
                 const std::string str_value = it->second;
                 size_t last;
-                int value = std::stoi(str_value.data(), &last);
 
-                if(last != str_value.size())
-                    throw std::invalid_argument("");
+                bool success = true;
+                int value;
+                try { value = std::stoi(str_value.data(), &last); }
+                catch(std::logic_error) { success = false; }
+
+                _fire_assert(success && last == str_value.size() /* probably was floating point */,
+                             std::string("value ") + str_value + " is not an integer");
 
                 return value;
             }
 
             if(assigned == Type::int_t)
                 return value_int;
-            assert(false && "element not found in variables and no default value provided");
+            _fire_assert(false, std::string("required argument ") + name + " not provided");
             return 0;
         }
 
         operator float_t() const {
             auto it = _args.find(name);
-            if(it != _args.end())
-                return std::stold(it->second.data());
+            if (it != _args.end()) {
+                try {
+                    return std::stold(it->second.data());
+                } catch (std::logic_error) {
+                    _fire_assert(false, std::string("value ") + it->second + " is not a real number");
+                }
+            }
 
             if(assigned == Type::int_t)
                 return value_int;
             if(assigned == Type::float_t)
                 return value_float;
-            assert(false && "element not found in variables and no default value provided");
+            _fire_assert(false, std::string("required argument ") + name + " not provided");
             return 0;
         }
 
@@ -85,7 +108,7 @@ namespace fire {
 
             if(assigned == Type::string_t)
                 return value_string;
-            assert(false && "element not found in variables and no default value provided");
+            _fire_assert(false, std::string("Error: required argument ") + name + " not provided");
             return 0;
         }
     };
