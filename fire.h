@@ -48,8 +48,16 @@ namespace fire {
 
         operator int_t() const {
             auto it = _args.find(name);
-            if(it != _args.end())
-                return std::stoll(it->second.data());
+            if(it != _args.end()) {
+                const std::string str_value = it->second;
+                size_t last;
+                int value = std::stoi(str_value.data(), &last);
+
+                if(last != str_value.size())
+                    throw std::invalid_argument("");
+
+                return value;
+            }
 
             if(assigned == Type::int_t)
                 return value_int;
