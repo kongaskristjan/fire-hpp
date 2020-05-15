@@ -9,4 +9,7 @@ target_link_libraries(run_tests GTest::GTest GTest::Main)
 gtest_discover_tests(run_tests)
 add_test(NAME monolithic COMMAND run_tests)
 
-add_executable(manual_test main.cpp fire.h)
+add_executable(basic examples/basic.cpp fire.h)
+set_target_properties(basic PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples)
+
+configure_file(run_examples.py run_examples.py COPYONLY)

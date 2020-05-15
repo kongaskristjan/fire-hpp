@@ -1,8 +1,11 @@
 # Fire for C++
 
-## Todo
+## Development
 
-* Testable errors
+This library uses extensive testing. Unit tests are located in Tests.cpp, while examples are used as integration tests. Those tests are necessary, as CLI cannot be easily verified in the unit testing framework. This also ensures that examples are always up-to-date and work as intended. Before committing, please ensure `./build/run_tests` and `./build/run_examples.py` succeed.
+
+### Todo
+
 * Gathering arguments
     * Error when providing arguments that don't exist
     * Help generation
@@ -17,7 +20,7 @@
 * FIRE_MAIN() (see design goals) (is it even possible?)
 * Optimal parameter syntax (see design goals) (likely impossible)
 
-## Design goals
+### Design goals
 
 #### Current interface
 
