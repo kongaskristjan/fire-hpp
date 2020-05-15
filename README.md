@@ -7,7 +7,6 @@ This library uses extensive testing. Unit tests are located in Tests.cpp, while 
 ### Todo
 
 * Gathering arguments
-    * Error when providing arguments that don't exist
     * Help generation
 * Multiple keys for arguments
 * High quality parsing
@@ -31,7 +30,9 @@ int fire_main(int x = Named("x", 0), int y = Named("y", 0)) {
 FIRE(fire_main)
 ```
 
-#### FIRE_MAIN() interface: Complicated, but likely possible
+#### FIRE_MAIN() interface
+
+Likely impossible. Also, where are you going to supply program description?
 
 ```
 int FIRE_MAIN(int x = Named("x", 0), int y = Named("y", 0)) {
@@ -40,7 +41,7 @@ int FIRE_MAIN(int x = Named("x", 0), int y = Named("y", 0)) {
 
 #### FIRE_MAIN() + optimal parameter syntax
 
-Likely impossible, up to my knowledge you can't extract `x` and `y` names (necessary for parsing command line). Also, what happens when you want to supply parameter descriptions? 
+Likely impossible. Up to my knowledge you can't extract `x` and `y` names (necessary for parsing command line). Also, what happens when you want to supply parameter descriptions?
 
 ```
 int FIRE_MAIN(int x = 0, int y = 0) {

@@ -40,6 +40,7 @@ def run_basic(pth_prefix):
     runner.equal("-x 3 -y 4", "3 + 4 = 7")
     runner.handled_failure("-x test")
     runner.handled_failure("-x")
+    runner.handled_failure("--undefined 0")
 
 
 def main():

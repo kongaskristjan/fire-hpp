@@ -9,6 +9,31 @@
 
 namespace fire {
     constexpr int _fire_failure_code = 1;
+    int _main_argc = 0;
+    std::unordered_map<std::string, std::string> _args;
+    bool _loose_query = false;
+
+    template <typename R, typename ... Types> constexpr size_t _get_argument_count(R(*f)(Types ...)) {
+        return sizeof...(Types);
+    }
+
+    struct _Steal_element {
+        std::string key, value;
+        bool exists = false;
+
+        _Steal_element(std::unordered_map<std::string, std::string> &mp, const std::string &_key): key(_key) {
+            auto it = mp.find(key);
+            if(it == mp.end())
+                return;
+
+            value = it->second;
+            exists = true;
+            if(! _loose_query)
+                mp.erase(it);
+        }
+
+        operator bool() { return exists; }
+    };
 
     void _fire_assert(bool pass, const std::string &msg) {
         if(pass)
@@ -19,15 +44,33 @@ namespace fire {
         exit(_fire_failure_code);
     }
 
-    std::unordered_map<std::string, std::string> _args;
+    void _check(bool dec_main_argc = true) {
+        _main_argc -= dec_main_argc;
+        if(_loose_query || _main_argc > 0 || _args.empty())
+            return;
 
-    void _init_args(int argc, const char ** argv) {
+        std::string invalid;
+        for(const auto &it: _args)
+            invalid += std::string(" ") + it.first;
+        _fire_assert(false, std::string("Invalid argument") + (invalid.size() > 1 ? "s" : "") + invalid);
+    }
+
+    template<typename T>
+    T _check_return(const T &ret, bool dec_main_argc = true) {
+        _check(dec_main_argc);
+        return ret;
+    }
+
+    void _init_args(int argc, const char ** argv, int main_argc) {
+        _main_argc = main_argc;
         _fire_assert(argc % 2 == 1, "All arguments don't have values");
         _args.clear();
         for(int i = 1; i < argc; i += 2) {
             std::string name = argv[i], value = argv[i + 1];
             _args[name] = value;
         }
+
+        _check(false);
     }
 
     using int_t = int;
@@ -60,60 +103,66 @@ namespace fire {
             value_string(std::move(_value)), assigned(Type::string_t) {
         }
 
-        operator int_t() const {
-            auto it = _args.find(name);
-            if(it != _args.end()) {
-                const std::string str_value = it->second;
+        operator int_t() {
+            auto elem = _Steal_element(_args, name);
+            if(elem) {
                 size_t last;
-
                 bool success = true;
-                int value;
-                try { value = std::stoi(str_value.data(), &last); }
-                catch(std::logic_error) { success = false; }
+                int int_val = 0;
+                try { int_val = std::stoi(elem.value, &last); }
+                catch(std::logic_error &) { success = false; }
 
-                _fire_assert(success && last == str_value.size() /* probably was floating point */,
-                             std::string("value ") + str_value + " is not an integer");
+                _fire_assert(success && last == elem.value.size() /* probably was floating point */,
+                             std::string("value ") + elem.value + " is not an integer");
 
-                return value;
+                return _check_return(int_val);
             }
 
             if(assigned == Type::int_t)
-                return value_int;
+                return _check_return(value_int);
             _fire_assert(false, std::string("required argument ") + name + " not provided");
             return 0;
         }
 
-        operator float_t() const {
-            auto it = _args.find(name);
-            if (it != _args.end()) {
+        operator float_t() {
+            auto elem = _Steal_element(_args, name);
+            if(elem) {
                 try {
-                    return std::stold(it->second.data());
-                } catch (std::logic_error) {
-                    _fire_assert(false, std::string("value ") + it->second + " is not a real number");
+                    return _check_return(std::stold(elem.value));
+                } catch(std::logic_error &) {
+                    _fire_assert(false, std::string("value ") + elem.value + " is not a real number");
                 }
             }
 
             if(assigned == Type::int_t)
-                return value_int;
+                return _check_return(value_int);
             if(assigned == Type::float_t)
-                return value_float;
+                return _check_return(value_float);
             _fire_assert(false, std::string("required argument ") + name + " not provided");
             return 0;
         }
 
-        operator string_t() const {
+        operator string_t() {
+            auto elem = _Steal_element(_args, name);
             auto it = _args.find(name);
-            if(it != _args.end())
-                return it->second.data();
+            if(elem)
+                return _check_return(elem.value);
 
             if(assigned == Type::string_t)
-                return value_string;
+                return _check_return(value_string);
             _fire_assert(false, std::string("Error: required argument ") + name + " not provided");
-            return 0;
+            return "";
         }
     };
 }
 
-#define FIRE(main_func) int main(int argc, const char ** argv) { fire::_init_args(argc, argv); return main_func(); }
+
+
+#define FIRE(main_func) \
+int main(int argc, const char ** argv) {\
+    std::size_t main_argc = fire::_get_argument_count(main_func);\
+    fire::_init_args(argc, argv, main_argc);\
+    return main_func();\
+}
 
 #endif
