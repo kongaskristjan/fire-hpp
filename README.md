@@ -6,20 +6,22 @@ This library uses extensive testing. Unit tests are located in Tests.cpp, while 
 
 ### Todo
 
+* Optional
+    * Implement `fire::optional`, in C++17 `std::optional == fire::optional`
+    * Substitute `Steal_element` with `optional<string>`
+    * Add optional arguments
 * Gathering arguments
     * Help generation
 * Multiple keys for arguments
 * High quality parsing
     * Boolean parameters (with `"-xy" == "-x -y"` support)
-    * Positional arguments
+    * Positional arguments (Named -> Arg)
     * Support "hyphens" for strings
-    * Error handling
-* Optional arguments with C++11 compatibility
 * Modules
-* FIRE_MAIN() (see design goals) (is it even possible?)
-* Optimal parameter syntax (see design goals) (likely impossible)
 
-### Design goals
+### Design dreams
+
+These goals are likely impossible, so I call them dreams.
 
 #### Current interface
 
