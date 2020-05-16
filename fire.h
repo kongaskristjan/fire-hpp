@@ -7,8 +7,33 @@
 #include <cassert>
 #include <cstdlib>
 
+#if __cplusplus >= 201500 // C++17
+#include <optional>
+#endif
+
+
 namespace fire {
     constexpr int _fire_failure_code = 1;
+
+#if __cplusplus >= 201500 // >= C++17
+    template <typename T>
+    using Optional = std::optional<T>;
+#else // <= C++14
+    template <typename T>
+    class Optional {
+        T _value;
+        bool _exists = false;
+
+    public:
+        Optional() = default;
+        Optional(const T &__value): _value(__value), _exists(true) {}
+        Optional<T>& operator=(const T& __value) { _value = __value; _exists = true; }
+        explicit operator bool() const { return _exists; }
+        bool has_value() const { return _exists; }
+        T value_or(const T& def) const { return _exists ? _value : def; }
+    };
+#endif
+
     class _Overview { // All members are static
         static std::unordered_map<std::string, std::string> _args;
         static int _main_argc;

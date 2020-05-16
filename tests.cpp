@@ -26,6 +26,37 @@ void init_args_strict_query(const vector<string> &args, int named_calls) {
     init_args(args, false, named_calls);
 }
 
+
+
+TEST(Optional, value) {
+    Optional<int> no_value;
+    EXPECT_FALSE((bool) no_value);
+    EXPECT_FALSE(no_value.has_value());
+    EXPECT_EQ(no_value.value_or(3), 3);
+
+    Optional<int> value(1);
+    EXPECT_TRUE((bool) value);
+    EXPECT_TRUE(value.has_value());
+    EXPECT_EQ(value.value_or(3), 1);
+}
+
+TEST(Optional, assignment) {
+    Optional<int> opt1, opt2 = 3, opt3(3);
+    EXPECT_FALSE(opt1.has_value());
+    EXPECT_TRUE(opt2.has_value());
+    EXPECT_TRUE(opt3.has_value());
+    opt1 = opt3;
+    EXPECT_TRUE(opt1.has_value());
+}
+
+TEST(Optional, no_value) {
+    Optional<int> opt;
+    EXPECT_FALSE((bool) opt);
+    EXPECT_FALSE(opt.has_value());
+    EXPECT_EQ(opt.value_or(3), 3);
+}
+
+
 TEST(Named, defaults) {
     init_args_loose_query({"./run_tests"});
 
