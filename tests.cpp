@@ -59,71 +59,74 @@ TEST(optional, no_value) {
 }
 
 
+TEST(init_args, invalid_input) {
+    EXPECT_EXIT_FAIL(init_args_loose_query({"./run_tests", "-i"}));
+    EXPECT_EXIT_FAIL(init_args_loose_query({"./run_tests", "--i", "0"}));
+    EXPECT_EXIT_FAIL(init_args_loose_query({"./run_tests", "-int", "0"}));
+}
+
+
 TEST(named, defaults) {
     init_args_loose_query({"./run_tests"});
 
-    EXPECT_EQ((int) named("-i", 1), 1);
-    EXPECT_NEAR((double) named("-f", 2), 2, 1e-5);
-    EXPECT_NEAR((double) named("-f", 2.0), 2.0, 1e-5);
-    EXPECT_EQ((string) named("-s", "test"), "test");
+    EXPECT_EQ((int) named("i", 1), 1);
+    EXPECT_NEAR((double) named("f", 2), 2, 1e-5);
+    EXPECT_NEAR((double) named("f", 2.0), 2.0, 1e-5);
+    EXPECT_EQ((string) named("s", "test"), "test");
 
-    EXPECT_EXIT_FAIL((int) named("-i", 1.0));
-    EXPECT_EXIT_FAIL((int) named("-i", "test"));
-    EXPECT_EXIT_FAIL((double) named("-f", "test"));
-    EXPECT_EXIT_FAIL((string) named("-s", 1));
-    EXPECT_EXIT_FAIL((string) named("-s", 1.0));
+    EXPECT_EXIT_FAIL((int) named("i", 1.0));
+    EXPECT_EXIT_FAIL((int) named("i", "test"));
+    EXPECT_EXIT_FAIL((double) named("f", "test"));
+    EXPECT_EXIT_FAIL((string) named("s", 1));
+    EXPECT_EXIT_FAIL((string) named("s", 1.0));
 }
 
 TEST(named, correct_parsing) {
     init_args_loose_query({"./run_tests", "-i", "1", "-f", "2.0", "-s", "test"});
 
-    EXPECT_EQ((int) named("-i", 2), 1);
+    EXPECT_EQ((int) named("i", 2), 1);
 
-    EXPECT_EQ((int) named("-i"), 1);
-    EXPECT_NEAR((double) named("-i"), 1.0, 1e-5);
-    EXPECT_NEAR((double) named("-f"), 2.0, 1e-5);
-    EXPECT_EQ((string) named("-s"), "test");
+    EXPECT_EQ((int) named("i"), 1);
+    EXPECT_NEAR((double) named("i"), 1.0, 1e-5);
+    EXPECT_NEAR((double) named("f"), 2.0, 1e-5);
+    EXPECT_EQ((string) named("s"), "test");
 
-    EXPECT_EXIT_FAIL((int) named("-f"));
-    EXPECT_EXIT_FAIL((int) named("-s"));
-    EXPECT_EXIT_FAIL((double) named("-s"));
+    EXPECT_EXIT_FAIL((int) named("f"));
+    EXPECT_EXIT_FAIL((int) named("s"));
+    EXPECT_EXIT_FAIL((double) named("s"));
 
-    EXPECT_EXIT_FAIL((int) named("-x"));
-}
-
-TEST(named, incorrect_parsing) {
-    EXPECT_EXIT_FAIL(init_args_loose_query({"./run_tests", "-i"}));
+    EXPECT_EXIT_FAIL((int) named("x"));
 }
 
 TEST(named, strict_query) {
     EXPECT_EXIT_FAIL(init_args_strict_query({"./run_tests", "-i", "1"}, 0));
 
     init_args_strict_query({"./run_tests", "-i", "1"}, 1);
-    (int_t) named("-i");
-    EXPECT_EXIT_FAIL((int_t) named("-x"));
+    (int_t) named("i");
+    EXPECT_EXIT_FAIL((int_t) named("x"));
 
     init_args_strict_query({"./run_tests", "-i", "1"}, 1);
-    EXPECT_EXIT_FAIL((int_t) named("-x"));
+    EXPECT_EXIT_FAIL((int_t) named("x"));
 
     init_args_strict_query({"./run_tests", "-i", "1"}, 1);
-    EXPECT_EXIT_FAIL((int_t) named("-x", 0));
+    EXPECT_EXIT_FAIL((int_t) named("x", 0));
 }
 
 TEST(named, optional_arguments) {
     init_args_loose_query({"./run_tests", "-i", "1", "-f", "1.0", "-s", "test"});
 
-    fire::optional<int_t> i_undef = named("--undefined");
-    fire::optional<int_t> i = named("-i");
+    fire::optional<int_t> i_undef = named("undefined");
+    fire::optional<int_t> i = named("i");
     EXPECT_FALSE(i_undef.has_value());
     EXPECT_EQ(i.value(), 1);
 
-    fire::optional<float_t> f_undef = named("--undefined");
-    fire::optional<float_t> f = named("-f");
+    fire::optional<float_t> f_undef = named("undefined");
+    fire::optional<float_t> f = named("f");
     EXPECT_FALSE(f_undef.has_value());
     EXPECT_NEAR(f.value(), 1.0, 1e-5);
 
-    fire::optional<string_t> s_undef = named("--undefined");
-    fire::optional<string_t> s = named("-s");
+    fire::optional<string_t> s_undef = named("undefined");
+    fire::optional<string_t> s = named("s");
     EXPECT_FALSE(s_undef.has_value());
     EXPECT_EQ(s.value(), "test");
 }
@@ -131,6 +134,6 @@ TEST(named, optional_arguments) {
 TEST(named, optional_and_default) {
     init_args_loose_query({"./run_tests", "-i", "0"});
 
-    EXPECT_EXIT_FAIL(fire::optional<int_t> i_undef = named("--undefined", 0));
-    EXPECT_EXIT_FAIL(fire::optional<int_t> i = named("-i", 0));
+    EXPECT_EXIT_FAIL(fire::optional<int_t> i_undef = named("undefined", 0));
+    EXPECT_EXIT_FAIL(fire::optional<int_t> i = named("i", 0));
 }

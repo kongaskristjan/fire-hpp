@@ -6,7 +6,7 @@ This library uses extensive testing. Unit tests are located in Tests.cpp, while 
 
 ### Todo
 
-* Automatically deduce number of dashes (write `Named("x")` instead of `Named("-x")`)
+* Parameter descriptions
 * Gathering arguments
     * Help generation
 * Multiple keys for arguments

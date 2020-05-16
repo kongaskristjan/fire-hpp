@@ -49,6 +49,8 @@ namespace fire {
         static int _main_argc;
         static bool _loose_query;
 
+        static size_t count_hyphens(const std::string &s);
+
     public:
         static void check(bool dec_main_argc = true);
         template<typename T> static T check_return(const T &ret, bool dec_main_argc = true);
@@ -59,6 +61,13 @@ namespace fire {
     std::unordered_map<std::string, std::string> _overview::_args;
     int _overview::_main_argc;
     bool _overview::_loose_query;
+
+    size_t _overview::count_hyphens(const std::string &s) {
+        int hyphens;
+        for(hyphens = 0; hyphens < s.size() && s[hyphens] == '-'; ++hyphens)
+            ;
+        return hyphens;
+    }
 
     void _overview::check(bool dec_main_argc) {
         _main_argc -= dec_main_argc;
@@ -94,7 +103,16 @@ namespace fire {
         _assert(argc % 2 == 1, "All arguments don't have values");
         _args.clear();
         for (int i = 1; i < argc; i += 2) {
-            std::string name = argv[i], value = argv[i + 1];
+            std::string hyphened_name = argv[i], value = argv[i + 1];
+            size_t hyphens = count_hyphens(hyphened_name);
+            std::string name = hyphened_name.substr(hyphens);
+
+            _assert(name.size() > 0, std::string("ill formed parameter ") + name);
+            if(name.size() == 1)
+                _assert(hyphens == 1, std::string("single character parameter ") + name + " must prefix exactly one hyphen: -" + name);
+            if(name.size() >= 2)
+                _assert(hyphens == 2, std::string("multi-character parameter ") + name + " must prefix exactly two hyphens: --" + name);
+
             _args[name] = value;
         }
 
