@@ -52,8 +52,7 @@ namespace fire {
         static size_t count_hyphens(const std::string &s);
 
     public:
-        static void check(bool dec_main_argc = true);
-        template<typename T> static T check_return(const T &ret, bool dec_main_argc = true);
+        static void check(bool dec_main_argc);
         static optional<std::string> steal(const std::string &key);
         static void init_args(int argc, const char **argv, int main_argc, bool loose_query);
     };
@@ -78,12 +77,6 @@ namespace fire {
         for (const auto &it: _args)
             invalid += std::string(" ") + it.first;
         _assert(false, std::string("Invalid argument") + (invalid.size() > 1 ? "s" : "") + invalid);
-    }
-
-    template<typename T>
-    T _overview::check_return(const T &ret, bool dec_main_argc) {
-        check(dec_main_argc);
-        return ret;
     }
 
     optional<std::string> _overview::steal(const std::string &key) {
@@ -136,6 +129,8 @@ namespace fire {
         optional<string_t> _string_value;
 
         template <typename T> optional<T> get() { T::unimplemented_function; } // no default function
+        template <typename T> optional<T> convert_optional();
+        template <typename T> T convert();
 
     public:
         explicit named(std::string _name): _name(std::move(_name)) {}
@@ -143,12 +138,12 @@ namespace fire {
         named(std::string _name, float_t _value): _name(std::move(_name)), _float_value(_value) {}
         named(std::string _name, const string_t &_value): _name(std::move(_name)), _string_value(_value) {}
 
-        operator optional<int_t>();
-        operator optional<float_t>();
-        operator optional<string_t>();
-        operator int_t();
-        operator float_t();
-        operator string_t();
+        operator optional<int_t>() { return convert_optional<int_t>(); }
+        operator optional<float_t>() { return convert_optional<float_t>(); }
+        operator optional<string_t>() { return convert_optional<string_t>(); }
+        operator int_t() { return convert<int_t>(); }
+        operator float_t() { return convert<float_t>(); }
+        operator string_t() { return convert<string_t>(); }
     };
 
     template <>
@@ -164,10 +159,10 @@ namespace fire {
             _assert(success && last == elem.value().size() /* probably was floating point */,
                     std::string("value ") + elem.value() + " is not an integer");
 
-            return _overview::check_return(converted);
+            return converted;
         }
 
-        return _overview::check_return(_int_value);
+        return _int_value;
     }
 
     template <>
@@ -175,14 +170,14 @@ namespace fire {
         auto elem = _overview::steal(_name);
         if(elem) {
             try {
-                return _overview::check_return(std::stold(elem.value()));
+                return std::stold(elem.value());
             } catch(std::logic_error &) {
                 _assert(false, std::string("value ") + elem.value() + " is not a real number");
             }
         }
 
-        if(_float_value.has_value()) return _overview::check_return(_float_value);
-        if(_int_value.has_value()) return _overview::check_return(_int_value.value());
+        if(_float_value.has_value()) return _float_value;
+        if(_int_value.has_value()) return _int_value.value();
         return {};
     }
 
@@ -190,44 +185,24 @@ namespace fire {
     optional<string_t> named::get<string_t>() {
         auto elem = _overview::steal(_name);
         if(elem)
-            return _overview::check_return(elem.value());
+            return elem.value();
 
-        return _overview::check_return(_string_value);
+        return _string_value;
     }
 
-    named::operator optional<int_t>() {
+    template <typename T>
+    optional<T> named::convert_optional() {
         _assert(! _int_value.has_value() && ! _float_value.has_value() && ! _string_value.has_value(),
                 "Optional argument has default value");
-        return _overview::check_return(get<int_t>());
+        _overview::check(true);
+        return get<T>();
     }
 
-    named::operator optional<float_t>() {
-        _assert(! _int_value.has_value() && ! _float_value.has_value() && ! _string_value.has_value(),
-                "Optional argument has default value");
-        return _overview::check_return(get<float_t>());
-    }
-
-    named::operator optional<string_t>() {
-        _assert(! _int_value.has_value() && ! _float_value.has_value() && ! _string_value.has_value(),
-                "Optional argument has default value");
-        return _overview::check_return(get<string_t>());
-    }
-
-    named::operator int_t() {
-        optional<int_t> val = get<int_t>();
+    template <typename T>
+    T named::convert() {
+        optional<T> val = get<T>();
         _assert(val.has_value(), std::string("Required argument ") + _name + " not provided");
-        return val.value();
-    }
-
-    named::operator float_t() {
-        optional<float_t> val = get<float_t>();
-        _assert(val.has_value(), std::string("Required argument ") + _name + " not provided");
-        return val.value();
-    }
-
-    named::operator string_t() {
-        optional<string_t> val = get<string_t>();
-        _assert(val.has_value(), std::string("Required argument ") + _name + " not provided");
+        _overview::check(true);
         return val.value();
     }
 }
