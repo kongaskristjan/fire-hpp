@@ -6,15 +6,21 @@ This library uses extensive testing. Unit tests are located in Tests.cpp, while 
 
 ### Todo
 
-* Optional
-    * Add optional arguments
+* Automatically deduce number of dashes (write `Named("x")` instead of `Named("-x")`)
 * Gathering arguments
     * Help generation
 * Multiple keys for arguments
+* Unnamed arguments
+    * Positionals (`positional`, `named` -> `arg`)
+    * Vectors
 * High quality parsing
     * Boolean parameters (with `"-xy" == "-x -y"` support)
-    * Positional arguments (`named` -> `arg`)
+    * `"-x 1" == "-x=1"`
     * Support "hyphens" for strings
+* Add more types
+    * `unsigned`
+    * Short/long versions of numeric types, eg. `short`, `long`, `long long`
+* Linking together multiple compilation units
 * Modules
 
 ### Design dreams

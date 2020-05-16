@@ -3,7 +3,7 @@
 #include "fire.h"
 
 #define EXPECT_EXIT_SUCCESS(statement) EXPECT_EXIT(statement, ::testing::ExitedWithCode(0), "")
-#define EXPECT_EXIT_FAIL(statement) EXPECT_EXIT(statement, ::testing::ExitedWithCode(_fire_failure_code), "")
+#define EXPECT_EXIT_FAIL(statement) EXPECT_EXIT(statement, ::testing::ExitedWithCode(fire::_failure_code), "")
 
 using namespace std;
 using namespace fire;
@@ -33,11 +33,13 @@ TEST(optional, value) {
     EXPECT_FALSE((bool) no_value);
     EXPECT_FALSE(no_value.has_value());
     EXPECT_EQ(no_value.value_or(3), 3);
+    EXPECT_EXIT_FAIL(no_value.value());
 
     fire::optional<int> value(1);
     EXPECT_TRUE((bool) value);
     EXPECT_TRUE(value.has_value());
     EXPECT_EQ(value.value_or(3), 1);
+    EXPECT_EQ(value.value(), 1);
 }
 
 TEST(optional, assignment) {
@@ -105,4 +107,30 @@ TEST(named, strict_query) {
 
     init_args_strict_query({"./run_tests", "-i", "1"}, 1);
     EXPECT_EXIT_FAIL((int_t) named("-x", 0));
+}
+
+TEST(named, optional_arguments) {
+    init_args_loose_query({"./run_tests", "-i", "1", "-f", "1.0", "-s", "test"});
+
+    fire::optional<int_t> i_undef = named("--undefined");
+    fire::optional<int_t> i = named("-i");
+    EXPECT_FALSE(i_undef.has_value());
+    EXPECT_EQ(i.value(), 1);
+
+    fire::optional<float_t> f_undef = named("--undefined");
+    fire::optional<float_t> f = named("-f");
+    EXPECT_FALSE(f_undef.has_value());
+    EXPECT_NEAR(f.value(), 1.0, 1e-5);
+
+    fire::optional<string_t> s_undef = named("--undefined");
+    fire::optional<string_t> s = named("-s");
+    EXPECT_FALSE(s_undef.has_value());
+    EXPECT_EQ(s.value(), "test");
+}
+
+TEST(named, optional_and_default) {
+    init_args_loose_query({"./run_tests", "-i", "0"});
+
+    EXPECT_EXIT_FAIL(fire::optional<int_t> i_undef = named("--undefined", 0));
+    EXPECT_EXIT_FAIL(fire::optional<int_t> i = named("-i", 0));
 }
