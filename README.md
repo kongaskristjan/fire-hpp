@@ -8,14 +8,14 @@ This library uses extensive testing. Unit tests are located in Tests.cpp, while 
 
 * Optional
     * Implement `fire::optional`, in C++17 `std::optional == fire::optional`
-    * Substitute `Steal_element` with `optional<string>`
+    * Substitute `steal_element` with `optional<string>`
     * Add optional arguments
 * Gathering arguments
     * Help generation
 * Multiple keys for arguments
 * High quality parsing
     * Boolean parameters (with `"-xy" == "-x -y"` support)
-    * Positional arguments (Named -> Arg)
+    * Positional arguments (`named` -> `arg`)
     * Support "hyphens" for strings
 * Modules
 
@@ -26,7 +26,7 @@ These goals are likely impossible, so I call them dreams.
 #### Current interface
 
 ```
-int fire_main(int x = Named("x", 0), int y = Named("y", 0)) {
+int fire_main(int x = named("x", 0), int y = named("y", 0)) {
 }
 
 FIRE(fire_main)
@@ -37,7 +37,7 @@ FIRE(fire_main)
 Likely impossible. Also, where are you going to supply program description?
 
 ```
-int FIRE_MAIN(int x = Named("x", 0), int y = Named("y", 0)) {
+int FIRE_MAIN(int x = named("x", 0), int y = named("y", 0)) {
 }
 ```
 

@@ -17,34 +17,34 @@ namespace fire {
 
 #if __cplusplus >= 201500 // >= C++17
     template <typename T>
-    using Optional = std::optional<T>;
+    using optional = std::optional<T>;
 #else // <= C++14
     template <typename T>
-    class Optional {
+    class optional {
         T _value;
         bool _exists = false;
 
     public:
-        Optional() = default;
-        Optional(const T &__value): _value(__value), _exists(true) {}
-        Optional<T>& operator=(const T& __value) { _value = __value; _exists = true; }
+        optional() = default;
+        optional(const T &__value): _value(__value), _exists(true) {}
+        optional<T>& operator=(const T& __value) { _value = __value; _exists = true; }
         explicit operator bool() const { return _exists; }
         bool has_value() const { return _exists; }
         T value_or(const T& def) const { return _exists ? _value : def; }
     };
 #endif
 
-    class _Overview { // All members are static
+    class _overview { // All members are static
         static std::unordered_map<std::string, std::string> _args;
         static int _main_argc;
         static bool _loose_query;
 
     public:
-        struct Steal_element {
+        struct steal_element {
             std::string key, value;
             bool exists = false;
 
-            Steal_element(std::string _key) : key(std::move(_key)) {
+            steal_element(std::string _key) : key(std::move(_key)) {
                 auto it = _args.find(key);
                 if (it == _args.end())
                     return;
@@ -98,9 +98,9 @@ namespace fire {
         }
     };
 
-    std::unordered_map<std::string, std::string> _Overview::_args;
-    int _Overview::_main_argc;
-    bool _Overview::_loose_query;
+    std::unordered_map<std::string, std::string> _overview::_args;
+    int _overview::_main_argc;
+    bool _overview::_loose_query;
 
     template<typename R, typename ... Types>
     constexpr size_t _get_argument_count(R(*f)(Types ...)) {
@@ -111,34 +111,34 @@ namespace fire {
     using float_t = double;
     using string_t = std::string;
 
-    class Named {
-        enum class Type { unassigned, int_t, float_t, string_t };
+    class named {
+        enum class type { unassigned, int_t, float_t, string_t };
 
         std::string name;
-        Type assigned = Type::unassigned;
+        type assigned = type::unassigned;
 
         int_t value_int = 0;
         float_t value_float = 0;
         string_t value_string;
 
     public:
-        explicit Named(std::string _name): name(std::move(_name)) {
+        explicit named(std::string _name): name(std::move(_name)) {
         }
 
-        Named(std::string _name, int_t _value): name(std::move(_name)),
-            value_int(_value), assigned(Type::int_t) {
+        named(std::string _name, int_t _value): name(std::move(_name)),
+            value_int(_value), assigned(type::int_t) {
         }
 
-        Named(std::string _name, float_t _value): name(std::move(_name)),
-            value_float(_value), assigned(Type::float_t) {
+        named(std::string _name, float_t _value): name(std::move(_name)),
+            value_float(_value), assigned(type::float_t) {
         }
 
-        Named(std::string _name, string_t _value): name(std::move(_name)),
-            value_string(std::move(_value)), assigned(Type::string_t) {
+        named(std::string _name, string_t _value): name(std::move(_name)),
+            value_string(std::move(_value)), assigned(type::string_t) {
         }
 
         operator int_t() {
-            auto elem = _Overview::Steal_element(name);
+            auto elem = _overview::steal_element(name);
             if(elem) {
                 size_t last;
                 bool success = true;
@@ -146,44 +146,44 @@ namespace fire {
                 try { int_val = std::stoi(elem.value, &last); }
                 catch(std::logic_error &) { success = false; }
 
-                _Overview::fire_assert(success && last == elem.value.size() /* probably was floating point */,
+                _overview::fire_assert(success && last == elem.value.size() /* probably was floating point */,
                                        std::string("value ") + elem.value + " is not an integer");
 
-                return _Overview::check_return(int_val);
+                return _overview::check_return(int_val);
             }
 
-            if(assigned == Type::int_t)
-                return _Overview::check_return(value_int);
-            _Overview::fire_assert(false, std::string("required argument ") + name + " not provided");
+            if(assigned == type::int_t)
+                return _overview::check_return(value_int);
+            _overview::fire_assert(false, std::string("required argument ") + name + " not provided");
             return 0;
         }
 
         operator float_t() {
-            auto elem = _Overview::Steal_element(name);
+            auto elem = _overview::steal_element(name);
             if(elem) {
                 try {
-                    return _Overview::check_return(std::stold(elem.value));
+                    return _overview::check_return(std::stold(elem.value));
                 } catch(std::logic_error &) {
-                    _Overview::fire_assert(false, std::string("value ") + elem.value + " is not a real number");
+                    _overview::fire_assert(false, std::string("value ") + elem.value + " is not a real number");
                 }
             }
 
-            if(assigned == Type::int_t)
-                return _Overview::check_return(value_int);
-            if(assigned == Type::float_t)
-                return _Overview::check_return(value_float);
-            _Overview::fire_assert(false, std::string("required argument ") + name + " not provided");
+            if(assigned == type::int_t)
+                return _overview::check_return(value_int);
+            if(assigned == type::float_t)
+                return _overview::check_return(value_float);
+            _overview::fire_assert(false, std::string("required argument ") + name + " not provided");
             return 0;
         }
 
         operator string_t() {
-            auto elem = _Overview::Steal_element(name);
+            auto elem = _overview::steal_element(name);
             if(elem)
-                return _Overview::check_return(elem.value);
+                return _overview::check_return(elem.value);
 
-            if(assigned == Type::string_t)
-                return _Overview::check_return(value_string);
-            _Overview::fire_assert(false, std::string("Error: required argument ") + name + " not provided");
+            if(assigned == type::string_t)
+                return _overview::check_return(value_string);
+            _overview::fire_assert(false, std::string("Error: required argument ") + name + " not provided");
             return "";
         }
     };
@@ -194,7 +194,7 @@ namespace fire {
 #define FIRE(main_func) \
 int main(int argc, const char ** argv) {\
     std::size_t main_argc = fire::_get_argument_count(main_func);\
-    fire::_Overview::init_args(argc, argv, main_argc, false);\
+    fire::_overview::init_args(argc, argv, main_argc, false);\
     return main_func();\
 }
 
