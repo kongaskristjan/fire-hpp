@@ -40,24 +40,6 @@ namespace fire {
         static bool _loose_query;
 
     public:
-        struct steal_element {
-            std::string key, value;
-            bool exists = false;
-
-            steal_element(std::string _key) : key(std::move(_key)) {
-                auto it = _args.find(key);
-                if (it == _args.end())
-                    return;
-
-                value = it->second;
-                exists = true;
-                if (!_loose_query)
-                    _args.erase(it);
-            }
-
-            operator bool() { return exists; }
-        };
-
         static void fire_assert(bool pass, const std::string &msg) {
             if (pass)
                 return;
@@ -82,6 +64,17 @@ namespace fire {
         static T check_return(const T &ret, bool dec_main_argc = true) {
             check(dec_main_argc);
             return ret;
+        }
+
+        static optional<std::string> steal(const std::string &key) {
+            auto it = _args.find(key);
+            if (it == _args.end())
+                return optional<std::string>();
+
+            optional<std::string> opt = it->second;
+            if (!_loose_query)
+                _args.erase(it);
+            return opt;
         }
 
         static void init_args(int argc, const char **argv, int main_argc, bool loose_query) {
@@ -138,16 +131,16 @@ namespace fire {
         }
 
         operator int_t() {
-            auto elem = _overview::steal_element(name);
-            if(elem) {
+            auto elem = _overview::steal(name);
+            if(elem.has_value()) {
                 size_t last;
                 bool success = true;
                 int int_val = 0;
-                try { int_val = std::stoi(elem.value, &last); }
+                try { int_val = std::stoi(elem.value_or(""), &last); }
                 catch(std::logic_error &) { success = false; }
 
-                _overview::fire_assert(success && last == elem.value.size() /* probably was floating point */,
-                                       std::string("value ") + elem.value + " is not an integer");
+                _overview::fire_assert(success && last == elem.value_or("").size() /* probably was floating point */,
+                                       std::string("value ") + elem.value_or("") + " is not an integer");
 
                 return _overview::check_return(int_val);
             }
@@ -159,12 +152,12 @@ namespace fire {
         }
 
         operator float_t() {
-            auto elem = _overview::steal_element(name);
+            auto elem = _overview::steal(name);
             if(elem) {
                 try {
-                    return _overview::check_return(std::stold(elem.value));
+                    return _overview::check_return(std::stold(elem.value_or("")));
                 } catch(std::logic_error &) {
-                    _overview::fire_assert(false, std::string("value ") + elem.value + " is not a real number");
+                    _overview::fire_assert(false, std::string("value ") + elem.value_or("") + " is not a real number");
                 }
             }
 
@@ -177,9 +170,9 @@ namespace fire {
         }
 
         operator string_t() {
-            auto elem = _overview::steal_element(name);
+            auto elem = _overview::steal(name);
             if(elem)
-                return _overview::check_return(elem.value);
+                return _overview::check_return(elem.value_or(""));
 
             if(assigned == type::string_t)
                 return _overview::check_return(value_string);

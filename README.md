@@ -7,8 +7,6 @@ This library uses extensive testing. Unit tests are located in Tests.cpp, while 
 ### Todo
 
 * Optional
-    * Implement `fire::optional`, in C++17 `std::optional == fire::optional`
-    * Substitute `steal_element` with `optional<string>`
     * Add optional arguments
 * Gathering arguments
     * Help generation
