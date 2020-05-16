@@ -66,6 +66,16 @@ TEST(init_args, invalid_input) {
 }
 
 
+TEST(named, false_hyphens) {
+    init_args_loose_query({"./run_tests"});
+
+    EXPECT_EXIT_FAIL(named("--undefined"));
+    EXPECT_EXIT_FAIL(named("-i"));
+    EXPECT_EXIT_FAIL(named("-i", 0));
+    EXPECT_EXIT_FAIL(named("-f", 0.0));
+    EXPECT_EXIT_FAIL(named("-s", "test"));
+}
+
 TEST(named, defaults) {
     init_args_loose_query({"./run_tests"});
 

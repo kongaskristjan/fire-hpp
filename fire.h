@@ -24,6 +24,13 @@ namespace fire {
         exit(_failure_code);
     }
 
+    size_t count_hyphens(const std::string &s) {
+        int hyphens;
+        for(hyphens = 0; hyphens < s.size() && s[hyphens] == '-'; ++hyphens)
+            ;
+        return hyphens;
+    }
+
 #if __cplusplus >= 201500 // >= C++17
     template <typename T>
     using optional = std::optional<T>;
@@ -49,8 +56,6 @@ namespace fire {
         static int _main_argc;
         static bool _loose_query;
 
-        static size_t count_hyphens(const std::string &s);
-
     public:
         static void check(bool dec_main_argc);
         static optional<std::string> steal(const std::string &key);
@@ -60,13 +65,6 @@ namespace fire {
     std::unordered_map<std::string, std::string> _overview::_args;
     int _overview::_main_argc;
     bool _overview::_loose_query;
-
-    size_t _overview::count_hyphens(const std::string &s) {
-        int hyphens;
-        for(hyphens = 0; hyphens < s.size() && s[hyphens] == '-'; ++hyphens)
-            ;
-        return hyphens;
-    }
 
     void _overview::check(bool dec_main_argc) {
         _main_argc -= dec_main_argc;
@@ -128,15 +126,16 @@ namespace fire {
         optional<float_t> _float_value;
         optional<string_t> _string_value;
 
+        void check_name() const;
         template <typename T> optional<T> get() { T::unimplemented_function; } // no default function
         template <typename T> optional<T> convert_optional();
         template <typename T> T convert();
 
     public:
-        explicit named(std::string _name): _name(std::move(_name)) {}
-        named(std::string _name, int_t _value): _name(std::move(_name)), _int_value(_value) {}
-        named(std::string _name, float_t _value): _name(std::move(_name)), _float_value(_value) {}
-        named(std::string _name, const string_t &_value): _name(std::move(_name)), _string_value(_value) {}
+        explicit named(std::string _name): _name(std::move(_name)) { check_name(); }
+        named(std::string _name, int_t _value): _name(std::move(_name)), _int_value(_value) { check_name(); }
+        named(std::string _name, float_t _value): _name(std::move(_name)), _float_value(_value) { check_name(); }
+        named(std::string _name, const string_t &_value): _name(std::move(_name)), _string_value(_value) { check_name(); }
 
         operator optional<int_t>() { return convert_optional<int_t>(); }
         operator optional<float_t>() { return convert_optional<float_t>(); }
@@ -145,6 +144,10 @@ namespace fire {
         operator float_t() { return convert<float_t>(); }
         operator string_t() { return convert<string_t>(); }
     };
+
+    void named::check_name() const {
+        _assert(count_hyphens(_name) == 0, std::string("argument ") + _name + "declaration must not have prefix hyphens (these are added automatically");
+    }
 
     template <>
     optional<int_t> named::get<int_t>() {
