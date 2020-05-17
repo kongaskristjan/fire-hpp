@@ -13,7 +13,7 @@ void init_args(const vector<string> &args, bool loose_query, int named_calls = 1
     for(size_t i = 0; i < args.size(); ++i)
         argv[i] = args[i].c_str();
 
-    _overview::init_args(args.size(), argv, named_calls, loose_query);
+    _matcher::init_args(args.size(), argv, named_calls, loose_query);
 
     delete [] argv;
 }
@@ -59,10 +59,31 @@ TEST(optional, no_value) {
 }
 
 
-TEST(init_args, invalid_input) {
+TEST(matcher, invalid_input) {
     EXPECT_EXIT_FAIL(init_args_loose_query({"./run_tests", "-i"}));
     EXPECT_EXIT_FAIL(init_args_loose_query({"./run_tests", "--i", "0"}));
     EXPECT_EXIT_FAIL(init_args_loose_query({"./run_tests", "-int", "0"}));
+}
+
+
+TEST(help, help_invocation) {
+    EXPECT_EXIT_SUCCESS(init_args_strict_query({"./run_tests", "-h"}, 0));
+    EXPECT_EXIT_SUCCESS(init_args_strict_query({"./run_tests", "--help"}, 0));
+
+    init_args_strict_query({"./run_tests", "-h"}, 1);
+    EXPECT_EXIT_SUCCESS(int_t i_undef = named("i", "", 0));
+
+    init_args_strict_query({"./run_tests", "-h", "-i", "1"}, 1);
+    EXPECT_EXIT_SUCCESS(int_t i_undef = named("i", "", 0));
+
+    init_args_strict_query({"./run_tests", "-h", "-i", "1"}, 1);
+    EXPECT_EXIT_SUCCESS(int_t i_undef = named("i"));
+
+    init_args_strict_query({"./run_tests", "-h"}, 1);
+    EXPECT_EXIT_SUCCESS(fire::optional<int_t> i_undef = named("i"));
+
+    init_args_strict_query({"./run_tests", "-h", "-i", "1"}, 1);
+    EXPECT_EXIT_SUCCESS(fire::optional<int_t> i_undef = named("i"));
 }
 
 

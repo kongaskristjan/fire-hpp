@@ -6,8 +6,6 @@ This library uses extensive testing. Unit tests are located in Tests.cpp, while 
 
 ### Todo
 
-* Gathering arguments
-    * Help generation
 * Multiple keys for arguments
 * Unnamed arguments
     * Positionals (`positional`, `named` -> `arg`)

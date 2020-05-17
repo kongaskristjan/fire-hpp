@@ -3,6 +3,7 @@
 
 #include <string>
 #include <iostream>
+#include <map>
 #include <unordered_map>
 #include <unordered_set>
 #include <cassert>
@@ -52,27 +53,61 @@ namespace fire {
     };
 #endif
 
-    class _overview { // All members are static
+    class _matcher {
+        static std::string _executable;
         static std::unordered_map<std::string, std::string> _args;
         static std::unordered_set<std::string> _queried;
         static int _main_argc;
         static bool _loose_query;
+        static bool _help_flag;
 
     public:
         static void check(bool dec_main_argc);
         static optional<std::string> get_and_mark_as_queried(const std::string &key);
         static void init_args(int argc, const char **argv, int main_argc, bool loose_query);
+        static const std::string& get_executable() { return _executable; }
     };
 
-    std::unordered_map<std::string, std::string> _overview::_args;
-    std::unordered_set<std::string> _overview::_queried;
-    int _overview::_main_argc;
-    bool _overview::_loose_query;
+    std::string _matcher::_executable;
+    std::unordered_map<std::string, std::string> _matcher::_args;
+    std::unordered_set<std::string> _matcher::_queried;
+    int _matcher::_main_argc;
+    bool _matcher::_loose_query;
+    bool _matcher::_help_flag;
 
-    void _overview::check(bool dec_main_argc) {
+    class _help_logger { // Gathers function argument help info here
+    public:
+        struct log_elem {
+            std::string descr;
+            std::string type;
+            std::string def;
+            bool optional;
+        };
+
+    private:
+        static std::map<std::string, log_elem> _params;
+
+        static std::string _make_printable(const std::string &name, const log_elem &elem);
+        static void _add_to_help(std::string &usage, std::string &options,
+                                 const std::string &name, const log_elem &elem);
+    public:
+        static void print_help();
+        static void log(const std::string &name, const log_elem &elem);
+        static void clear() { _params.clear(); }
+    };
+
+    std::map<std::string, _help_logger::log_elem> _help_logger::_params;
+
+    void _matcher::check(bool dec_main_argc) {
         _main_argc -= dec_main_argc;
-        if (_loose_query || _main_argc > 0 || _args.empty())
-            return;
+        if(_loose_query || _main_argc > 0) return;
+
+        if(_help_flag) {
+            _help_logger::print_help();
+            exit(0);
+        }
+
+        if(_args.empty()) return;
 
         std::string invalid;
         for (const auto &it: _args)
@@ -80,7 +115,7 @@ namespace fire {
         _assert(false, std::string("Invalid argument") + (invalid.size() > 1 ? "s" : "") + invalid);
     }
 
-    optional<std::string> _overview::get_and_mark_as_queried(const std::string &key) {
+    optional<std::string> _matcher::get_and_mark_as_queried(const std::string &key) {
         _assert(_queried.find(key) == _queried.end(), std::string("double query for argument ") + key);
         if (!_loose_query)
             _queried.insert(key);
@@ -95,14 +130,26 @@ namespace fire {
         return opt;
     }
 
-    void _overview::init_args(int argc, const char **argv, int main_argc, bool loose_query) {
+    void _matcher::init_args(int argc, const char **argv, int main_argc, bool loose_query) {
         _main_argc = main_argc;
         _loose_query = loose_query;
-        _assert(argc % 2 == 1, "All arguments don't have values");
         _args.clear();
         _queried.clear();
-        for (int i = 1; i < argc; i += 2) {
-            std::string hyphened_name = argv[i], value = argv[i + 1];
+        _help_flag = false;
+        _help_logger::clear();
+
+        _executable = argv[0];
+        int i = 1;
+        while(i < argc) {
+            std::string hyphened_name = argv[i];
+            if(hyphened_name == "-h" || hyphened_name == "--help") {
+                _help_flag = true;
+                i += 1;
+                continue;
+            }
+
+            _assert(argc >= i + 2, "all parameters must have values");
+            std::string value = argv[i + 1];
             size_t hyphens = count_hyphens(hyphened_name);
             std::string name = hyphened_name.substr(hyphens);
 
@@ -113,9 +160,53 @@ namespace fire {
                 _assert(hyphens == 2, std::string("multi-character parameter ") + name + " must prefix exactly two hyphens: --" + name);
 
             _args[name] = value;
+            i += 2;
         }
 
         check(false);
+    }
+
+    std::string _help_logger::_make_printable(const std::string &name, const log_elem &elem) {
+        _assert(name.size() >= 1, "Internal error");
+        std::string printable;
+        printable += std::string((name.size() == 1) ? 1 : 2, '-');
+        printable += name;
+        printable += "=<";
+        printable += elem.type;
+        printable += ">";
+        return printable;
+    }
+
+    void _help_logger::_add_to_help(std::string &usage, std::string &options,
+                                    const std::string &name, const log_elem &elem) {
+        usage += " ";
+        if(elem.optional) usage += "[";
+        usage += _make_printable(name, elem);
+        if(elem.optional) usage += "]";
+
+        options += "      " + _make_printable(name, elem) + "  " + elem.descr;
+        if(! elem.def.empty())
+            options += std::string(" [default: ") + elem.def + "]";
+        options += "\n";
+    }
+
+    void _help_logger::print_help() {
+        std::string usage = "    Usage:\n      " + _matcher::get_executable();
+        std::string options = "    Options:\n";
+        for(const auto& it: _params)
+            if(! it.second.optional)
+                _add_to_help(usage, options, it.first, it.second);
+        for(const auto& it: _params)
+            if(it.second.optional)
+                _add_to_help(usage, options, it.first, it.second);
+
+        std::cerr << std::endl << usage << std::endl << std::endl << std::endl << options << std::endl;
+    }
+
+    void _help_logger::log(const std::string &name, const log_elem &_elem) {
+        log_elem elem = _elem;
+        elem.optional |= ! elem.def.empty();
+        _params.insert({name, elem});
     }
 
     template<typename R, typename ... Types>
@@ -135,36 +226,37 @@ namespace fire {
         optional<float_t> _float_value;
         optional<string_t> _string_value;
 
-        void check_name() const;
-        template <typename T> optional<T> get() { T::unimplemented_function; } // no default function
-        template <typename T> optional<T> convert_optional();
-        template <typename T> T convert();
+        void _check_name() const;
+        template <typename T> optional<T> _get() { T::unimplemented_function; } // no default function
+        template <typename T> optional<T> _convert_optional();
+        template <typename T> T _convert();
+        void _log(const std::string &type, bool optional);
 
     public:
         explicit named(std::string _name, std::string _descr = ""):
-            _name(std::move(_name)), _descr(std::move(_descr)) { check_name(); }
+            _name(std::move(_name)), _descr(std::move(_descr)) { _check_name(); }
         named(std::string _name, std::string _descr, int_t _value):
-            _name(std::move(_name)), _descr(std::move(_descr)), _int_value(_value) { check_name(); }
+            _name(std::move(_name)), _descr(std::move(_descr)), _int_value(_value) { _check_name(); }
         named(std::string _name, std::string _descr, float_t _value):
-            _name(std::move(_name)), _descr(std::move(_descr)), _float_value(_value) { check_name(); }
+            _name(std::move(_name)), _descr(std::move(_descr)), _float_value(_value) { _check_name(); }
         named(std::string _name, std::string _descr, const string_t &_value):
-            _name(std::move(_name)), _descr(std::move(_descr)), _string_value(_value) { check_name(); }
+            _name(std::move(_name)), _descr(std::move(_descr)), _string_value(_value) { _check_name(); }
 
-        operator optional<int_t>() { return convert_optional<int_t>(); }
-        operator optional<float_t>() { return convert_optional<float_t>(); }
-        operator optional<string_t>() { return convert_optional<string_t>(); }
-        operator int_t() { return convert<int_t>(); }
-        operator float_t() { return convert<float_t>(); }
-        operator string_t() { return convert<string_t>(); }
+        operator optional<int_t>() { _log("INTEGER", true); return _convert_optional<int_t>(); }
+        operator optional<float_t>() { _log("REAL", true); return _convert_optional<float_t>(); }
+        operator optional<string_t>() { _log("STRING", true); return _convert_optional<string_t>(); }
+        operator int_t() { _log("INTEGER", false); return _convert<int_t>(); }
+        operator float_t() { _log("REAL", false); return _convert<float_t>(); }
+        operator string_t() { _log("STRING", false); return _convert<string_t>(); }
     };
 
-    void named::check_name() const {
+    void named::_check_name() const {
         _assert(count_hyphens(_name) == 0, std::string("argument ") + _name + "declaration must not have prefix hyphens (these are added automatically");
     }
 
     template <>
-    optional<int_t> named::get<int_t>() {
-        auto elem = _overview::get_and_mark_as_queried(_name);
+    optional<int_t> named::_get<int_t>() {
+        auto elem = _matcher::get_and_mark_as_queried(_name);
         if(elem.has_value()) {
             size_t last;
             bool success = true;
@@ -182,8 +274,8 @@ namespace fire {
     }
 
     template <>
-    optional<float_t> named::get<float_t>() {
-        auto elem = _overview::get_and_mark_as_queried(_name);
+    optional<float_t> named::_get<float_t>() {
+        auto elem = _matcher::get_and_mark_as_queried(_name);
         if(elem) {
             try {
                 return std::stold(elem.value());
@@ -198,8 +290,8 @@ namespace fire {
     }
 
     template <>
-    optional<string_t> named::get<string_t>() {
-        auto elem = _overview::get_and_mark_as_queried(_name);
+    optional<string_t> named::_get<string_t>() {
+        auto elem = _matcher::get_and_mark_as_queried(_name);
         if(elem)
             return elem.value();
 
@@ -207,19 +299,28 @@ namespace fire {
     }
 
     template <typename T>
-    optional<T> named::convert_optional() {
+    optional<T> named::_convert_optional() {
         _assert(! _int_value.has_value() && ! _float_value.has_value() && ! _string_value.has_value(),
                 "Optional argument has default value");
-        _overview::check(true);
-        return get<T>();
+        _matcher::check(true);
+        return _get<T>();
     }
 
     template <typename T>
-    T named::convert() {
-        optional<T> val = get<T>();
+    T named::_convert() {
+        optional<T> val = _get<T>();
         _assert(val.has_value(), std::string("Required argument ") + _name + " not provided");
-        _overview::check(true);
+        _matcher::check(true);
         return val.value();
+    }
+
+    void named::_log(const std::string &type, bool optional) {
+        std::string def;
+        if(_int_value.has_value()) def = std::to_string(_int_value.value());
+        if(_float_value.has_value()) def = std::to_string(_float_value.value());
+        if(_string_value.has_value()) def = _string_value.value();
+
+        _help_logger::log(_name, {_descr, type, def, optional});
     }
 }
 
@@ -228,7 +329,7 @@ namespace fire {
 #define FIRE(main_func) \
 int main(int argc, const char ** argv) {\
     std::size_t main_argc = fire::_get_argument_count(main_func);\
-    fire::_overview::init_args(argc, argv, main_argc, false);\
+    fire::_matcher::init_args(argc, argv, main_argc, false);\
     return main_func();\
 }
 

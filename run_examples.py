@@ -26,6 +26,11 @@ class assert_runner:
         assert result.stderr != b""
         assert_runner.check_count += 1
 
+    def help_success(self, cmd):
+        result = subprocess.run([self.pth] + cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        assert result.returncode == 0
+        assert_runner.check_count += 1
+
     def b2str(self, b):
         return str(b, "utf-8")
 
@@ -41,6 +46,10 @@ def run_basic(pth_prefix):
     runner.handled_failure("-x test")
     runner.handled_failure("-x")
     runner.handled_failure("--undefined 0")
+    runner.help_success("-h")
+    runner.help_success("--help")
+    runner.help_success("-x 0 -h")
+    runner.help_success("-h -x 0")
 
 
 def main():
