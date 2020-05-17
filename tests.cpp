@@ -147,3 +147,10 @@ TEST(named, optional_and_default) {
     EXPECT_EXIT_FAIL(fire::optional<int_t> i_undef = named("undefined", 0));
     EXPECT_EXIT_FAIL(fire::optional<int_t> i = named("i", 0));
 }
+
+TEST(named, duplicate_parameter) {
+    init_args_strict_query({"./run_tests"}, 10);
+
+    int_t i1 = named("undefined", 0);
+    EXPECT_EXIT_FAIL(int_t i2 = named("undefined", 0));
+}

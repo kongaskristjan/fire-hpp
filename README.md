@@ -21,6 +21,8 @@ This library uses extensive testing. Unit tests are located in Tests.cpp, while 
     * `unsigned`
     * Short/long versions of numeric types, eg. `short`, `long`, `long long`
 * Linking together multiple compilation units
+* Deferring command line user issues to always show argument parsing errors
+* Testing for error messages
 * Modules
 
 ### Design dreams

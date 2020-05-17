@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <unordered_map>
+#include <unordered_set>
 #include <cassert>
 #include <cstdlib>
 
@@ -53,16 +54,18 @@ namespace fire {
 
     class _overview { // All members are static
         static std::unordered_map<std::string, std::string> _args;
+        static std::unordered_set<std::string> _queried;
         static int _main_argc;
         static bool _loose_query;
 
     public:
         static void check(bool dec_main_argc);
-        static optional<std::string> steal(const std::string &key);
+        static optional<std::string> get_and_mark_as_queried(const std::string &key);
         static void init_args(int argc, const char **argv, int main_argc, bool loose_query);
     };
 
     std::unordered_map<std::string, std::string> _overview::_args;
+    std::unordered_set<std::string> _overview::_queried;
     int _overview::_main_argc;
     bool _overview::_loose_query;
 
@@ -77,7 +80,11 @@ namespace fire {
         _assert(false, std::string("Invalid argument") + (invalid.size() > 1 ? "s" : "") + invalid);
     }
 
-    optional<std::string> _overview::steal(const std::string &key) {
+    optional<std::string> _overview::get_and_mark_as_queried(const std::string &key) {
+        _assert(_queried.find(key) == _queried.end(), std::string("double query for argument ") + key);
+        if (!_loose_query)
+            _queried.insert(key);
+
         auto it = _args.find(key);
         if (it == _args.end())
             return optional<std::string>();
@@ -93,6 +100,7 @@ namespace fire {
         _loose_query = loose_query;
         _assert(argc % 2 == 1, "All arguments don't have values");
         _args.clear();
+        _queried.clear();
         for (int i = 1; i < argc; i += 2) {
             std::string hyphened_name = argv[i], value = argv[i + 1];
             size_t hyphens = count_hyphens(hyphened_name);
@@ -151,7 +159,7 @@ namespace fire {
 
     template <>
     optional<int_t> named::get<int_t>() {
-        auto elem = _overview::steal(_name);
+        auto elem = _overview::get_and_mark_as_queried(_name);
         if(elem.has_value()) {
             size_t last;
             bool success = true;
@@ -170,7 +178,7 @@ namespace fire {
 
     template <>
     optional<float_t> named::get<float_t>() {
-        auto elem = _overview::steal(_name);
+        auto elem = _overview::get_and_mark_as_queried(_name);
         if(elem) {
             try {
                 return std::stold(elem.value());
@@ -186,7 +194,7 @@ namespace fire {
 
     template <>
     optional<string_t> named::get<string_t>() {
-        auto elem = _overview::steal(_name);
+        auto elem = _overview::get_and_mark_as_queried(_name);
         if(elem)
             return elem.value();
 
