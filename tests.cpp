@@ -71,30 +71,30 @@ TEST(named, false_hyphens) {
 
     EXPECT_EXIT_FAIL(named("--undefined"));
     EXPECT_EXIT_FAIL(named("-i"));
-    EXPECT_EXIT_FAIL(named("-i", 0));
-    EXPECT_EXIT_FAIL(named("-f", 0.0));
-    EXPECT_EXIT_FAIL(named("-s", "test"));
+    EXPECT_EXIT_FAIL(named("-i", "", 0));
+    EXPECT_EXIT_FAIL(named("-f", "", 0.0));
+    EXPECT_EXIT_FAIL(named("-s", "", "test"));
 }
 
 TEST(named, defaults) {
     init_args_loose_query({"./run_tests"});
 
-    EXPECT_EQ((int) named("i", 1), 1);
-    EXPECT_NEAR((double) named("f", 2), 2, 1e-5);
-    EXPECT_NEAR((double) named("f", 2.0), 2.0, 1e-5);
-    EXPECT_EQ((string) named("s", "test"), "test");
+    EXPECT_EQ((int) named("i", "", 1), 1);
+    EXPECT_NEAR((double) named("f", "", 2), 2, 1e-5);
+    EXPECT_NEAR((double) named("f", "", 2.0), 2.0, 1e-5);
+    EXPECT_EQ((string) named("s", "", "test"), "test");
 
-    EXPECT_EXIT_FAIL((int) named("i", 1.0));
-    EXPECT_EXIT_FAIL((int) named("i", "test"));
-    EXPECT_EXIT_FAIL((double) named("f", "test"));
-    EXPECT_EXIT_FAIL((string) named("s", 1));
-    EXPECT_EXIT_FAIL((string) named("s", 1.0));
+    EXPECT_EXIT_FAIL((int) named("i", "", 1.0));
+    EXPECT_EXIT_FAIL((int) named("i", "", "test"));
+    EXPECT_EXIT_FAIL((double) named("f", "", "test"));
+    EXPECT_EXIT_FAIL((string) named("s", "", 1));
+    EXPECT_EXIT_FAIL((string) named("s", "", 1.0));
 }
 
 TEST(named, correct_parsing) {
     init_args_loose_query({"./run_tests", "-i", "1", "-f", "2.0", "-s", "test"});
 
-    EXPECT_EQ((int) named("i", 2), 1);
+    EXPECT_EQ((int) named("i", "", 2), 1);
 
     EXPECT_EQ((int) named("i"), 1);
     EXPECT_NEAR((double) named("i"), 1.0, 1e-5);
@@ -119,7 +119,7 @@ TEST(named, strict_query) {
     EXPECT_EXIT_FAIL((int_t) named("x"));
 
     init_args_strict_query({"./run_tests", "-i", "1"}, 1);
-    EXPECT_EXIT_FAIL((int_t) named("x", 0));
+    EXPECT_EXIT_FAIL((int_t) named("x", "", 0));
 }
 
 TEST(named, optional_arguments) {
@@ -144,13 +144,13 @@ TEST(named, optional_arguments) {
 TEST(named, optional_and_default) {
     init_args_loose_query({"./run_tests", "-i", "0"});
 
-    EXPECT_EXIT_FAIL(fire::optional<int_t> i_undef = named("undefined", 0));
-    EXPECT_EXIT_FAIL(fire::optional<int_t> i = named("i", 0));
+    EXPECT_EXIT_FAIL(fire::optional<int_t> i_undef = named("undefined", "", 0));
+    EXPECT_EXIT_FAIL(fire::optional<int_t> i = named("i", "", 0));
 }
 
 TEST(named, duplicate_parameter) {
     init_args_strict_query({"./run_tests"}, 10);
 
-    int_t i1 = named("undefined", 0);
-    EXPECT_EXIT_FAIL(int_t i2 = named("undefined", 0));
+    int_t i1 = named("undefined", "", 0);
+    EXPECT_EXIT_FAIL(int_t i2 = named("undefined", "", 0));
 }

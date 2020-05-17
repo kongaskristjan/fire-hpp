@@ -129,6 +129,7 @@ namespace fire {
 
     class named {
         std::string _name;
+        std::string _descr;
 
         optional<int_t> _int_value;
         optional<float_t> _float_value;
@@ -140,10 +141,14 @@ namespace fire {
         template <typename T> T convert();
 
     public:
-        explicit named(std::string _name): _name(std::move(_name)) { check_name(); }
-        named(std::string _name, int_t _value): _name(std::move(_name)), _int_value(_value) { check_name(); }
-        named(std::string _name, float_t _value): _name(std::move(_name)), _float_value(_value) { check_name(); }
-        named(std::string _name, const string_t &_value): _name(std::move(_name)), _string_value(_value) { check_name(); }
+        explicit named(std::string _name, std::string _descr = ""):
+            _name(std::move(_name)), _descr(std::move(_descr)) { check_name(); }
+        named(std::string _name, std::string _descr, int_t _value):
+            _name(std::move(_name)), _descr(std::move(_descr)), _int_value(_value) { check_name(); }
+        named(std::string _name, std::string _descr, float_t _value):
+            _name(std::move(_name)), _descr(std::move(_descr)), _float_value(_value) { check_name(); }
+        named(std::string _name, std::string _descr, const string_t &_value):
+            _name(std::move(_name)), _descr(std::move(_descr)), _string_value(_value) { check_name(); }
 
         operator optional<int_t>() { return convert_optional<int_t>(); }
         operator optional<float_t>() { return convert_optional<float_t>(); }
