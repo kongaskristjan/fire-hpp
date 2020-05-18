@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../fire.h"
+#include "../fire.hpp"
 
 using namespace std;
 using namespace fire;

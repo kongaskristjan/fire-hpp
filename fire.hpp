@@ -1,5 +1,5 @@
-#ifndef FIRE_H
-#define FIRE_H
+#ifndef __FIRE_HPP__
+#define __FIRE_HPP__
 
 #include <string>
 #include <iostream>

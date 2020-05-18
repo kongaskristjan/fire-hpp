@@ -6,7 +6,6 @@ This library uses extensive testing. Unit tests are located in Tests.cpp, while 
 
 ### Todo
 
-* Rename repo fire-cpp -> fire-hpp, and rename fire.h -> fire.hpp
 * Short versions of keys (`--compress`, `-c`)
 * High quality parsing
     * Boolean parameters (with `"-xy" == "-x -y"` support)
