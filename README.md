@@ -6,25 +6,31 @@ This library uses extensive testing. Unit tests are located in Tests.cpp, while 
 
 ### Todo
 
-* Multiple keys for arguments
-* Unnamed arguments
-    * Positionals (`positional`, `named` -> `arg`)
-    * Vectors
+* Rename repo fire-cpp -> fire-hpp, and rename fire.h -> fire.hpp
+* Short versions of keys (`--compress`, `-c`)
 * High quality parsing
     * Boolean parameters (with `"-xy" == "-x -y"` support)
     * `"-x 1" == "-x=1"`
-    * Support "hyphens" for strings
+    * Support "quotation marks" for string arguments
+* Unnamed arguments
+    * Positional parsing mode
+    * Positionals (`positional`, `named` -> `arg`)
+    * Vectors
+long`
+* Linking together multiple compilation units
 * Add more types
     * `unsigned`
-    * Short/long versions of numeric types, eg. `short`, `long`, `long long`
-* Linking together multiple compilation units
-* Deferring command line user issues to always show argument parsing errors
-* Testing for error messages
-* Modules
+    * Short/long versions of numeric types, eg. `short`, `long`, `long * Testing for error messages
+* Documentation
 
-### Design dreams
+#### v0.1 release
 
-These goals are likely impossible, so I call them dreams.
+* Remove exceptions
+* Modules (with separate help messages for each module (otherwise impossible without exceptions))
+
+### Design ~~goals~~ dreams
+
+These goals are likely impossible.
 
 #### Current interface
 

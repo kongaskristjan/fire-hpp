@@ -3,6 +3,7 @@
 
 #include <string>
 #include <iostream>
+#include <vector>
 #include <map>
 #include <unordered_map>
 #include <unordered_set>
@@ -17,12 +18,12 @@
 namespace fire {
     constexpr int _failure_code = 1;
 
-    void _assert(bool pass, const std::string &msg) {
+    void _instant_assert(bool pass, const std::string &msg) {
         if (pass)
             return;
 
         if (!msg.empty())
-            std::cerr << "Error: " << msg << std::endl;
+            std::cerr << "Error (programmer side): " << msg << std::endl;
         exit(_failure_code);
     }
 
@@ -49,7 +50,7 @@ namespace fire {
         explicit operator bool() const { return _exists; }
         bool has_value() const { return _exists; }
         T value_or(const T& def) const { return _exists ? _value : def; }
-        T value() const { _assert(_exists, "Accessing unassigned optional"); return _value; }
+        T value() const { _instant_assert(_exists, "Accessing unassigned optional"); return _value; }
     };
 #endif
 
@@ -57,6 +58,7 @@ namespace fire {
         static std::string _executable;
         static std::unordered_map<std::string, std::string> _args;
         static std::unordered_set<std::string> _queried;
+        static std::vector<std::string> _deferred_errors;
         static int _main_argc;
         static bool _loose_query;
         static bool _help_flag;
@@ -66,11 +68,13 @@ namespace fire {
         static optional<std::string> get_and_mark_as_queried(const std::string &key);
         static void init_args(int argc, const char **argv, int main_argc, bool loose_query);
         static const std::string& get_executable() { return _executable; }
+        static bool deferred_assert(bool pass, const std::string &msg);
     };
 
     std::string _matcher::_executable;
     std::unordered_map<std::string, std::string> _matcher::_args;
     std::unordered_set<std::string> _matcher::_queried;
+    std::vector<std::string> _matcher::_deferred_errors;
     int _matcher::_main_argc;
     bool _matcher::_loose_query;
     bool _matcher::_help_flag;
@@ -107,16 +111,23 @@ namespace fire {
             exit(0);
         }
 
-        if(_args.empty()) return;
+        if(! _args.empty()) {
+            std::string invalid;
+            for (const auto &it: _args)
+                invalid += std::string(" ") + it.first;
+            deferred_assert(false, std::string("Invalid argument") + (invalid.size() > 1 ? "s" : "") + invalid);
+        }
 
-        std::string invalid;
-        for (const auto &it: _args)
-            invalid += std::string(" ") + it.first;
-        _assert(false, std::string("Invalid argument") + (invalid.size() > 1 ? "s" : "") + invalid);
+        if(! _deferred_errors.empty()) {
+            std::cerr << "Error: " << _deferred_errors[0] << std::endl;
+            exit(_failure_code);
+        }
     }
 
     optional<std::string> _matcher::get_and_mark_as_queried(const std::string &key) {
-        _assert(_queried.find(key) == _queried.end(), std::string("double query for argument ") + key);
+        if(! deferred_assert(_queried.find(key) == _queried.end(), std::string("double query for argument ") + key))
+            return {};
+
         if (!_loose_query)
             _queried.insert(key);
 
@@ -148,16 +159,18 @@ namespace fire {
                 continue;
             }
 
-            _assert(argc >= i + 2, "all parameters must have values");
+            if(! deferred_assert(argc >= i + 2, "all parameters must have values")) return;
             std::string value = argv[i + 1];
             size_t hyphens = count_hyphens(hyphened_name);
             std::string name = hyphened_name.substr(hyphens);
 
-            _assert(name.size() > 0, std::string("ill formed parameter ") + name);
+            _instant_assert(name.size() > 0, std::string("ill formed parameter ") + name);
             if(name.size() == 1)
-                _assert(hyphens == 1, std::string("single character parameter ") + name + " must prefix exactly one hyphen: -" + name);
+                if(! deferred_assert(hyphens == 1, std::string("single character parameter ") + name +
+                                              " must prefix exactly one hyphen: -" + name)) return;
             if(name.size() >= 2)
-                _assert(hyphens == 2, std::string("multi-character parameter ") + name + " must prefix exactly two hyphens: --" + name);
+                if(! deferred_assert(hyphens == 2, std::string("multi-character parameter ") + name +
+                                              " must prefix exactly two hyphens: --" + name)) return;
 
             _args[name] = value;
             i += 2;
@@ -166,8 +179,18 @@ namespace fire {
         check(false);
     }
 
+    bool _matcher::deferred_assert(bool pass, const std::string &msg) {
+        if(_loose_query) {
+            _instant_assert(pass, msg);
+            return pass;
+        }
+        if(! pass)
+            _deferred_errors.push_back(msg);
+        return pass;
+    }
+
     std::string _help_logger::_make_printable(const std::string &name, const log_elem &elem) {
-        _assert(name.size() >= 1, "Internal error");
+        _instant_assert(name.size() >= 1, "Internal error");
         std::string printable;
         printable += std::string((name.size() == 1) ? 1 : 2, '-');
         printable += name;
@@ -251,7 +274,8 @@ namespace fire {
     };
 
     void named::_check_name() const {
-        _assert(count_hyphens(_name) == 0, std::string("argument ") + _name + "declaration must not have prefix hyphens (these are added automatically");
+        _instant_assert(count_hyphens(_name) == 0, std::string("argument ") + _name +
+                                                   "declaration must not have prefix hyphens (these are added automatically");
     }
 
     template <>
@@ -260,12 +284,12 @@ namespace fire {
         if(elem.has_value()) {
             size_t last;
             bool success = true;
-            int converted;
+            int converted = 0;
             try { converted = std::stoi(elem.value(), &last); }
             catch(std::logic_error &) { success = false; }
 
-            _assert(success && last == elem.value().size() /* probably was floating point */,
-                    std::string("value ") + elem.value() + " is not an integer");
+            _matcher::deferred_assert(success && last == elem.value().size() /* != indicates floating point */,
+                            std::string("value ") + elem.value() + " is not an integer");
 
             return converted;
         }
@@ -280,7 +304,7 @@ namespace fire {
             try {
                 return std::stold(elem.value());
             } catch(std::logic_error &) {
-                _assert(false, std::string("value ") + elem.value() + " is not a real number");
+                _matcher::deferred_assert(false, std::string("value ") + elem.value() + " is not a real number");
             }
         }
 
@@ -300,8 +324,8 @@ namespace fire {
 
     template <typename T>
     optional<T> named::_convert_optional() {
-        _assert(! _int_value.has_value() && ! _float_value.has_value() && ! _string_value.has_value(),
-                "Optional argument has default value");
+        _matcher::deferred_assert(!_int_value.has_value() && !_float_value.has_value() && !_string_value.has_value(),
+                        "Optional argument has default value");
         _matcher::check(true);
         return _get<T>();
     }
@@ -309,9 +333,9 @@ namespace fire {
     template <typename T>
     T named::_convert() {
         optional<T> val = _get<T>();
-        _assert(val.has_value(), std::string("Required argument ") + _name + " not provided");
+        _matcher::deferred_assert(val.has_value(), std::string("Required argument ") + _name + " not provided");
         _matcher::check(true);
-        return val.value();
+        return val.value_or(T());
     }
 
     void named::_log(const std::string &type, bool optional) {
