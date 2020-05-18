@@ -19,21 +19,11 @@
 namespace fire {
     constexpr int _failure_code = 1;
 
-    void _instant_assert(bool pass, const std::string &msg) {
-        if (pass)
-            return;
+    template<typename R, typename ... Types>
+    constexpr size_t _get_argument_count(R(*f)(Types ...)) { return sizeof...(Types); }
 
-        if (!msg.empty())
-            std::cerr << "Error (programmer side): " << msg << std::endl;
-        exit(_failure_code);
-    }
-
-    size_t count_hyphens(const std::string &s) {
-        int hyphens;
-        for(hyphens = 0; hyphens < s.size() && s[hyphens] == '-'; ++hyphens)
-            ;
-        return hyphens;
-    }
+    void _instant_assert(bool pass, const std::string &msg);
+    size_t count_hyphens(const std::string &s);
 
 #if __cplusplus >= 201500 // >= C++17
     template <typename T>
@@ -54,6 +44,10 @@ namespace fire {
         T value() const { _instant_assert(_exists, "Accessing unassigned optional"); return _value; }
     };
 #endif
+
+    using int_t = int;
+    using float_t = double;
+    using string_t = std::string;
 
     class _matcher {
         static std::string _executable;
@@ -102,6 +96,54 @@ namespace fire {
     };
 
     std::map<std::string, _help_logger::log_elem> _help_logger::_params;
+
+    class named {
+        std::string _name;
+        std::string _descr;
+
+        optional<int_t> _int_value;
+        optional<float_t> _float_value;
+        optional<string_t> _string_value;
+
+        void _check_name() const;
+        template <typename T> optional<T> _get() { T::unimplemented_function; } // no default function
+        template <typename T> optional<T> _convert_optional();
+        template <typename T> T _convert();
+        void _log(const std::string &type, bool optional);
+
+    public:
+        explicit named(std::string _name, std::string _descr = ""):
+            _name(std::move(_name)), _descr(std::move(_descr)) { _check_name(); }
+        named(std::string _name, std::string _descr, int_t _value):
+            _name(std::move(_name)), _descr(std::move(_descr)), _int_value(_value) { _check_name(); }
+        named(std::string _name, std::string _descr, float_t _value):
+            _name(std::move(_name)), _descr(std::move(_descr)), _float_value(_value) { _check_name(); }
+        named(std::string _name, std::string _descr, const string_t &_value):
+            _name(std::move(_name)), _descr(std::move(_descr)), _string_value(_value) { _check_name(); }
+
+        operator optional<int_t>() { _log("INTEGER", true); return _convert_optional<int_t>(); }
+        operator optional<float_t>() { _log("REAL", true); return _convert_optional<float_t>(); }
+        operator optional<string_t>() { _log("STRING", true); return _convert_optional<string_t>(); }
+        operator int_t() { _log("INTEGER", false); return _convert<int_t>(); }
+        operator float_t() { _log("REAL", false); return _convert<float_t>(); }
+        operator string_t() { _log("STRING", false); return _convert<string_t>(); }
+    };
+
+    void _instant_assert(bool pass, const std::string &msg) {
+        if (pass)
+            return;
+
+        if (!msg.empty())
+            std::cerr << "Error (programmer side): " << msg << std::endl;
+        exit(_failure_code);
+    }
+
+    size_t count_hyphens(const std::string &s) {
+        int hyphens;
+        for(hyphens = 0; hyphens < s.size() && s[hyphens] == '-'; ++hyphens)
+            ;
+        return hyphens;
+    }
 
     void _matcher::check(bool dec_main_argc) {
         _main_argc -= dec_main_argc;
@@ -168,10 +210,10 @@ namespace fire {
             _instant_assert(name.size() > 0, std::string("ill formed parameter ") + name);
             if(name.size() == 1)
                 if(! deferred_assert(hyphens == 1, std::string("single character parameter ") + name +
-                                              " must prefix exactly one hyphen: -" + name)) return;
+                                                   " must prefix exactly one hyphen: -" + name)) return;
             if(name.size() >= 2)
                 if(! deferred_assert(hyphens == 2, std::string("multi-character parameter ") + name +
-                                              " must prefix exactly two hyphens: --" + name)) return;
+                                                   " must prefix exactly two hyphens: --" + name)) return;
 
             _args[name] = value;
             i += 2;
@@ -238,47 +280,6 @@ namespace fire {
         elem.optional |= ! elem.def.empty();
         _params.insert({name, elem});
     }
-
-    template<typename R, typename ... Types>
-    constexpr size_t _get_argument_count(R(*f)(Types ...)) {
-        return sizeof...(Types);
-    }
-
-    using int_t = int;
-    using float_t = double;
-    using string_t = std::string;
-
-    class named {
-        std::string _name;
-        std::string _descr;
-
-        optional<int_t> _int_value;
-        optional<float_t> _float_value;
-        optional<string_t> _string_value;
-
-        void _check_name() const;
-        template <typename T> optional<T> _get() { T::unimplemented_function; } // no default function
-        template <typename T> optional<T> _convert_optional();
-        template <typename T> T _convert();
-        void _log(const std::string &type, bool optional);
-
-    public:
-        explicit named(std::string _name, std::string _descr = ""):
-            _name(std::move(_name)), _descr(std::move(_descr)) { _check_name(); }
-        named(std::string _name, std::string _descr, int_t _value):
-            _name(std::move(_name)), _descr(std::move(_descr)), _int_value(_value) { _check_name(); }
-        named(std::string _name, std::string _descr, float_t _value):
-            _name(std::move(_name)), _descr(std::move(_descr)), _float_value(_value) { _check_name(); }
-        named(std::string _name, std::string _descr, const string_t &_value):
-            _name(std::move(_name)), _descr(std::move(_descr)), _string_value(_value) { _check_name(); }
-
-        operator optional<int_t>() { _log("INTEGER", true); return _convert_optional<int_t>(); }
-        operator optional<float_t>() { _log("REAL", true); return _convert_optional<float_t>(); }
-        operator optional<string_t>() { _log("STRING", true); return _convert_optional<string_t>(); }
-        operator int_t() { _log("INTEGER", false); return _convert<int_t>(); }
-        operator float_t() { _log("REAL", false); return _convert<float_t>(); }
-        operator string_t() { _log("STRING", false); return _convert<string_t>(); }
-    };
 
     void named::_check_name() const {
         _instant_assert(count_hyphens(_name) == 0, std::string("argument ") + _name +
