@@ -13,7 +13,7 @@ This library uses extensive testing. Unit tests are located in Tests.cpp, while 
     * Support "quotation marks" for string arguments
 * Unnamed arguments
     * Positional parsing mode
-    * Positionals (`positional`, `named` -> `arg`)
+    * Positionals
     * Vectors
 long`
 * Linking together multiple compilation units
@@ -35,7 +35,7 @@ These goals are likely impossible.
 #### Current interface
 
 ```
-int fire_main(int x = named("x", 0), int y = named("y", 0)) {
+int fire_main(int x = arg("x", 0), int y = arg("y", 0)) {
 }
 
 FIRE(fire_main)
@@ -46,7 +46,7 @@ FIRE(fire_main)
 Likely impossible. Also, where are you going to supply program description?
 
 ```
-int FIRE_MAIN(int x = named("x", 0), int y = named("y", 0)) {
+int FIRE_MAIN(int x = arg("x", 0), int y = arg("y", 0)) {
 }
 ```
 
