@@ -9,6 +9,7 @@
 #include <unordered_set>
 #include <cassert>
 #include <cstdlib>
+#include <algorithm>
 
 #if __cplusplus >= 201500 // C++17
 #include <optional>
@@ -93,7 +94,7 @@ namespace fire {
 
         static std::string _make_printable(const std::string &name, const log_elem &elem);
         static void _add_to_help(std::string &usage, std::string &options,
-                                 const std::string &name, const log_elem &elem);
+                                 const std::string &name, const log_elem &elem, size_t margin);
     public:
         static void print_help();
         static void log(const std::string &name, const log_elem &elem);
@@ -192,22 +193,23 @@ namespace fire {
     std::string _help_logger::_make_printable(const std::string &name, const log_elem &elem) {
         _instant_assert(name.size() >= 1, "Internal error");
         std::string printable;
+        if(elem.optional) printable += "[";
         printable += std::string((name.size() == 1) ? 1 : 2, '-');
         printable += name;
         printable += "=<";
         printable += elem.type;
         printable += ">";
+        if(elem.optional) printable += "]";
         return printable;
     }
 
     void _help_logger::_add_to_help(std::string &usage, std::string &options,
-                                    const std::string &name, const log_elem &elem) {
+                                    const std::string &name, const log_elem &elem, size_t margin) {
+        std::string printable = _make_printable(name, elem);
         usage += " ";
-        if(elem.optional) usage += "[";
-        usage += _make_printable(name, elem);
-        if(elem.optional) usage += "]";
+        usage += printable;
 
-        options += "      " + _make_printable(name, elem) + "  " + elem.descr;
+        options += "      " + printable + std::string(2 + margin - printable.size(), ' ') + elem.descr;
         if(! elem.def.empty())
             options += std::string(" [default: ") + elem.def + "]";
         options += "\n";
@@ -216,12 +218,17 @@ namespace fire {
     void _help_logger::print_help() {
         std::string usage = "    Usage:\n      " + _matcher::get_executable();
         std::string options = "    Options:\n";
+
+        size_t margin = 0;
+        for(const auto& it: _params)
+            margin = std::max(margin, _make_printable(it.first, it.second).size());
+
         for(const auto& it: _params)
             if(! it.second.optional)
-                _add_to_help(usage, options, it.first, it.second);
+                _add_to_help(usage, options, it.first, it.second, margin);
         for(const auto& it: _params)
             if(it.second.optional)
-                _add_to_help(usage, options, it.first, it.second);
+                _add_to_help(usage, options, it.first, it.second, margin);
 
         std::cerr << std::endl << usage << std::endl << std::endl << std::endl << options << std::endl;
     }

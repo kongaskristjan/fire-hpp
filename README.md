@@ -22,6 +22,7 @@ long`
     * `unsigned`
     * Short/long versions of numeric types, eg. `short`, `long`, `long * Testing for error messages
 * Documentation
+* Test on Windows, Mac
 
 #### v0.1 release
 
