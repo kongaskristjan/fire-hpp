@@ -6,16 +6,13 @@ This library uses extensive testing. Unit tests are located in Tests.cpp, while 
 
 ### Todo
 
-* Short versions of keys (`--compress`, `-c`)
 * High quality parsing
     * Boolean parameters (with `"-xy" == "-x -y"` support)
     * `"-x 1" == "-x=1"`
-    * Support "quotation marks" for string arguments
 * Unnamed arguments
     * Positional parsing mode
     * Positionals
     * Vectors
-long`
 * Linking together multiple compilation units
 * Add more types
     * `unsigned`
@@ -25,6 +22,7 @@ long`
 
 #### v0.1 release
 
+* super/super_arg keyword for argument, which will save program from exiting even if not all required arguments are present or correct (eg. for --version) (don't immediately finish parsing if there are user made errors)
 * Remove exceptions
 * Modules (with separate help messages for each module (otherwise impossible without exceptions))
 

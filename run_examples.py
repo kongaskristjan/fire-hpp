@@ -43,6 +43,7 @@ def run_basic(pth_prefix):
     runner.equal("-x 3", "3 + 0 = 3")
     runner.equal("-y 4", "0 + 4 = 4")
     runner.equal("-x 3 -y 4", "3 + 4 = 7")
+    runner.equal("--x-coord 3 --y-coord 4", "3 + 4 = 7")
     runner.handled_failure("-x test")
     runner.handled_failure("-x")
     runner.handled_failure("--undefined 0")

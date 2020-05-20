@@ -37,7 +37,7 @@ namespace fire {
     public:
         optional() = default;
         optional(const T &__value): _value(__value), _exists(true) {}
-        optional<T>& operator=(const T& __value) { _value = __value; _exists = true; }
+        optional<T>& operator=(const T& __value) { _value = __value; _exists = true; return *this; }
         explicit operator bool() const { return _exists; }
         bool has_value() const { return _exists; }
         T value_or(const T& def) const { return _exists ? _value : def; }
@@ -45,14 +45,29 @@ namespace fire {
     };
 #endif
 
+    class identifier {
+        optional<std::string> _short_name, _long_name;
+
+        static void _check_name(const std::string &name);
+    public:
+        identifier(std::initializer_list<const char *> lst); // {short name, long name} or {name}
+        identifier(const char *name): identifier{name} {}
+
+        bool operator<(const identifier &other) const;
+        bool overlaps(const identifier &other) const;
+        bool contains(const std::string &name) const;
+        std::string help() const;
+        std::string longer() const;
+    };
+
     using int_t = int;
     using float_t = double;
     using string_t = std::string;
 
     class _matcher {
         static std::string _executable;
-        static std::unordered_map<std::string, std::string> _args;
-        static std::unordered_set<std::string> _queried;
+        static std::vector<std::pair<std::string, std::string>> _args;
+        static std::vector<identifier> _queried;
         static std::vector<std::string> _deferred_errors;
         static int _main_argc;
         static bool _loose_query;
@@ -60,15 +75,15 @@ namespace fire {
 
     public:
         static void check(bool dec_main_argc);
-        static optional<std::string> get_and_mark_as_queried(const std::string &key);
+        static optional<std::string> get_and_mark_as_queried(const identifier &id);
         static void init_args(int argc, const char **argv, int main_argc, bool loose_query);
         static const std::string& get_executable() { return _executable; }
         static bool deferred_assert(bool pass, const std::string &msg);
     };
 
     std::string _matcher::_executable;
-    std::unordered_map<std::string, std::string> _matcher::_args;
-    std::unordered_set<std::string> _matcher::_queried;
+    std::vector<std::pair<std::string, std::string>> _matcher::_args;
+    std::vector<identifier> _matcher::_queried;
     std::vector<std::string> _matcher::_deferred_errors;
     int _matcher::_main_argc;
     bool _matcher::_loose_query;
@@ -84,42 +99,50 @@ namespace fire {
         };
 
     private:
-        static std::map<std::string, log_elem> _params;
+        static std::vector<std::pair<identifier, log_elem>> _params;
 
-        static std::string _make_printable(const std::string &name, const log_elem &elem);
+        static std::string _make_printable(const identifier &id, const log_elem &elem, bool verbose);
         static void _add_to_help(std::string &usage, std::string &options,
-                                 const std::string &name, const log_elem &elem, size_t margin);
+                                 const identifier &id, const log_elem &elem, size_t margin);
     public:
         static void print_help();
-        static void log(const std::string &name, const log_elem &elem);
+        static void log(const identifier &name, const log_elem &elem);
         static void clear() { _params.clear(); }
     };
 
-    std::map<std::string, _help_logger::log_elem> _help_logger::_params;
+    std::vector<std::pair<identifier, _help_logger::log_elem>> _help_logger::_params;
 
     class arg {
-        std::string _name;
+        identifier _id;
         std::string _descr;
 
         optional<int_t> _int_value;
         optional<float_t> _float_value;
         optional<string_t> _string_value;
 
-        void _check_name() const;
         template <typename T> optional<T> _get() { T::unimplemented_function; } // no default function
         template <typename T> optional<T> _convert_optional();
         template <typename T> T _convert();
         void _log(const std::string &type, bool optional);
 
     public:
-        explicit arg(std::string _name, std::string _descr = ""):
-            _name(std::move(_name)), _descr(std::move(_descr)) { _check_name(); }
-        arg(std::string _name, std::string _descr, int_t _value):
-            _name(std::move(_name)), _descr(std::move(_descr)), _int_value(_value) { _check_name(); }
-        arg(std::string _name, std::string _descr, float_t _value):
-            _name(std::move(_name)), _descr(std::move(_descr)), _float_value(_value) { _check_name(); }
-        arg(std::string _name, std::string _descr, const string_t &_value):
-            _name(std::move(_name)), _descr(std::move(_descr)), _string_value(_value) { _check_name(); }
+        explicit arg(identifier _id, std::string _descr = ""):
+            _id(std::move(_id)), _descr(std::move(_descr)) {}
+        arg(identifier _id, std::string _descr, int_t _value):
+            _id(std::move(_id)), _descr(std::move(_descr)), _int_value(_value) {}
+        arg(identifier _id, std::string _descr, float_t _value):
+            _id(std::move(_id)), _descr(std::move(_descr)), _float_value(_value) {}
+        arg(identifier _id, std::string _descr, const string_t &_value):
+            _id(std::move(_id)), _descr(std::move(_descr)), _string_value(_value) {}
+
+        explicit arg(std::initializer_list<const char *> init, std::string _descr = ""):
+            _id(init), _descr(std::move(_descr)) {}
+        arg(std::initializer_list<const char *> init, std::string _descr, int_t _value):
+            _id(init), _descr(std::move(_descr)), _int_value(_value) {}
+        arg(std::initializer_list<const char *> init, std::string _descr, float_t _value):
+            _id(init), _descr(std::move(_descr)), _float_value(_value) {}
+        arg(std::initializer_list<const char *> init, std::string _descr, const string_t &_value):
+            _id(init), _descr(std::move(_descr)), _string_value(_value) {}
 
         operator optional<int_t>() { _log("INTEGER", true); return _convert_optional<int_t>(); }
         operator optional<float_t>() { _log("REAL", true); return _convert_optional<float_t>(); }
@@ -145,6 +168,76 @@ namespace fire {
         return hyphens;
     }
 
+
+    void identifier::_check_name(const std::string &name) {
+        _instant_assert(count_hyphens(name) == 0, std::string("argument ") + name +
+        " hyphens must not prefix declaration");
+    }
+
+    identifier::identifier(std::initializer_list<const char *> lst) { // {short name, long name} or {name}
+        std::vector<std::string> names;
+        for(auto x: lst)
+            names.emplace_back(x);
+
+        _instant_assert(names.size() == 1 || names.size() == 2,
+                "identifier must be initialized with 1 or 2 names when using initializer list");
+
+        if(names.size() == 1) {
+            _instant_assert(names[0].size() >= 1, "Name must contain at least one character");
+            _check_name(names[0]);
+
+            if (names[0].size() == 1)
+                _short_name = names[0];
+            else
+                _long_name = names[0];
+        } else {
+            _instant_assert(names[0].size() == 1, "Short name must contain exactly one character");
+            _instant_assert(names[1].size() >= 2, "Long name must contain at least two characters");
+
+            _check_name(names[0]);
+            _check_name(names[1]);
+
+            _short_name = names[0];
+            _long_name = names[1];
+        }
+    }
+
+    bool identifier::operator<(const identifier &other) const {
+        std::string name = _long_name.value_or(_short_name.value_or(""));
+        std::string other_name = other._long_name.value_or(other._short_name.value_or(""));
+
+        return name < other_name;
+    }
+
+    bool identifier::overlaps(const identifier &other) const {
+        if(_long_name.has_value() && other._long_name.has_value())
+            if(_long_name.value() == other._long_name.value())
+                return true;
+        if(_short_name.has_value() && other._short_name.has_value())
+            if(_short_name.value() == other._short_name.value())
+                return true;
+        return false;
+    }
+
+    bool identifier::contains(const std::string &name) const {
+        if(_short_name.has_value() && name == _short_name.value()) return true;
+        if(_long_name.has_value() && name == _long_name.value()) return true;
+        return false;
+    }
+
+    std::string identifier::help() const {
+        if(! _short_name.has_value()) return std::string("--") + _long_name.value();
+        if(! _long_name.has_value()) return std::string("-") + _short_name.value();
+        return std::string("(-") + _short_name.value() + "|--" + _long_name.value() + ")";
+    }
+
+    std::string identifier::longer() const {
+        if(_long_name.has_value())
+            return "--" + _long_name.value();
+        return "-" + _short_name.value();
+    }
+
+
     void _matcher::check(bool dec_main_argc) {
         _main_argc -= dec_main_argc;
         if(_loose_query || _main_argc > 0) return;
@@ -167,21 +260,22 @@ namespace fire {
         }
     }
 
-    optional<std::string> _matcher::get_and_mark_as_queried(const std::string &key) {
-        if(! deferred_assert(_queried.find(key) == _queried.end(), std::string("double query for argument ") + key))
-            return {};
+    optional<std::string> _matcher::get_and_mark_as_queried(const identifier &id) {
+        for(const auto& it: _queried)
+            deferred_assert(! it.overlaps(id), std::string("double query for argument ") + id.longer());
 
         if (!_loose_query)
-            _queried.insert(key);
+            _queried.push_back(id);
 
-        auto it = _args.find(key);
-        if (it == _args.end())
-            return optional<std::string>();
+        for(auto it = _args.begin(); it != _args.end(); ++it)
+            if(id.contains(it->first)) {
+                std::string result = it->second;
+                if(! _loose_query)
+                    _args.erase(it);
+                return it->second;
+            }
 
-        optional<std::string> opt = it->second;
-        if (!_loose_query)
-            _args.erase(it);
-        return opt;
+        return {};
     }
 
     void _matcher::init_args(int argc, const char **argv, int main_argc, bool loose_query) {
@@ -215,7 +309,7 @@ namespace fire {
                 if(! deferred_assert(hyphens == 2, std::string("multi-character parameter ") + name +
                                                    " must prefix exactly two hyphens: --" + name)) return;
 
-            _args[name] = value;
+            _args.emplace_back(name, value);
             i += 2;
         }
 
@@ -232,12 +326,10 @@ namespace fire {
         return pass;
     }
 
-    std::string _help_logger::_make_printable(const std::string &name, const log_elem &elem) {
-        _instant_assert(name.size() >= 1, "Internal error");
+    std::string _help_logger::_make_printable(const identifier &id, const log_elem &elem, bool verbose) {
         std::string printable;
         if(elem.optional) printable += "[";
-        printable += std::string((name.size() == 1) ? 1 : 2, '-');
-        printable += name;
+        printable += verbose ? id.help() : id.longer();
         printable += "=<";
         printable += elem.type;
         printable += ">";
@@ -246,11 +338,11 @@ namespace fire {
     }
 
     void _help_logger::_add_to_help(std::string &usage, std::string &options,
-                                    const std::string &name, const log_elem &elem, size_t margin) {
-        std::string printable = _make_printable(name, elem);
+                                    const identifier &id, const log_elem &elem, size_t margin) {
         usage += " ";
-        usage += printable;
+        usage += _make_printable(id, elem, false);
 
+        std::string printable = _make_printable(id, elem, true);
         options += "      " + printable + std::string(2 + margin - printable.size(), ' ') + elem.descr;
         if(! elem.def.empty())
             options += std::string(" [default: ") + elem.def + "]";
@@ -258,39 +350,43 @@ namespace fire {
     }
 
     void _help_logger::print_help() {
+        using id2elem = std::pair<identifier, log_elem>;
+
         std::string usage = "    Usage:\n      " + _matcher::get_executable();
         std::string options = "    Options:\n";
 
-        size_t margin = 0;
-        for(const auto& it: _params)
-            margin = std::max(margin, _make_printable(it.first, it.second).size());
+        std::vector<std::pair<identifier, log_elem>> printed(_params);
+        std::sort(printed.begin(), printed.end(), [](const id2elem &a, const id2elem &b) {
+            if(a.second.optional != b.second.optional)
+                return a.second.optional < b.second.optional;
+            return a.first < b.first;
+        });
 
-        for(const auto& it: _params)
+        size_t margin = 0;
+        for(const auto& it: printed)
+            margin = std::max(margin, _make_printable(it.first, it.second, true).size());
+
+        for(const auto& it: printed)
             if(! it.second.optional)
                 _add_to_help(usage, options, it.first, it.second, margin);
-        for(const auto& it: _params)
+        for(const auto& it: printed)
             if(it.second.optional)
                 _add_to_help(usage, options, it.first, it.second, margin);
 
         std::cerr << std::endl << usage << std::endl << std::endl << std::endl << options << std::endl;
     }
 
-    void _help_logger::log(const std::string &name, const log_elem &_elem) {
+    void _help_logger::log(const identifier &name, const log_elem &_elem) {
         log_elem elem = _elem;
         elem.optional |= ! elem.def.empty();
-        _params.insert({name, elem});
-    }
-
-    void arg::_check_name() const {
-        _instant_assert(count_hyphens(_name) == 0, std::string("argument ") + _name +
-                                                   "declaration must not have prefix hyphens (these are added automatically");
+        _params.emplace_back(name, elem);
     }
 
     template <>
     optional<int_t> arg::_get<int_t>() {
-        auto elem = _matcher::get_and_mark_as_queried(_name);
+        auto elem = _matcher::get_and_mark_as_queried(_id);
         if(elem.has_value()) {
-            size_t last;
+            size_t last = 0;
             bool success = true;
             int converted = 0;
             try { converted = std::stoi(elem.value(), &last); }
@@ -307,7 +403,7 @@ namespace fire {
 
     template <>
     optional<float_t> arg::_get<float_t>() {
-        auto elem = _matcher::get_and_mark_as_queried(_name);
+        auto elem = _matcher::get_and_mark_as_queried(_id);
         if(elem) {
             try {
                 return std::stold(elem.value());
@@ -323,7 +419,7 @@ namespace fire {
 
     template <>
     optional<string_t> arg::_get<string_t>() {
-        auto elem = _matcher::get_and_mark_as_queried(_name);
+        auto elem = _matcher::get_and_mark_as_queried(_id);
         if(elem)
             return elem.value();
 
@@ -341,7 +437,7 @@ namespace fire {
     template <typename T>
     T arg::_convert() {
         optional<T> val = _get<T>();
-        _matcher::deferred_assert(val.has_value(), std::string("Required argument ") + _name + " not provided");
+        _matcher::deferred_assert(val.has_value(), std::string("Required argument ") + _id.longer() + " not provided");
         _matcher::check(true);
         return val.value_or(T());
     }
@@ -352,7 +448,7 @@ namespace fire {
         if(_float_value.has_value()) def = std::to_string(_float_value.value());
         if(_string_value.has_value()) def = _string_value.value();
 
-        _help_logger::log(_name, {_descr, type, def, optional});
+        _help_logger::log(_id, {_descr, type, def, optional});
     }
 }
 

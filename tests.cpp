@@ -59,6 +59,70 @@ TEST(optional, no_value) {
 }
 
 
+TEST(identifier, constructor) {
+    identifier({"l", "long"});
+    identifier({"l"});
+    identifier({"long"});
+    EXPECT_EXIT_FAIL(identifier({"l", "l"}));
+    EXPECT_EXIT_FAIL(identifier({"long", "l"}));
+    EXPECT_EXIT_FAIL(identifier({"long", "long"}));
+    EXPECT_EXIT_FAIL(identifier({"", "long"}));
+    EXPECT_EXIT_FAIL(identifier({"l", ""}));
+
+    identifier("l");
+    identifier("long");
+    EXPECT_EXIT_FAIL(identifier(""));
+}
+
+TEST(identifier, overlap) {
+    identifier long1("l"), long2({"l", "long"}), long3("long");
+    identifier short1("s"), short2({"s", "short"}), short3("short");
+
+    EXPECT_TRUE(long1.overlaps(long2));
+    EXPECT_TRUE(long2.overlaps(long3));
+    EXPECT_FALSE(long3.overlaps(long1));
+
+    EXPECT_FALSE(long1.overlaps(short1));
+    EXPECT_FALSE(long2.overlaps(short2));
+    EXPECT_FALSE(long3.overlaps(short3));
+}
+
+TEST(identifier, contains) {
+    identifier long1("l"), long2({"l", "long"}), long3("long");
+
+    EXPECT_FALSE(long1.contains("long"));
+    EXPECT_TRUE(long2.overlaps("long"));
+    EXPECT_TRUE(long3.overlaps("long"));
+
+    EXPECT_TRUE(long1.contains("l"));
+    EXPECT_TRUE(long2.overlaps("l"));
+    EXPECT_FALSE(long3.overlaps("l"));
+}
+
+TEST(identifier, help) {
+    EXPECT_EQ(identifier("l").help(), "-l");
+    EXPECT_EQ(identifier({"l", "long"}).help(), "(-l|--long)");
+    EXPECT_EQ(identifier("long").help(), "--long");
+}
+
+TEST(identifier, longer) {
+    EXPECT_EQ(identifier("l").longer(), "-l");
+    EXPECT_EQ(identifier({"l", "long"}).longer(), "--long");
+    EXPECT_EQ(identifier("long").longer(), "--long");
+}
+
+TEST(identifier, less) {
+    EXPECT_TRUE(identifier("a") < identifier("z"));
+    EXPECT_FALSE(identifier("z") < identifier("a"));
+
+    EXPECT_TRUE(identifier("abc") < identifier("zyx"));
+    EXPECT_FALSE(identifier("zyx") < identifier("abc"));
+
+    EXPECT_TRUE(identifier({"z", "aa"}) < identifier({"a", "az"}));
+    EXPECT_FALSE(identifier({"a", "az"}) < identifier({"z", "aa"}));
+}
+
+
 TEST(matcher, invalid_input) {
     EXPECT_EXIT_FAIL(init_args_loose_query({"./run_tests", "-i"}));
     EXPECT_EXIT_FAIL(init_args_loose_query({"./run_tests", "--i", "0"}));
