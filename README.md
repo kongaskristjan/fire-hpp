@@ -7,7 +7,7 @@ This library uses extensive testing. Unit tests are located in Tests.cpp, while 
 ### Todo
 
 * High quality parsing
-    * Boolean parameters (with `"-xy" == "-x -y"` support)
+    * `"-xy" == "-x -y"`
     * `"-x 1" == "-x=1"`
 * Unnamed arguments
     * Positional parsing mode

@@ -35,9 +35,14 @@ class assert_runner:
         return str(b, "utf-8")
 
 
+def run_all_combinations(pth_prefix):
+    runner = assert_runner(pth_prefix + "all_combinations")
+
+    runner.help_success("-h")
+
+
 def run_basic(pth_prefix):
-    pth = pth_prefix + "basic"
-    runner = assert_runner(pth)
+    runner = assert_runner(pth_prefix + "basic")
 
     runner.equal("", "0 + 0 = 0")
     runner.equal("-x 3", "3 + 0 = 3")
@@ -53,19 +58,23 @@ def run_basic(pth_prefix):
     runner.help_success("-h -x 0")
 
 
-def run_all_combinations(pth_prefix):
-    pth = pth_prefix + "all_combinations"
-    runner = assert_runner(pth)
+def run_flags(pth_prefix):
+    runner = assert_runner(pth_prefix + "flags")
 
-    runner.help_success("-h")
+    runner.equal("", "0 0")
+    runner.equal("-a -b", "1 1")
+    runner.handled_failure("-a 1")
 
 
 def main():
     pth_prefix = os.path.dirname(__file__) + "/examples/"
 
     print("Running tests in {} ...".format(pth_prefix), end="")
-    run_basic(pth_prefix)
+
     run_all_combinations(pth_prefix)
+    run_basic(pth_prefix)
+    run_flags(pth_prefix)
+
     print(" SUCCESS! (ran {} tests with {} checks)".format(assert_runner.test_count, assert_runner.check_count))
 
 

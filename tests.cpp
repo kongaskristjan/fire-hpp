@@ -101,7 +101,7 @@ TEST(identifier, contains) {
 
 TEST(identifier, help) {
     EXPECT_EQ(identifier("l").help(), "-l");
-    EXPECT_EQ(identifier({"l", "long"}).help(), "(-l|--long)");
+    EXPECT_EQ(identifier({"l", "long"}).help(), "-l|--long");
     EXPECT_EQ(identifier("long").help(), "--long");
 }
 
@@ -124,7 +124,7 @@ TEST(identifier, less) {
 
 
 TEST(matcher, invalid_input) {
-    EXPECT_EXIT_FAIL(init_args_loose_query({"./run_tests", "-i"}));
+    EXPECT_EXIT_FAIL(init_args_loose_query({"./run_tests", "--i"}));
     EXPECT_EXIT_FAIL(init_args_loose_query({"./run_tests", "--i", "0"}));
     EXPECT_EXIT_FAIL(init_args_loose_query({"./run_tests", "-int", "0"}));
 }
@@ -182,10 +182,16 @@ TEST(arg, defaults) {
     EXPECT_EXIT_FAIL((double) arg("f", "", "test"));
     EXPECT_EXIT_FAIL((string) arg("s", "", 1));
     EXPECT_EXIT_FAIL((string) arg("s", "", 1.0));
+
+    EXPECT_EXIT_FAIL((bool) arg("b", "", 1));
 }
 
 TEST(arg, correct_parsing) {
-    init_args_loose_query({"./run_tests", "-i", "1", "-f", "2.0", "-s", "test"});
+    init_args_loose_query({"./run_tests", "--bool1", "-i", "1", "-f", "2.0", "-s", "test", "--bool2"});
+
+    EXPECT_TRUE((bool) arg("bool1"));
+    EXPECT_TRUE((bool) arg("bool2"));
+    EXPECT_FALSE((bool) arg("undefined"));
 
     EXPECT_EQ((int) arg("i", "", 2), 1);
 
