@@ -142,6 +142,8 @@ TEST(matcher, boolean_flags) {
 TEST(help, help_invocation) {
     EXPECT_EXIT_SUCCESS(init_args_strict_query({"./run_tests", "-h"}, 0));
     EXPECT_EXIT_SUCCESS(init_args_strict_query({"./run_tests", "--help"}, 0));
+    EXPECT_EXIT_SUCCESS(init_args_strict_query({"./run_tests", "-h", "1"}, 0));
+    EXPECT_EXIT_SUCCESS(init_args_strict_query({"./run_tests", "--help", "1"}, 0));
 
     init_args_strict_query({"./run_tests", "-h"}, 1);
     EXPECT_EXIT_SUCCESS(int_t i_undef = arg("i"));

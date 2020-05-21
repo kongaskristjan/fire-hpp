@@ -308,7 +308,7 @@ namespace fire {
         tie(named, positional) = separate_named_positional(raw);
         assign_named_values(named);
 
-        _help_flag = get_and_mark_as_queried(identifier({"h", "help"})).second == arg_type::bool_t;
+        _help_flag = get_and_mark_as_queried(identifier({"h", "help"})).second != arg_type::none_t;
         deferred_assert(positional.empty(), "positional arguments are currently unsupported");
         check(false);
     }
