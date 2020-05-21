@@ -175,7 +175,7 @@ namespace fire {
 
 
     void identifier::_check_name(const std::string &name) {
-        _instant_assert(count_hyphens(name) == 0, std::string("argument ") + name +
+        _instant_assert(count_hyphens(name) == 0, "argument " + name +
         " hyphens must not prefix declaration");
     }
 
@@ -231,9 +231,9 @@ namespace fire {
     }
 
     std::string identifier::help() const {
-        if(! _short_name.has_value()) return std::string("--") + _long_name.value();
-        if(! _long_name.has_value()) return std::string("-") + _short_name.value();
-        return std::string("-") + _short_name.value() + "|--" + _long_name.value();
+        if(! _short_name.has_value()) return "--" + _long_name.value();
+        if(! _long_name.has_value()) return "-" + _short_name.value();
+        return "-" + _short_name.value() + "|--" + _long_name.value();
     }
 
     std::string identifier::longer() const {
@@ -255,7 +255,7 @@ namespace fire {
         if(! _args.empty()) {
             std::string invalid;
             for (const auto &it: _args)
-                invalid += std::string(" ") + it.first;
+                invalid += " " + it.first;
             deferred_assert(false, std::string("Invalid argument") + (invalid.size() > 1 ? "s" : "") + invalid);
         }
 
@@ -267,7 +267,7 @@ namespace fire {
 
     std::pair<std::string, _matcher::arg_type> _matcher::get_and_mark_as_queried(const identifier &id) {
         for(const auto& it: _queried)
-            deferred_assert(! it.overlaps(id), std::string("double query for argument ") + id.longer());
+            deferred_assert(! it.overlaps(id), "double query for argument " + id.longer());
 
         if (!_loose_query)
             _queried.push_back(id);
@@ -364,7 +364,7 @@ namespace fire {
         std::string printable = _make_printable(id, elem, true);
         options += "      " + printable + std::string(2 + margin - printable.size(), ' ') + elem.descr;
         if(! elem.def.empty())
-            options += std::string(" [default: ") + elem.def + "]";
+            options += " [default: " + elem.def + "]";
         options += "\n";
     }
 
@@ -414,7 +414,7 @@ namespace fire {
             catch(std::logic_error &) { success = false; }
 
             _matcher::deferred_assert(success && last == elem.first.size(), // != indicates floating point
-                                      std::string("value ") + elem.first + " is not an integer");
+                                      "value " + elem.first + " is not an integer");
 
             return converted;
         }
@@ -431,7 +431,7 @@ namespace fire {
             try {
                 return std::stold(elem.first);
             } catch(std::logic_error &) {
-                _matcher::deferred_assert(false, std::string("value ") + elem.first + " is not a real number");
+                _matcher::deferred_assert(false, "value " + elem.first + " is not a real number");
             }
         }
 
@@ -462,7 +462,7 @@ namespace fire {
     template <typename T>
     T arg::_convert() {
         optional<T> val = _get<T>();
-        _matcher::deferred_assert(val.has_value(), std::string("Required argument ") + _id.longer() + " not provided");
+        _matcher::deferred_assert(val.has_value(), "Required argument " + _id.longer() + " not provided");
         _matcher::check(true);
         return val.value_or(T());
     }
