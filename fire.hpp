@@ -85,7 +85,8 @@ namespace fire {
         static std::tuple<std::vector<std::string>, std::vector<std::string>>
             separate_named_positional(const std::vector<std::string> &raw);
         static std::vector<std::string> split_equations(const std::vector<std::string> &named);
-        static void assign_named_values(const std::vector<std::string> &named);
+        static std::vector<std::pair<std::string, optional<std::string>>>
+                assign_named_values(const std::vector<std::string> &named);
         static const std::string& get_executable() { return _executable; }
         static bool deferred_assert(bool pass, const std::string &msg);
     };
@@ -300,6 +301,8 @@ namespace fire {
         _help_logger::clear();
 
         parse(argc, argv);
+        _help_flag = get_and_mark_as_queried(identifier({"h", "help"})).second != arg_type::none_t;
+        check(false);
     }
 
     void _matcher::parse(int argc, const char **argv) {
@@ -308,11 +311,9 @@ namespace fire {
         std::vector<std::string> named, positional;
         tie(named, positional) = separate_named_positional(raw);
         named = split_equations(named);
-        assign_named_values(named);
+        _args = assign_named_values(named);
 
-        _help_flag = get_and_mark_as_queried(identifier({"h", "help"})).second != arg_type::none_t;
         deferred_assert(positional.empty(), "positional arguments are currently unsupported");
-        check(false);
     }
 
     std::vector<std::string> _matcher::to_vector_string(int n_strings, const char **strings) {
@@ -366,19 +367,23 @@ namespace fire {
         return split;
     }
 
-    void _matcher::assign_named_values(const std::vector<std::string> &named) {
+    std::vector<std::pair<std::string, optional<std::string>>>
+            _matcher::assign_named_values(const std::vector<std::string> &named) {
+        std::vector<std::pair<std::string, optional<std::string>>> args;
+
         for(const std::string &hyphened_name: named) {
             int hyphens = count_hyphens(hyphened_name);
             std::string name = hyphened_name.substr(hyphens);
             if(hyphens >= 2) {
                 deferred_assert(name.size() >= 2, "single character parameter " + name + " must have exactly one hyphen");
-                _args.emplace_back(name, optional<std::string>());
+                args.emplace_back(name, optional<std::string>());
             } else if(hyphens == 1) {
                 for (char c: name)
-                    _args.emplace_back(std::string(1, c), optional<std::string>());
+                    args.emplace_back(std::string(1, c), optional<std::string>());
             } else
-                _args.back().second = name;
+                args.back().second = name;
         }
+        return args;
     }
 
     bool _matcher::deferred_assert(bool pass, const std::string &msg) {

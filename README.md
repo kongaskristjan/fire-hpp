@@ -13,7 +13,7 @@ This library uses extensive testing. Unit tests are located in Tests.cpp, while 
 * Linking together multiple compilation units
 * Add more types
     * `unsigned`
-    * Short/long versions of numeric types, eg. `short`, `long`, `long * Testing for error messages
+    * Short/long versions of numeric types, eg. `short`, `long`, `long long`
 * Documentation
 * Systematic, tested examples
 * Test on Windows, Mac
@@ -22,7 +22,11 @@ This library uses extensive testing. Unit tests are located in Tests.cpp, while 
 
 * super/super_arg keyword for argument, which will save program from exiting even if not all required arguments are present or correct (eg. for --version) (don't immediately finish parsing if there are user made errors)
 * Remove exceptions
-* Wide character strings
+* Automatic testing for error messages
+* Support for wide character strings
+
+#### v0.2 release
+
 * Modules (with separate help messages for each module (otherwise impossible without exceptions))
 
 ### Design ~~goals~~ dreams
@@ -32,7 +36,7 @@ These goals are likely impossible.
 #### Current interface
 
 ```
-int fire_main(int x = arg("x", 0), int y = arg("y", 0)) {
+int fire_main(int x = arg("x"), int y = arg("y")) {
 }
 
 FIRE(fire_main)
@@ -43,7 +47,7 @@ FIRE(fire_main)
 Likely impossible. Also, where are you going to supply program description?
 
 ```
-int FIRE_MAIN(int x = arg("x", 0), int y = arg("y", 0)) {
+int FIRE_MAIN(int x = arg("x"), int y = arg("y")) {
 }
 ```
 
