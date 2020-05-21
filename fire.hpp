@@ -309,20 +309,30 @@ namespace fire {
                 deferred_assert(! last_name.empty(), "positional arguments are not supported yet");
                 _args.emplace_back(last_name, name);
                 last_name = "";
-            } else {
-                if(! last_name.empty())
-                    _args.emplace_back(last_name, optional<std::string>());
-
-                if (name.size() == 1)
-                    if (!deferred_assert(hyphens == 1, "single character parameter " + name +
-                                                       " must prefix exactly one hyphen: -" + name))
-                        return;
-                if (name.size() >= 2)
-                    if (!deferred_assert(hyphens == 2, "multi-character parameter " + name +
-                                                       " must prefix exactly two hyphens: --" + name))
-                        return;
-                last_name = name;
+                continue;
             }
+
+            if(! last_name.empty())
+                _args.emplace_back(last_name, optional<std::string>());
+
+            if (!deferred_assert(name.size() >= 1, "paramter must not entirely consist of hyphens"))
+                return;
+
+            if (hyphens == 1) {
+                if(name.size() == 1) {
+                    last_name = name;
+                } else {
+                    for(size_t i = 0; i < name.size(); ++i)
+                        _args.emplace_back(std::string(1, name[i]), optional<std::string>());
+                    last_name = "";
+                }
+                continue;
+            }
+
+            if (!deferred_assert(name.size() >= 2, "single character parameter " + name + " must have one hyphen"))
+                return;
+
+            last_name = name;
         }
 
         if(! last_name.empty())

@@ -126,7 +126,16 @@ TEST(identifier, less) {
 TEST(matcher, invalid_input) {
     EXPECT_EXIT_FAIL(init_args_loose_query({"./run_tests", "--i"}));
     EXPECT_EXIT_FAIL(init_args_loose_query({"./run_tests", "--i", "0"}));
-    EXPECT_EXIT_FAIL(init_args_loose_query({"./run_tests", "-int", "0"}));
+    EXPECT_EXIT_FAIL(init_args_loose_query({"./run_tests", "-ab", "0"}));
+    EXPECT_EXIT_FAIL(init_args_loose_query({"./run_tests", "0"}));
+}
+
+TEST(matcher, boolean_flags) {
+    init_args_loose_query({"./run_tests", "-a", "-bcd"});
+    EXPECT_TRUE((bool) arg("a"));
+    EXPECT_TRUE((bool) arg("b"));
+    EXPECT_TRUE((bool) arg("c"));
+    EXPECT_TRUE((bool) arg("d"));
 }
 
 
@@ -192,6 +201,7 @@ TEST(arg, correct_parsing) {
     EXPECT_TRUE((bool) arg("bool1"));
     EXPECT_TRUE((bool) arg("bool2"));
     EXPECT_FALSE((bool) arg("undefined"));
+    EXPECT_EXIT_FAIL((bool) arg("i"));
 
     EXPECT_EQ((int) arg("i", "", 2), 1);
 

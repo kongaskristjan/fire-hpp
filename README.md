@@ -7,7 +7,6 @@ This library uses extensive testing. Unit tests are located in Tests.cpp, while 
 ### Todo
 
 * High quality parsing
-    * `"-xy" == "-x -y"`
     * `"-x 1" == "-x=1"`
 * Unnamed arguments
     * Positional parsing mode
@@ -24,6 +23,7 @@ This library uses extensive testing. Unit tests are located in Tests.cpp, while 
 
 * super/super_arg keyword for argument, which will save program from exiting even if not all required arguments are present or correct (eg. for --version) (don't immediately finish parsing if there are user made errors)
 * Remove exceptions
+* Wide character strings
 * Modules (with separate help messages for each module (otherwise impossible without exceptions))
 
 ### Design ~~goals~~ dreams
