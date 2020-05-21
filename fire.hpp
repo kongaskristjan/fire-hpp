@@ -81,6 +81,10 @@ namespace fire {
         static std::pair<std::string, arg_type> get_and_mark_as_queried(const identifier &id);
         static void init_args(int argc, const char **argv, int main_argc, bool loose_query);
         static void parse(int argc, const char **argv);
+        static std::vector<std::string> to_vector_string(int n_strings, const char **strings);
+        static std::tuple<std::vector<std::string>, std::vector<std::string>>
+            separate_named_positional(const std::vector<std::string> &raw);
+        static void assign_named_values(const std::vector<std::string> &named);
         static const std::string& get_executable() { return _executable; }
         static bool deferred_assert(bool pass, const std::string &msg);
     };
@@ -272,15 +276,16 @@ namespace fire {
         if (!_loose_query)
             _queried.push_back(id);
 
-        for(auto it = _args.begin(); it != _args.end(); ++it)
-            if(id.contains(it->first)) {
+        for(auto it = _args.begin(); it != _args.end(); ++it) {
+            if (id.contains(it->first)) {
                 optional<std::string> result = it->second;
-                if(! _loose_query)
+                if (!_loose_query)
                     _args.erase(it);
-                if(result.has_value())
+                if (result.has_value())
                     return {result.value(), arg_type::string_t};
                 return {"", arg_type::bool_t};
             }
+        }
 
         return {"", arg_type::none_t};
     }
@@ -298,49 +303,60 @@ namespace fire {
 
     void _matcher::parse(int argc, const char **argv) {
         _executable = argv[0];
-
-        std::string last_name;
-        for(int i = 1; i < argc; ++i) {
-            std::string hyphened_name = argv[i];
-            size_t hyphens = count_hyphens(hyphened_name);
-            std::string name = hyphened_name.substr(hyphens);
-
-            if(hyphens == 0) {
-                deferred_assert(! last_name.empty(), "positional arguments are not supported yet");
-                _args.emplace_back(last_name, name);
-                last_name = "";
-                continue;
-            }
-
-            if(! last_name.empty())
-                _args.emplace_back(last_name, optional<std::string>());
-
-            if (!deferred_assert(name.size() >= 1, "paramter must not entirely consist of hyphens"))
-                return;
-
-            if (hyphens == 1) {
-                if(name.size() == 1) {
-                    last_name = name;
-                } else {
-                    for(size_t i = 0; i < name.size(); ++i)
-                        _args.emplace_back(std::string(1, name[i]), optional<std::string>());
-                    last_name = "";
-                }
-                continue;
-            }
-
-            if (!deferred_assert(name.size() >= 2, "single character parameter " + name + " must have one hyphen"))
-                return;
-
-            last_name = name;
-        }
-
-        if(! last_name.empty())
-            _args.emplace_back(last_name, optional<std::string>());
+        std::vector<std::string> raw = to_vector_string(argc - 1, argv + 1);
+        std::vector<std::string> named, positional;
+        tie(named, positional) = separate_named_positional(raw);
+        assign_named_values(named);
 
         _help_flag = get_and_mark_as_queried(identifier({"h", "help"})).second == arg_type::bool_t;
-
+        deferred_assert(positional.empty(), "positional arguments are currently unsupported");
         check(false);
+    }
+
+    std::vector<std::string> _matcher::to_vector_string(int n_strings, const char **strings) {
+        std::vector<std::string> raw(n_strings);
+        for(int i = 0; i < n_strings; ++i)
+            raw[i] = strings[i];
+        return raw;
+    }
+
+    std::tuple<std::vector<std::string>, std::vector<std::string>>
+            _matcher::separate_named_positional(const std::vector<std::string> &raw) {
+        std::vector<std::string> named, positional;
+
+        bool to_named = false;
+        for(const std::string &s: raw) {
+            int hyphens = count_hyphens(s);
+            int name_size = s.size() - hyphens;
+            if(hyphens >= 1) {
+                named.push_back(s);
+                to_named = hyphens >= 2 || name_size == 1; // Not "-abc" == "-a -b -c"
+                continue;
+            }
+            if(to_named) {
+                named.push_back(s);
+                to_named = false;
+                continue;
+            }
+            positional.push_back(s);
+        }
+
+        return { named, positional };
+    }
+
+    void _matcher::assign_named_values(const std::vector<std::string> &named) {
+        for(const std::string &hyphened_name: named) {
+            int hyphens = count_hyphens(hyphened_name);
+            std::string name = hyphened_name.substr(hyphens);
+            if(hyphens >= 2) {
+                deferred_assert(name.size() >= 2, "single character parameter " + name + " must have exactly one hyphen");
+                _args.emplace_back(name, optional<std::string>());
+            } else if(hyphens == 1) {
+                for (char c: name)
+                    _args.emplace_back(std::string(1, c), optional<std::string>());
+            } else
+                _args.back().second = name;
+        }
     }
 
     bool _matcher::deferred_assert(bool pass, const std::string &msg) {

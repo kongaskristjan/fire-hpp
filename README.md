@@ -17,6 +17,7 @@ This library uses extensive testing. Unit tests are located in Tests.cpp, while 
     * `unsigned`
     * Short/long versions of numeric types, eg. `short`, `long`, `long * Testing for error messages
 * Documentation
+* Systematic, tested examples
 * Test on Windows, Mac
 
 #### v0.1 release

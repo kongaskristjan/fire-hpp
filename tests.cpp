@@ -146,25 +146,14 @@ TEST(help, help_invocation) {
     init_args_strict_query({"./run_tests", "-h"}, 1);
     EXPECT_EXIT_SUCCESS(int_t i_undef = arg("i"));
 
-    init_args_strict_query({"./run_tests", "-h"}, 1);
-    EXPECT_EXIT_SUCCESS(int_t i_undef = arg("i", "", 0));
-
     init_args_strict_query({"./run_tests", "-h", "-i", "1"}, 1);
     EXPECT_EXIT_SUCCESS(int_t i_undef = arg("i"));
-
-    init_args_strict_query({"./run_tests", "-h", "-i", "1"}, 1);
-    EXPECT_EXIT_SUCCESS(int_t i_undef = arg("i", "", 0));
-
-    init_args_strict_query({"./run_tests", "-h"}, 1);
-    EXPECT_EXIT_SUCCESS(fire::optional<int_t> i_undef = arg("i"));
-
-    init_args_strict_query({"./run_tests", "-h", "-i", "1"}, 1);
-    EXPECT_EXIT_SUCCESS(fire::optional<int_t> i_undef = arg("i"));
 
     init_args_strict_query({"./run_tests", "-h"}, 3);
     int_t i1_undef = arg("i1");
     int_t i2_undef = arg("i2");
     EXPECT_EXIT_SUCCESS(int_t i3_undef = arg("i3"));
+
 }
 
 
