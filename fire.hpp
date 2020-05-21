@@ -84,6 +84,7 @@ namespace fire {
         static std::vector<std::string> to_vector_string(int n_strings, const char **strings);
         static std::tuple<std::vector<std::string>, std::vector<std::string>>
             separate_named_positional(const std::vector<std::string> &raw);
+        static std::vector<std::string> split_equations(const std::vector<std::string> &named);
         static void assign_named_values(const std::vector<std::string> &named);
         static const std::string& get_executable() { return _executable; }
         static bool deferred_assert(bool pass, const std::string &msg);
@@ -306,6 +307,7 @@ namespace fire {
         std::vector<std::string> raw = to_vector_string(argc - 1, argv + 1);
         std::vector<std::string> named, positional;
         tie(named, positional) = separate_named_positional(raw);
+        named = split_equations(named);
         assign_named_values(named);
 
         _help_flag = get_and_mark_as_queried(identifier({"h", "help"})).second != arg_type::none_t;
@@ -331,6 +333,7 @@ namespace fire {
             if(hyphens >= 1) {
                 named.push_back(s);
                 to_named = hyphens >= 2 || name_size == 1; // Not "-abc" == "-a -b -c"
+                to_named &= (s.find('=') == std::string::npos); // No equation signs
                 continue;
             }
             if(to_named) {
@@ -342,6 +345,25 @@ namespace fire {
         }
 
         return { named, positional };
+    }
+
+    std::vector<std::string> _matcher::split_equations(const std::vector<std::string> &named) {
+        std::vector<std::string> split;
+        for(const std::string &hyphened_name: named) {
+            int hyphens = count_hyphens(hyphened_name);
+            size_t eq = hyphened_name.find('=');
+            if(eq == std::string::npos) {
+                split.push_back(hyphened_name);
+                continue;
+            }
+            int name_size = eq - hyphens;
+
+            if(!deferred_assert(name_size == 1 || hyphens >= 2, "expanding single-hyphen arguments must not have value")) continue;
+
+            split.push_back(hyphened_name.substr(0, eq));
+            split.push_back(hyphened_name.substr(eq + 1));
+        }
+        return split;
     }
 
     void _matcher::assign_named_values(const std::vector<std::string> &named) {

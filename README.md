@@ -6,8 +6,6 @@ This library uses extensive testing. Unit tests are located in Tests.cpp, while 
 
 ### Todo
 
-* High quality parsing
-    * `"-x 1" == "-x=1"`
 * Unnamed arguments
     * Positional parsing mode
     * Positionals

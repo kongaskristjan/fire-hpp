@@ -138,6 +138,15 @@ TEST(matcher, boolean_flags) {
     EXPECT_TRUE((bool) arg("d"));
 }
 
+TEST(matcher, equations) {
+    init_args_loose_query({"./run_tests", "-a=b", "--abc=xy", "-x=y=z"});
+    EXPECT_EQ((string) arg("a"), "b");
+    EXPECT_EQ((string) arg("abc"), "xy");
+    EXPECT_EQ((string) arg("x"), "y=z"); // quotation marks are omitted from command line
+
+    EXPECT_EXIT_FAIL(init_args_loose_query({"./run_tests", "-a=b", "123"}));
+}
+
 
 TEST(help, help_invocation) {
     EXPECT_EXIT_SUCCESS(init_args_strict_query({"./run_tests", "-h"}, 0));
