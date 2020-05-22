@@ -70,7 +70,8 @@ namespace fire {
 
     class _matcher {
         static std::string _executable;
-        static std::vector<std::pair<std::string, optional<std::string>>> _args;
+        static std::vector<std::string> _positional;
+        static std::vector<std::pair<std::string, optional<std::string>>> _named;
         static std::vector<identifier> _queried;
         static std::vector<std::string> _deferred_errors;
         static int _main_argc;
@@ -87,7 +88,7 @@ namespace fire {
         static void parse(int argc, const char **argv);
         static std::vector<std::string> to_vector_string(int n_strings, const char **strings);
         static std::tuple<std::vector<std::string>, std::vector<std::string>>
-            separate_named_positional(const std::vector<std::string> &raw);
+                separate_named_positional(const std::vector<std::string> &raw);
         static std::vector<std::string> split_equations(const std::vector<std::string> &named);
         static std::vector<std::pair<std::string, optional<std::string>>>
                 assign_named_values(const std::vector<std::string> &named);
@@ -96,7 +97,8 @@ namespace fire {
     };
 
     std::string _matcher::_executable;
-    std::vector<std::pair<std::string, optional<std::string>>> _matcher::_args;
+    std::vector<std::string> _matcher::_positional;
+    std::vector<std::pair<std::string, optional<std::string>>> _matcher::_named;
     std::vector<identifier> _matcher::_queried;
     std::vector<std::string> _matcher::_deferred_errors;
     int _matcher::_main_argc;
@@ -277,12 +279,16 @@ namespace fire {
             exit(0);
         }
 
-        if(! _args.empty()) {
-            std::string invalid;
-            for (const auto &it: _args)
-                invalid += " " + it.first;
-            deferred_assert(false, std::string("Invalid argument") + (invalid.size() > 1 ? "s" : "") + invalid);
+        std::string invalid;
+        for(const auto &it: _named) {
+            for(const auto &jt: _queried)
+                if(jt.contains(it.first))
+                    goto VALID;
+
+            invalid += " " + it.first;
+            VALID:;
         }
+        deferred_assert(invalid.empty(), std::string("Invalid argument") + (invalid.size() > 1 ? "s" : "") + invalid);
 
         if(! _deferred_errors.empty()) {
             std::cerr << "Error: " << _deferred_errors[0] << std::endl;
@@ -297,11 +303,9 @@ namespace fire {
         if (_strict)
             _queried.push_back(id);
 
-        for(auto it = _args.begin(); it != _args.end(); ++it) {
+        for(auto it = _named.begin(); it != _named.end(); ++it) {
             if (id.contains(it->first)) {
                 optional<std::string> result = it->second;
-                if (_strict)
-                    _args.erase(it);
                 if (result.has_value())
                     return {result.value(), arg_type::string_t};
                 return {"", arg_type::bool_t};
@@ -315,7 +319,7 @@ namespace fire {
         _main_argc = main_argc;
         _positional_mode = positional_mode;
         _strict = strict;
-        _args.clear();
+        _named.clear();
         _queried.clear();
         _help_flag = false;
         _help_logger::clear();
@@ -328,13 +332,13 @@ namespace fire {
     void _matcher::parse(int argc, const char **argv) {
         _executable = argv[0];
         std::vector<std::string> raw = to_vector_string(argc - 1, argv + 1);
-        std::vector<std::string> named, positional;
-        tie(named, positional) = separate_named_positional(raw);
+        std::vector<std::string> named;
+        tie(named, _positional) = separate_named_positional(raw);
         named = split_equations(named);
-        _args = assign_named_values(named);
+        _named = assign_named_values(named);
 
         if(! _positional_mode)
-            deferred_assert(positional.empty(), "positional arguments given, but not accepted");
+            deferred_assert(_positional.empty(), "positional arguments given, but not accepted");
     }
 
     std::vector<std::string> _matcher::to_vector_string(int n_strings, const char **strings) {

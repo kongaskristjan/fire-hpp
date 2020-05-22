@@ -253,6 +253,11 @@ TEST(arg, correct_parsing) {
 }
 
 TEST(arg, strict_query) {
+    init_args_strict({"./run_tests"}, 0);
+
+    init_args_strict({"./run_tests", "-x", "0"}, 1);
+    (int_t) arg("x");
+
     EXPECT_EXIT_FAIL(init_args_strict({"./run_tests", "-i", "1"}, 0));
 
     init_args_strict({"./run_tests", "-i", "1"}, 2);
