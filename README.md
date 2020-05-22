@@ -47,7 +47,6 @@ This library uses extensive testing. Unit tests are located in Tests.cpp, while 
 ### Todo
 
 * Unnamed arguments
-    * Positional parsing mode
     * Positionals
     * Vectors
 * Linking together multiple compilation units

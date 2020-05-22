@@ -71,7 +71,8 @@ namespace fire {
         static std::vector<identifier> _queried;
         static std::vector<std::string> _deferred_errors;
         static int _main_argc;
-        static bool _loose_query;
+        static bool _positional_mode;
+        static bool _strict;
         static bool _help_flag;
 
     public:
@@ -79,7 +80,7 @@ namespace fire {
 
         static void check(bool dec_main_argc);
         static std::pair<std::string, arg_type> get_and_mark_as_queried(const identifier &id);
-        static void init_args(int argc, const char **argv, int main_argc, bool loose_query);
+        static void init_args(int argc, const char **argv, int main_argc, bool positional_mode, bool strict);
         static void parse(int argc, const char **argv);
         static std::vector<std::string> to_vector_string(int n_strings, const char **strings);
         static std::tuple<std::vector<std::string>, std::vector<std::string>>
@@ -96,7 +97,8 @@ namespace fire {
     std::vector<identifier> _matcher::_queried;
     std::vector<std::string> _matcher::_deferred_errors;
     int _matcher::_main_argc;
-    bool _matcher::_loose_query;
+    bool _matcher::_positional_mode;
+    bool _matcher::_strict;
     bool _matcher::_help_flag;
 
     class _help_logger { // Gathers function argument help info here
@@ -251,7 +253,7 @@ namespace fire {
 
     void _matcher::check(bool dec_main_argc) {
         _main_argc -= dec_main_argc;
-        if(_loose_query || _main_argc > 0) return;
+        if(! _strict || _main_argc > 0) return;
 
         if(_help_flag) {
             _help_logger::print_help();
@@ -275,13 +277,13 @@ namespace fire {
         for(const auto& it: _queried)
             deferred_assert(! it.overlaps(id), "double query for argument " + id.longer());
 
-        if (!_loose_query)
+        if (_strict)
             _queried.push_back(id);
 
         for(auto it = _args.begin(); it != _args.end(); ++it) {
             if (id.contains(it->first)) {
                 optional<std::string> result = it->second;
-                if (!_loose_query)
+                if (_strict)
                     _args.erase(it);
                 if (result.has_value())
                     return {result.value(), arg_type::string_t};
@@ -292,9 +294,10 @@ namespace fire {
         return {"", arg_type::none_t};
     }
 
-    void _matcher::init_args(int argc, const char **argv, int main_argc, bool loose_query) {
+    void _matcher::init_args(int argc, const char **argv, int main_argc, bool positional_mode, bool strict) {
         _main_argc = main_argc;
-        _loose_query = loose_query;
+        _positional_mode = positional_mode;
+        _strict = strict;
         _args.clear();
         _queried.clear();
         _help_flag = false;
@@ -313,7 +316,8 @@ namespace fire {
         named = split_equations(named);
         _args = assign_named_values(named);
 
-        deferred_assert(positional.empty(), "positional arguments are currently unsupported");
+        if(! _positional_mode)
+            deferred_assert(positional.empty(), "positional arguments given, but not accepted");
     }
 
     std::vector<std::string> _matcher::to_vector_string(int n_strings, const char **strings) {
@@ -337,7 +341,7 @@ namespace fire {
                 to_named &= (s.find('=') == std::string::npos); // No equation signs
                 continue;
             }
-            if(to_named) {
+            if(! _positional_mode && to_named) {
                 named.push_back(s);
                 to_named = false;
                 continue;
@@ -387,7 +391,7 @@ namespace fire {
     }
 
     bool _matcher::deferred_assert(bool pass, const std::string &msg) {
-        if(_loose_query) {
+        if(! _strict) {
             _instant_assert(pass, msg);
             return pass;
         }
@@ -544,10 +548,24 @@ namespace fire {
 
 
 
+template<typename F>
+void init_and_run(int argc, const char ** argv, F main_func, bool positional) {
+    std::size_t main_argc = fire::_get_argument_count(main_func);
+    bool strict = true;
+    fire::_matcher::init_args(argc, argv, main_argc, positional, strict);
+}
+
 #define FIRE(main_func) \
 int main(int argc, const char ** argv) {\
-    std::size_t main_argc = fire::_get_argument_count(main_func);\
-    fire::_matcher::init_args(argc, argv, main_argc, false);\
+    bool positional = false;\
+    init_and_run(argc, argv, main_func, positional);\
+    return main_func();\
+}
+
+#define FIRE_POSITIONAL(main_func) \
+int main(int argc, const char ** argv) {\
+    bool positional = true;\
+    init_and_run(argc, argv, main_func, positional);\
     return main_func();\
 }
 
