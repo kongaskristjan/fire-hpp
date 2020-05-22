@@ -47,15 +47,18 @@ namespace fire {
 
     class identifier {
         optional<std::string> _short_name, _long_name;
+        optional<int> _pos;
 
         static void _check_name(const std::string &name);
     public:
         identifier(std::initializer_list<const char *> lst); // {short name, long name} or {name}
         identifier(const char *name): identifier{name} {}
+        identifier(int _pos): _pos(_pos) {}
 
         bool operator<(const identifier &other) const;
         bool overlaps(const identifier &other) const;
         bool contains(const std::string &name) const;
+        bool contains(int pos) const;
         std::string help() const;
         std::string longer() const;
     };
@@ -229,6 +232,9 @@ namespace fire {
         if(_short_name.has_value() && other._short_name.has_value())
             if(_short_name.value() == other._short_name.value())
                 return true;
+        if(_pos.has_value() && other._pos.has_value())
+            if(_pos.value() == other._pos.value())
+                return true;
         return false;
     }
 
@@ -238,16 +244,27 @@ namespace fire {
         return false;
     }
 
+    bool identifier::contains(int pos) const {
+        if(_pos.has_value() && pos == _pos.value()) return true;
+        return false;
+    }
+
     std::string identifier::help() const {
-        if(! _short_name.has_value()) return "--" + _long_name.value();
-        if(! _long_name.has_value()) return "-" + _short_name.value();
-        return "-" + _short_name.value() + "|--" + _long_name.value();
+        if(_long_name.has_value() && _short_name.has_value())
+            return "-" + _short_name.value() + "|--" + _long_name.value();
+        if(_long_name.has_value())
+            return "--" + _long_name.value();
+        if(_short_name.has_value())
+            return "-" + _short_name.value();
+        return "<" + std::to_string(_pos.value()) + ">";
     }
 
     std::string identifier::longer() const {
         if(_long_name.has_value())
             return "--" + _long_name.value();
-        return "-" + _short_name.value();
+        if(_short_name.has_value())
+            return "-" + _short_name.value();
+        return "<" + std::to_string(_pos.value()) + ">";
     }
 
 

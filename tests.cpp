@@ -80,43 +80,62 @@ TEST(identifier, constructor) {
     identifier("l");
     identifier("long");
     EXPECT_EXIT_FAIL(identifier(""));
+
+    identifier(0);
 }
 
 TEST(identifier, overlap) {
-    identifier long1("l"), long2({"l", "long"}), long3("long");
-    identifier short1("s"), short2({"s", "short"}), short3("short");
+    identifier long0("l"), long1({"l", "long"}), long2("long");
+    identifier short0("s"), short1({"s", "short"}), short2("short");
+    identifier pos0(0), pos1(1);
 
+    EXPECT_TRUE(long0.overlaps(long1));
     EXPECT_TRUE(long1.overlaps(long2));
-    EXPECT_TRUE(long2.overlaps(long3));
-    EXPECT_FALSE(long3.overlaps(long1));
+    EXPECT_FALSE(long2.overlaps(long0));
 
+    EXPECT_FALSE(long0.overlaps(short0));
     EXPECT_FALSE(long1.overlaps(short1));
     EXPECT_FALSE(long2.overlaps(short2));
-    EXPECT_FALSE(long3.overlaps(short3));
+
+    EXPECT_FALSE(pos0.overlaps(long0));
+    EXPECT_FALSE(pos0.overlaps(long2));
+    EXPECT_TRUE(pos0.overlaps(pos0));
+    EXPECT_FALSE(pos0.overlaps(pos1));
 }
 
 TEST(identifier, contains) {
-    identifier long1("l"), long2({"l", "long"}), long3("long");
+    identifier long0("l"), long1({"l", "long"}), long2("long");
+    identifier pos0(0);
 
-    EXPECT_FALSE(long1.contains("long"));
-    EXPECT_TRUE(long2.overlaps("long"));
-    EXPECT_TRUE(long3.overlaps("long"));
+    EXPECT_FALSE(long0.contains("long"));
+    EXPECT_TRUE(long1.contains("long"));
+    EXPECT_TRUE(long2.contains("long"));
 
+    EXPECT_TRUE(long0.contains("l"));
     EXPECT_TRUE(long1.contains("l"));
-    EXPECT_TRUE(long2.overlaps("l"));
-    EXPECT_FALSE(long3.overlaps("l"));
+    EXPECT_FALSE(long2.contains("l"));
+
+    EXPECT_FALSE(long0.contains(0));
+    EXPECT_FALSE(long2.contains(0));
+
+    EXPECT_TRUE(pos0.contains(0));
+    EXPECT_FALSE(pos0.contains(1));
 }
 
 TEST(identifier, help) {
     EXPECT_EQ(identifier("l").help(), "-l");
     EXPECT_EQ(identifier({"l", "long"}).help(), "-l|--long");
     EXPECT_EQ(identifier("long").help(), "--long");
+
+    EXPECT_EQ(identifier(0).help(), "<0>");
 }
 
 TEST(identifier, longer) {
     EXPECT_EQ(identifier("l").longer(), "-l");
     EXPECT_EQ(identifier({"l", "long"}).longer(), "--long");
     EXPECT_EQ(identifier("long").longer(), "--long");
+
+    EXPECT_EQ(identifier(0).longer(), "<0>");
 }
 
 TEST(identifier, less) {
