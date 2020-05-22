@@ -236,7 +236,6 @@ TEST(arg, correct_parsing) {
     EXPECT_TRUE((bool) arg("bool1"));
     EXPECT_TRUE((bool) arg("bool2"));
     EXPECT_FALSE((bool) arg("undefined"));
-    EXPECT_EXIT_FAIL((bool) arg("i"));
 
     EXPECT_EQ((int) arg("i", "", 2), 1);
 
@@ -244,12 +243,35 @@ TEST(arg, correct_parsing) {
     EXPECT_NEAR((double) arg("i"), 1.0, 1e-5);
     EXPECT_NEAR((double) arg("f"), 2.0, 1e-5);
     EXPECT_EQ((string) arg("s"), "test");
+}
+
+TEST(arg, incorrect_parsing) {
+    init_args({"./run_tests", "-i", "1", "-f", "2.0", "-s", "test"});
+    EXPECT_EXIT_FAIL((bool) arg("i"));
 
     EXPECT_EXIT_FAIL((int) arg("f"));
     EXPECT_EXIT_FAIL((int) arg("s"));
     EXPECT_EXIT_FAIL((double) arg("s"));
 
     EXPECT_EXIT_FAIL((int) arg("x"));
+
+    init_args({"./run_tests"});
+    EXPECT_EXIT_FAIL((int) arg(0, "", -1));
+}
+
+TEST(arg, positional_parsing) {
+    init_args_positional({"./run_tests", "0", "1"});
+    EXPECT_EQ((int) arg(0), 0);
+    EXPECT_EQ((int) arg(1), 1);
+    EXPECT_EXIT_FAIL((int) arg(2));
+
+    init_args_positional({"./run_tests", "0", "-x=3", "1"});
+    EXPECT_EQ((int) arg("x"), 3);
+    EXPECT_EQ((int) arg(0), 0);
+    EXPECT_EQ((int) arg(1), 1);
+    EXPECT_EQ((int) arg(2, "", -1), -1);
+    optional<int> opt = arg(2);
+    EXPECT_FALSE(opt.has_value());
 }
 
 TEST(arg, strict_query) {
@@ -269,6 +291,19 @@ TEST(arg, strict_query) {
 
     init_args_strict({"./run_tests", "-i", "1"}, 1);
     EXPECT_EXIT_FAIL((int_t) arg("x", "", 0));
+}
+
+TEST(arg, strict_query_positional) {
+    init_args_positional_strict({"./run_tests", "0", "1"}, 1);
+    EXPECT_EXIT_FAIL((int) arg(0)); // Invalid 2-nd argument
+
+    init_args_positional_strict({"./run_tests", "1"}, 2);
+    fire::optional<int> x0 = arg(0), x1 = arg(1);
+    EXPECT_EQ(x0.value(), 1);
+    EXPECT_FALSE(x1.has_value());
+
+    init_args_positional_strict({"./run_tests", "0", "1"}, 1);
+    EXPECT_EXIT_FAIL((int) arg(0));
 }
 
 TEST(arg, optional_arguments) {

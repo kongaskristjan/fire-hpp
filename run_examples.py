@@ -66,6 +66,17 @@ def run_flags(pth_prefix):
     runner.handled_failure("-a 1")
 
 
+def run_positional(pth_prefix):
+    runner = assert_runner(pth_prefix + "positional")
+
+    runner.handled_failure("")
+    runner.handled_failure("test")
+    runner.equal("2", "2 0")
+    runner.equal("2 3", "2 3")
+    runner.handled_failure("2 3 4")
+
+
+
 def main():
     pth_prefix = os.path.dirname(__file__) + "/examples/"
 
@@ -74,6 +85,7 @@ def main():
     run_all_combinations(pth_prefix)
     run_basic(pth_prefix)
     run_flags(pth_prefix)
+    run_positional(pth_prefix)
 
     print(" SUCCESS! (ran {} tests with {} checks)".format(assert_runner.test_count, assert_runner.check_count))
 

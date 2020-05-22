@@ -61,6 +61,7 @@ namespace fire {
         bool contains(int pos) const;
         std::string help() const;
         std::string longer() const;
+        optional<int> get_pos() const { return _pos; }
     };
 
     using bool_t = bool;
@@ -83,6 +84,8 @@ namespace fire {
         enum class arg_type { string_t, bool_t, none_t };
 
         static void check(bool dec_main_argc);
+        static void check_named();
+        static void check_positional();
         static std::pair<std::string, arg_type> get_and_mark_as_queried(const identifier &id);
         static void init_args(int argc, const char **argv, int main_argc, bool positional_mode, bool strict);
         static void parse(int argc, const char **argv);
@@ -279,6 +282,8 @@ namespace fire {
             exit(0);
         }
 
+        check_named();
+        check_positional();
         std::string invalid;
         for(const auto &it: _named) {
             for(const auto &jt: _queried)
@@ -290,13 +295,43 @@ namespace fire {
         }
         deferred_assert(invalid.empty(), std::string("Invalid argument") + (invalid.size() > 1 ? "s" : "") + invalid);
 
+
         if(! _deferred_errors.empty()) {
             std::cerr << "Error: " << _deferred_errors[0] << std::endl;
             exit(_failure_code);
         }
     }
 
+    void _matcher::check_named() {
+        std::string invalid;
+        for(const auto &it: _named) {
+            for(const auto &jt: _queried)
+                if(jt.contains(it.first))
+                    goto VALID;
+
+            invalid += " " + it.first;
+            VALID:;
+        }
+        deferred_assert(invalid.empty(), std::string("Invalid argument") + (invalid.size() > 1 ? "s" : "") + invalid);
+    }
+
+    void _matcher::check_positional() {
+        std::string invalid;
+        for(int i = 0; i < _positional.size(); ++i) {
+            for(const auto &it: _queried)
+                if(it.contains(i))
+                    goto VALID;
+
+            if(_positional.size()) invalid += " " + std::to_string(i);
+            VALID:;
+        }
+        deferred_assert(invalid.empty(), std::string("Invalid positional argument") + (invalid.size() > 1 ? "s" : "") + invalid);
+    }
+
     std::pair<std::string, _matcher::arg_type> _matcher::get_and_mark_as_queried(const identifier &id) {
+        if(! _positional_mode)
+            deferred_assert(! id.get_pos().has_value(), "positional argument used in non-positional mode");
+
         for(const auto& it: _queried)
             deferred_assert(! it.overlaps(id), "double query for argument " + id.longer());
 
@@ -310,6 +345,14 @@ namespace fire {
                     return {result.value(), arg_type::string_t};
                 return {"", arg_type::bool_t};
             }
+        }
+
+        if(id.get_pos().has_value()) {
+            int pos = id.get_pos().value();
+            if(pos >= _positional.size())
+                return {"", arg_type::none_t};
+
+            return {_positional[pos], arg_type::string_t};
         }
 
         return {"", arg_type::none_t};
@@ -533,10 +576,11 @@ namespace fire {
 
     template <typename T>
     optional<T> arg::_convert_optional() {
-        _matcher::deferred_assert(!_int_value.has_value() && !_float_value.has_value() && !_string_value.has_value(),
+        _instant_assert(! (_int_value.has_value() || _float_value.has_value() || _string_value.has_value()),
                         "Optional argument has default value");
+        optional<T> val = _get<T>();
         _matcher::check(true);
-        return _get<T>();
+        return val;
     }
 
     template <typename T>

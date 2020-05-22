@@ -27,7 +27,7 @@ Also,
 In addition to what was shown above, this library supports
 * integer, floating-point and string parameters, with automatic conversions
 * optional parameters
-* ~~positional parameters and unlimited number of parameters (through std::vector)~~
+* positional parameters ~~and unlimited number of parameters (through std::vector)~~
 * flags
 * parameter descriptions
 * typical constructs, such as expanding `-abc <=> -a -b -c` and `-x=1 <=> -x 1`
@@ -47,7 +47,6 @@ This library uses extensive testing. Unit tests are located in Tests.cpp, while 
 ### Todo
 
 * Unnamed arguments
-    * Positionals
     * Vectors
 * Linking together multiple compilation units
 * Add more types

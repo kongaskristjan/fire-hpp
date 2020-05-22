@@ -18,4 +18,7 @@ set_target_properties(basic PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_D
 add_executable(flags examples/flags.cpp fire.hpp)
 set_target_properties(flags PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples)
 
+add_executable(positional examples/positional.cpp fire.hpp)
+set_target_properties(positional PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples)
+
 configure_file(run_examples.py run_examples.py COPYONLY)
