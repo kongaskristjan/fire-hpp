@@ -316,11 +316,13 @@ namespace fire {
     }
 
     void _matcher::init_args(int argc, const char **argv, int main_argc, bool positional_mode, bool strict) {
+        _positional.clear();
+        _named.clear();
+        _queried.clear();
+        _deferred_errors.clear();
         _main_argc = main_argc;
         _positional_mode = positional_mode;
         _strict = strict;
-        _named.clear();
-        _queried.clear();
         _help_flag = false;
         _help_logger::clear();
 
