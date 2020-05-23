@@ -31,13 +31,14 @@ namespace fire {
 #else // <= C++14
     template <typename T>
     class optional {
-        T _value;
+        T _value = T();
         bool _exists = false;
 
     public:
         optional() = default;
-        optional(const T &__value): _value(__value), _exists(true) {}
+        optional(T __value): _value(std::move(__value)), _exists(true) {}
         optional<T>& operator=(const T& __value) { _value = __value; _exists = true; return *this; }
+        bool operator==(const optional<T>& other) { return _exists == other._exists && _value == other._value; }
         explicit operator bool() const { return _exists; }
         bool has_value() const { return _exists; }
         T value_or(const T& def) const { return _exists ? _value : def; }
@@ -48,20 +49,24 @@ namespace fire {
     class identifier {
         optional<std::string> _short_name, _long_name;
         optional<int> _pos;
+        bool _all = false;
 
         static void _check_name(const std::string &name);
     public:
+        identifier() { _all = true; };
         identifier(std::initializer_list<const char *> lst); // {short name, long name} or {name}
         identifier(const char *name): identifier{name} {}
         identifier(int _pos): _pos(_pos) {}
 
         bool operator<(const identifier &other) const;
+        bool operator==(const identifier &other) const { return !(*this < other || other < *this); }
         bool overlaps(const identifier &other) const;
         bool contains(const std::string &name) const;
         bool contains(int pos) const;
         std::string help() const;
         std::string longer() const;
         optional<int> get_pos() const { return _pos; }
+        bool all() const { return _all; };
     };
 
     using bool_t = bool;
@@ -96,6 +101,7 @@ namespace fire {
         static std::vector<std::pair<std::string, optional<std::string>>>
                 assign_named_values(const std::vector<std::string> &named);
         static const std::string& get_executable() { return _executable; }
+        static size_t pos_args() { return _positional.size(); }
         static bool deferred_assert(bool pass, const std::string &msg);
     };
 
@@ -133,7 +139,7 @@ namespace fire {
     std::vector<std::pair<identifier, _help_logger::log_elem>> _help_logger::_params;
 
     class arg {
-        identifier _id;
+        identifier _id; // No identifier implies all positional arguments
         std::string _descr;
 
         optional<int_t> _int_value;
@@ -141,19 +147,20 @@ namespace fire {
         optional<string_t> _string_value;
 
         template <typename T> optional<T> _get() { T::unimplemented_function; } // no default function
-        template <typename T> optional<T> _convert_optional();
-        template <typename T> T _convert();
+        template <typename T> optional<T> _convert_optional(bool dec_main_argc=true);
+        template <typename T> T _convert(bool dec_main_argc=true);
         void _log(const std::string &type, bool optional);
+        arg() = default;
 
     public:
         explicit arg(identifier _id, std::string _descr = ""):
-            _id(std::move(_id)), _descr(std::move(_descr)) {}
+            _id(_id), _descr(std::move(_descr)) {}
         arg(identifier _id, std::string _descr, int_t _value):
-            _id(std::move(_id)), _descr(std::move(_descr)), _int_value(_value) {}
+            _id(_id), _descr(std::move(_descr)), _int_value(_value) {}
         arg(identifier _id, std::string _descr, float_t _value):
-            _id(std::move(_id)), _descr(std::move(_descr)), _float_value(_value) {}
+            _id(_id), _descr(std::move(_descr)), _float_value(_value) {}
         arg(identifier _id, std::string _descr, const string_t &_value):
-            _id(std::move(_id)), _descr(std::move(_descr)), _string_value(_value) {}
+            _id(_id), _descr(std::move(_descr)), _string_value(_value) {}
 
         explicit arg(std::initializer_list<const char *> init, std::string _descr = ""):
             _id(init), _descr(std::move(_descr)) {}
@@ -164,13 +171,19 @@ namespace fire {
         arg(std::initializer_list<const char *> init, std::string _descr, const string_t &_value):
             _id(init), _descr(std::move(_descr)), _string_value(_value) {}
 
+        static arg all(std::string _descr = "") { arg a; a._descr = std::move(_descr); return a; }
+
         operator optional<int_t>() { _log("INTEGER", true); return _convert_optional<int_t>(); }
         operator optional<float_t>() { _log("REAL", true); return _convert_optional<float_t>(); }
         operator optional<string_t>() { _log("STRING", true); return _convert_optional<string_t>(); }
-        operator bool();
+
         operator int_t() { _log("INTEGER", false); return _convert<int_t>(); }
         operator float_t() { _log("REAL", false); return _convert<float_t>(); }
         operator string_t() { _log("STRING", false); return _convert<string_t>(); }
+        operator bool();
+
+        template <typename T>
+        operator std::vector<T>();
     };
 
     void _instant_assert(bool pass, const std::string &msg) {
@@ -261,7 +274,9 @@ namespace fire {
             return "--" + _long_name.value();
         if(_short_name.has_value())
             return "-" + _short_name.value();
-        return "<" + std::to_string(_pos.value()) + ">";
+        if(_pos.has_value())
+            return "<" + std::to_string(_pos.value()) + ">";
+        return "...";
     }
 
     std::string identifier::longer() const {
@@ -269,7 +284,9 @@ namespace fire {
             return "--" + _long_name.value();
         if(_short_name.has_value())
             return "-" + _short_name.value();
-        return "<" + std::to_string(_pos.value()) + ">";
+        if(_pos.has_value())
+            return "<" + std::to_string(_pos.value()) + ">";
+        return "...";
     }
 
 
@@ -322,10 +339,10 @@ namespace fire {
                 if(it.contains(i))
                     goto VALID;
 
-            if(_positional.size()) invalid += " " + std::to_string(i);
+            invalid += " " + std::to_string(i);
             VALID:;
         }
-        deferred_assert(invalid.empty(), std::string("Invalid positional argument") + (invalid.size() > 1 ? "s" : "") + invalid);
+        deferred_assert(invalid.empty(), "Invalid positional arguments" + invalid);
     }
 
     std::pair<std::string, _matcher::arg_type> _matcher::get_and_mark_as_queried(const identifier &id) {
@@ -501,6 +518,8 @@ namespace fire {
         std::sort(printed.begin(), printed.end(), [](const id2elem &a, const id2elem &b) {
             if(a.second.optional != b.second.optional)
                 return a.second.optional < b.second.optional;
+            if(b.first == identifier()) return false;
+            if(a.first == identifier()) return true;
             return a.first < b.first;
         });
 
@@ -509,11 +528,7 @@ namespace fire {
             margin = std::max(margin, _make_printable(it.first, it.second, true).size());
 
         for(const auto& it: printed)
-            if(! it.second.optional)
-                _add_to_help(usage, options, it.first, it.second, margin);
-        for(const auto& it: printed)
-            if(it.second.optional)
-                _add_to_help(usage, options, it.first, it.second, margin);
+            _add_to_help(usage, options, it.first, it.second, margin);
 
         std::cerr << std::endl << usage << std::endl << std::endl << std::endl << options << std::endl;
     }
@@ -575,19 +590,19 @@ namespace fire {
     }
 
     template <typename T>
-    optional<T> arg::_convert_optional() {
+    optional<T> arg::_convert_optional(bool dec_main_argc) {
         _instant_assert(! (_int_value.has_value() || _float_value.has_value() || _string_value.has_value()),
                         "Optional argument has default value");
         optional<T> val = _get<T>();
-        _matcher::check(true);
+        _matcher::check(dec_main_argc);
         return val;
     }
 
     template <typename T>
-    T arg::_convert() {
+    T arg::_convert(bool dec_main_argc) {
         optional<T> val = _get<T>();
         _matcher::deferred_assert(val.has_value(), "Required argument " + _id.longer() + " not provided");
-        _matcher::check(true);
+        _matcher::check(dec_main_argc);
         return val.value_or(T());
     }
 
@@ -604,12 +619,22 @@ namespace fire {
         _instant_assert(!_int_value.has_value() && !_float_value.has_value() && !_string_value.has_value(),
                 _id.longer() + " flag parameter must not have default value");
 
-        _log("", false); // User sees this as flag, not boolean option
+        _log("", true); // User sees this as flag, not boolean option
         auto elem = _matcher::get_and_mark_as_queried(_id);
         _matcher::deferred_assert(elem.second != _matcher::arg_type::string_t,
                                   "flag " + elem.first + " must not have value");
         _matcher::check(true);
         return elem.second == _matcher::arg_type::bool_t;
+    }
+
+    template <typename T>
+    arg::operator std::vector<T>() {
+        std::vector<T> ret;
+        for(size_t i = 0; i < _matcher::pos_args(); ++i)
+            ret.push_back(arg(i)._convert<T>(false));
+        _log("", true);
+        _matcher::check(true);
+        return std::move(ret);
     }
 }
 

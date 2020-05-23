@@ -61,6 +61,7 @@ def run_basic(pth_prefix):
 def run_flags(pth_prefix):
     runner = assert_runner(pth_prefix + "flags")
 
+    runner.help_success("-h")
     runner.equal("", "0 0")
     runner.equal("-a -b", "1 1")
     runner.handled_failure("-a 1")
@@ -69,12 +70,23 @@ def run_flags(pth_prefix):
 def run_positional(pth_prefix):
     runner = assert_runner(pth_prefix + "positional")
 
+    runner.help_success("-h")
     runner.handled_failure("")
     runner.handled_failure("test")
     runner.equal("2", "2 0")
     runner.equal("2 3", "2 3")
     runner.handled_failure("2 3 4")
 
+
+def run_all_positional(pth_prefix):
+    runner = assert_runner(pth_prefix + "all_positional")
+
+    runner.help_success("-h")
+    runner.equal("", "\n")
+    runner.equal("A B", "A B\n")
+    runner.equal("A B -1", "A\nB\n")
+    runner.equal("A B -l", "a b\n")
+    runner.equal("A B -1l", "a\nb\n")
 
 
 def main():
@@ -86,6 +98,7 @@ def main():
     run_basic(pth_prefix)
     run_flags(pth_prefix)
     run_positional(pth_prefix)
+    run_all_positional(pth_prefix)
 
     print(" SUCCESS! (ran {} tests with {} checks)".format(assert_runner.test_count, assert_runner.check_count))
 

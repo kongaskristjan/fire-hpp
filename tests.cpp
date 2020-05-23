@@ -128,6 +128,7 @@ TEST(identifier, help) {
     EXPECT_EQ(identifier("long").help(), "--long");
 
     EXPECT_EQ(identifier(0).help(), "<0>");
+    EXPECT_EQ(identifier().help(), "...");
 }
 
 TEST(identifier, longer) {
@@ -136,6 +137,7 @@ TEST(identifier, longer) {
     EXPECT_EQ(identifier("long").longer(), "--long");
 
     EXPECT_EQ(identifier(0).longer(), "<0>");
+    EXPECT_EQ(identifier().longer(), "...");
 }
 
 TEST(identifier, less) {
@@ -147,6 +149,13 @@ TEST(identifier, less) {
 
     EXPECT_TRUE(identifier({"z", "aa"}) < identifier({"a", "az"}));
     EXPECT_FALSE(identifier({"a", "az"}) < identifier({"z", "aa"}));
+}
+
+TEST(identifier, equals) {
+    EXPECT_TRUE(identifier() == identifier());
+    EXPECT_FALSE(identifier() == identifier("a"));
+    EXPECT_FALSE(identifier("a") == identifier("b"));
+    EXPECT_FALSE(identifier("bca") == identifier("abc"));
 }
 
 
@@ -186,7 +195,6 @@ TEST(matcher, positional_mode) {
 TEST(help, help_invocation) {
     EXPECT_EXIT_SUCCESS(init_args_strict({"./run_tests", "-h"}, 0));
     EXPECT_EXIT_SUCCESS(init_args_strict({"./run_tests", "--help"}, 0));
-    EXPECT_EXIT_SUCCESS(init_args_strict({"./run_tests", "-h", "1"}, 0));
     EXPECT_EXIT_SUCCESS(init_args_strict({"./run_tests", "--help", "1"}, 0));
 
     init_args_strict({"./run_tests", "-h"}, 1);
@@ -200,6 +208,26 @@ TEST(help, help_invocation) {
     int_t i2_undef = arg("i2");
     EXPECT_EXIT_SUCCESS(int_t i3_undef = arg("i3"));
 
+}
+
+TEST(help, positional_help_invocation) {
+    EXPECT_EXIT_SUCCESS(init_args_positional_strict({"./run_tests", "-h"}, 0));
+    EXPECT_EXIT_SUCCESS(init_args_positional_strict({"./run_tests", "--help"}, 0));
+    EXPECT_EXIT_SUCCESS(init_args_positional_strict({"./run_tests", "--help", "1"}, 0));
+
+    init_args_positional_strict({"./run_tests", "-h"}, 1);
+    EXPECT_EXIT_SUCCESS(int_t i_undef = arg(0));
+
+    init_args_positional_strict({"./run_tests", "-h", "1"}, 1);
+    EXPECT_EXIT_SUCCESS(int_t i_undef = arg(0));
+
+    init_args_positional_strict({"./run_tests", "-h"}, 3);
+    int_t i1_undef = arg(0);
+    int_t i2_undef = arg(1);
+    EXPECT_EXIT_SUCCESS(int_t i3_undef = arg(2));
+
+    init_args_positional_strict({"./run_tests", "-h"}, 1);
+    EXPECT_EXIT_SUCCESS(vector<string> v_undef = arg::all());
 }
 
 
@@ -272,6 +300,23 @@ TEST(arg, positional_parsing) {
     EXPECT_EQ((int) arg(2, "", -1), -1);
     optional<int> opt = arg(2);
     EXPECT_FALSE(opt.has_value());
+
+    vector<int> all1 = arg::all();
+    EXPECT_EQ(all1, vector<int>({0, 1}));
+}
+
+TEST(arg, all_positional_parsing) {
+    init_args_positional({"./run_tests"});
+    vector<int> all0 = arg::all();
+    EXPECT_EQ(all0, vector<int>({}));
+
+    init_args_positional({"./run_tests", "0", "1"});
+    vector<int> all1 = arg::all();
+    EXPECT_EQ(all1, vector<int>({0, 1}));
+
+    init_args_positional({"./run_tests", "text"});
+    vector<std::string> all2 = arg::all();
+    EXPECT_EQ(all2, vector<std::string>({"text"}));
 }
 
 TEST(arg, strict_query) {
@@ -304,6 +349,19 @@ TEST(arg, strict_query_positional) {
 
     init_args_positional_strict({"./run_tests", "0", "1"}, 1);
     EXPECT_EXIT_FAIL((int) arg(0));
+
+    init_args_positional_strict({"./run_tests", "0", "1"}, 1);
+    vector<int> all0 = arg::all();
+}
+
+TEST(arg, strict_query_all_positional) {
+    init_args_positional_strict({"./run_tests", "0", "1"}, 2);
+    vector<int> all1 = arg::all();
+    EXPECT_EXIT_FAIL((int) arg(0));
+
+    init_args_positional_strict({"./run_tests", "0", "1"}, 2);
+    (int) arg(0);
+    EXPECT_EXIT_FAIL(vector<int> all2 = arg::all());
 }
 
 TEST(arg, optional_arguments) {
