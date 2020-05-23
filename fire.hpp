@@ -75,45 +75,39 @@ namespace fire {
     using string_t = std::string;
 
     class _matcher {
-        static std::string _executable;
-        static std::vector<std::string> _positional;
-        static std::vector<std::pair<std::string, optional<std::string>>> _named;
-        static std::vector<identifier> _queried;
-        static std::vector<std::string> _deferred_errors;
-        static int _main_argc;
-        static bool _positional_mode;
-        static bool _strict;
-        static bool _help_flag;
+        std::string _executable;
+        std::vector<std::string> _positional;
+        std::vector<std::pair<std::string, optional<std::string>>> _named;
+        std::vector<identifier> _queried;
+        std::vector<std::string> _deferred_errors;
+        int _main_argc = 0;
+        bool _positional_mode = false;
+        bool _strict = false;
+        bool _help_flag = false;
 
     public:
         enum class arg_type { string_t, bool_t, none_t };
 
-        static void check(bool dec_main_argc);
-        static void check_named();
-        static void check_positional();
-        static std::pair<std::string, arg_type> get_and_mark_as_queried(const identifier &id);
-        static void init_args(int argc, const char **argv, int main_argc, bool positional_mode, bool strict);
-        static void parse(int argc, const char **argv);
-        static std::vector<std::string> to_vector_string(int n_strings, const char **strings);
-        static std::tuple<std::vector<std::string>, std::vector<std::string>>
+        _matcher() = default;
+        _matcher(int argc, const char **argv, int main_argc, bool positional_mode, bool strict);
+
+        void check(bool dec_main_argc);
+        void check_named();
+        void check_positional();
+
+        std::pair<std::string, arg_type> get_and_mark_as_queried(const identifier &id);
+        void parse(int argc, const char **argv);
+        std::vector<std::string> to_vector_string(int n_strings, const char **strings);
+        std::tuple<std::vector<std::string>, std::vector<std::string>>
                 separate_named_positional(const std::vector<std::string> &raw);
-        static std::vector<std::string> split_equations(const std::vector<std::string> &named);
-        static std::vector<std::pair<std::string, optional<std::string>>>
+        std::vector<std::string> split_equations(const std::vector<std::string> &named);
+        std::vector<std::pair<std::string, optional<std::string>>>
                 assign_named_values(const std::vector<std::string> &named);
-        static const std::string& get_executable() { return _executable; }
-        static size_t pos_args() { return _positional.size(); }
-        static bool deferred_assert(bool pass, const std::string &msg);
+        const std::string& get_executable() { return _executable; }
+        size_t pos_args() { return _positional.size(); }
+        bool deferred_assert(bool pass, const std::string &msg);
     };
 
-    std::string _matcher::_executable;
-    std::vector<std::string> _matcher::_positional;
-    std::vector<std::pair<std::string, optional<std::string>>> _matcher::_named;
-    std::vector<identifier> _matcher::_queried;
-    std::vector<std::string> _matcher::_deferred_errors;
-    int _matcher::_main_argc;
-    bool _matcher::_positional_mode;
-    bool _matcher::_strict;
-    bool _matcher::_help_flag;
 
     class _help_logger { // Gathers function argument help info here
     public:
@@ -125,18 +119,18 @@ namespace fire {
         };
 
     private:
-        static std::vector<std::pair<identifier, log_elem>> _params;
+        std::vector<std::pair<identifier, log_elem>> _params;
 
-        static std::string _make_printable(const identifier &id, const log_elem &elem, bool verbose);
-        static void _add_to_help(std::string &usage, std::string &options,
+        std::string _make_printable(const identifier &id, const log_elem &elem, bool verbose);
+        void _add_to_help(std::string &usage, std::string &options,
                                  const identifier &id, const log_elem &elem, size_t margin);
     public:
-        static void print_help();
-        static void log(const identifier &name, const log_elem &elem);
-        static void clear() { _params.clear(); }
+        void print_help();
+        void log(const identifier &name, const log_elem &elem);
     };
 
-    std::vector<std::pair<identifier, _help_logger::log_elem>> _help_logger::_params;
+    _matcher __matcher;
+    _help_logger __help_logger;
 
     class arg {
         identifier _id; // No identifier implies all positional arguments
@@ -290,12 +284,22 @@ namespace fire {
     }
 
 
+    _matcher::_matcher(int argc, const char **argv, int main_argc, bool positional_mode, bool strict) {
+        _main_argc = main_argc;
+        _positional_mode = positional_mode;
+        _strict = strict;
+
+        parse(argc, argv);
+        _help_flag = get_and_mark_as_queried(identifier({"h", "help"})).second != arg_type::none_t;
+        check(false);
+    }
+
     void _matcher::check(bool dec_main_argc) {
         _main_argc -= dec_main_argc;
         if(! _strict || _main_argc > 0) return;
 
         if(_help_flag) {
-            _help_logger::print_help();
+            __help_logger.print_help();
             exit(0);
         }
 
@@ -373,22 +377,6 @@ namespace fire {
         }
 
         return {"", arg_type::none_t};
-    }
-
-    void _matcher::init_args(int argc, const char **argv, int main_argc, bool positional_mode, bool strict) {
-        _positional.clear();
-        _named.clear();
-        _queried.clear();
-        _deferred_errors.clear();
-        _main_argc = main_argc;
-        _positional_mode = positional_mode;
-        _strict = strict;
-        _help_flag = false;
-        _help_logger::clear();
-
-        parse(argc, argv);
-        _help_flag = get_and_mark_as_queried(identifier({"h", "help"})).second != arg_type::none_t;
-        check(false);
     }
 
     void _matcher::parse(int argc, const char **argv) {
@@ -511,7 +499,7 @@ namespace fire {
     void _help_logger::print_help() {
         using id2elem = std::pair<identifier, log_elem>;
 
-        std::string usage = "    Usage:\n      " + _matcher::get_executable();
+        std::string usage = "    Usage:\n      " + __matcher.get_executable();
         std::string options = "    Options:\n";
 
         std::vector<std::pair<identifier, log_elem>> printed(_params);
@@ -541,8 +529,8 @@ namespace fire {
 
     template <>
     optional<int_t> arg::_get<int_t>() {
-        auto elem = _matcher::get_and_mark_as_queried(_id);
-        _matcher::deferred_assert(elem.second != _matcher::arg_type::bool_t,
+        auto elem = __matcher.get_and_mark_as_queried(_id);
+        __matcher.deferred_assert(elem.second != _matcher::arg_type::bool_t,
                                   "argument " + elem.first + " must have value");
         if(elem.second == _matcher::arg_type::string_t) {
             size_t last = 0;
@@ -551,7 +539,7 @@ namespace fire {
             try { converted = std::stoi(elem.first, &last); }
             catch(std::logic_error &) { success = false; }
 
-            _matcher::deferred_assert(success && last == elem.first.size(), // != indicates floating point
+            __matcher.deferred_assert(success && last == elem.first.size(), // != indicates floating point
                                       "value " + elem.first + " is not an integer");
 
             return converted;
@@ -562,14 +550,14 @@ namespace fire {
 
     template <>
     optional<float_t> arg::_get<float_t>() {
-        auto elem = _matcher::get_and_mark_as_queried(_id);
-        _matcher::deferred_assert(elem.second != _matcher::arg_type::bool_t,
+        auto elem = __matcher.get_and_mark_as_queried(_id);
+        __matcher.deferred_assert(elem.second != _matcher::arg_type::bool_t,
                 "argument " + elem.first + " must have value");
         if(elem.second == _matcher::arg_type::string_t) {
             try {
                 return std::stold(elem.first);
             } catch(std::logic_error &) {
-                _matcher::deferred_assert(false, "value " + elem.first + " is not a real number");
+                __matcher.deferred_assert(false, "value " + elem.first + " is not a real number");
             }
         }
 
@@ -580,8 +568,8 @@ namespace fire {
 
     template <>
     optional<string_t> arg::_get<string_t>() {
-        auto elem = _matcher::get_and_mark_as_queried(_id);
-        _matcher::deferred_assert(elem.second != _matcher::arg_type::bool_t,
+        auto elem = __matcher.get_and_mark_as_queried(_id);
+        __matcher.deferred_assert(elem.second != _matcher::arg_type::bool_t,
                                   "argument " + elem.first + " must have value");
 
         if(elem.second == _matcher::arg_type::string_t)
@@ -594,15 +582,15 @@ namespace fire {
         _instant_assert(! (_int_value.has_value() || _float_value.has_value() || _string_value.has_value()),
                         "Optional argument has default value");
         optional<T> val = _get<T>();
-        _matcher::check(dec_main_argc);
+        __matcher.check(dec_main_argc);
         return val;
     }
 
     template <typename T>
     T arg::_convert(bool dec_main_argc) {
         optional<T> val = _get<T>();
-        _matcher::deferred_assert(val.has_value(), "Required argument " + _id.longer() + " not provided");
-        _matcher::check(dec_main_argc);
+        __matcher.deferred_assert(val.has_value(), "Required argument " + _id.longer() + " not provided");
+        __matcher.check(dec_main_argc);
         return val.value_or(T());
     }
 
@@ -612,7 +600,7 @@ namespace fire {
         if(_float_value.has_value()) def = std::to_string(_float_value.value());
         if(_string_value.has_value()) def = _string_value.value();
 
-        _help_logger::log(_id, {_descr, type, def, optional});
+        __help_logger.log(_id, {_descr, type, def, optional});
     }
 
     arg::operator bool() {
@@ -620,20 +608,20 @@ namespace fire {
                 _id.longer() + " flag parameter must not have default value");
 
         _log("", true); // User sees this as flag, not boolean option
-        auto elem = _matcher::get_and_mark_as_queried(_id);
-        _matcher::deferred_assert(elem.second != _matcher::arg_type::string_t,
+        auto elem = __matcher.get_and_mark_as_queried(_id);
+        __matcher.deferred_assert(elem.second != _matcher::arg_type::string_t,
                                   "flag " + elem.first + " must not have value");
-        _matcher::check(true);
+        __matcher.check(true);
         return elem.second == _matcher::arg_type::bool_t;
     }
 
     template <typename T>
     arg::operator std::vector<T>() {
         std::vector<T> ret;
-        for(size_t i = 0; i < _matcher::pos_args(); ++i)
+        for(size_t i = 0; i < __matcher.pos_args(); ++i)
             ret.push_back(arg(i)._convert<T>(false));
         _log("", true);
-        _matcher::check(true);
+        __matcher.check(true);
         return std::move(ret);
     }
 }
@@ -644,7 +632,8 @@ template<typename F>
 void init_and_run(int argc, const char ** argv, F main_func, bool positional) {
     std::size_t main_argc = fire::_get_argument_count(main_func);
     bool strict = true;
-    fire::_matcher::init_args(argc, argv, main_argc, positional, strict);
+    fire::__help_logger = fire::_help_logger();
+    fire::__matcher = fire::_matcher(argc, argv, main_argc, positional, strict);
 }
 
 #define FIRE(main_func) \
