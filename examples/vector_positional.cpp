@@ -6,7 +6,7 @@
 
 using namespace std;
 
-int fire_main(vector<string> files = fire::arg::all("files to be printed"),
+int fire_main(vector<string> files = fire::arg::vector("files to be printed"),
         bool lines = fire::arg({"1", "one-per-line"}),
         bool lower = fire::arg({"l", "lower-case"})) {
     if(lower)

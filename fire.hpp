@@ -49,11 +49,11 @@ namespace fire {
     class identifier {
         optional<std::string> _short_name, _long_name;
         optional<int> _pos;
-        bool _all = false;
+        bool _vector = false;
 
         static void _check_name(const std::string &name);
     public:
-        identifier() { _all = true; };
+        identifier() { _vector = true; };
         identifier(std::initializer_list<const char *> lst); // {short name, long name} or {name}
         identifier(const char *name): identifier{name} {}
         identifier(int _pos): _pos(_pos) {}
@@ -66,7 +66,7 @@ namespace fire {
         std::string help() const;
         std::string longer() const;
         optional<int> get_pos() const { return _pos; }
-        bool all() const { return _all; };
+        bool vector() const { return _vector; };
     };
 
     using bool_t = bool;
@@ -133,7 +133,7 @@ namespace fire {
     _help_logger __help_logger;
 
     class arg {
-        identifier _id; // No identifier implies all positional arguments
+        identifier _id; // No identifier implies vector positional arguments
         std::string _descr;
 
         optional<int_t> _int_value;
@@ -165,7 +165,7 @@ namespace fire {
         arg(std::initializer_list<const char *> init, std::string _descr, const string_t &_value):
             _id(init), _descr(std::move(_descr)), _string_value(_value) {}
 
-        static arg all(std::string _descr = "") { arg a; a._descr = std::move(_descr); return a; }
+        static arg vector(std::string _descr = "") { arg a; a._descr = std::move(_descr); return a; }
 
         operator optional<int_t>() { _log("INTEGER", true); return _convert_optional<int_t>(); }
         operator optional<float_t>() { _log("REAL", true); return _convert_optional<float_t>(); }
