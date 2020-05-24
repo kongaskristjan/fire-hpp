@@ -22,8 +22,8 @@ namespace fire {
     template<typename R, typename ... Types>
     constexpr size_t _get_argument_count(R(*f)(Types ...)) { return sizeof...(Types); }
 
-    void _instant_assert(bool pass, const std::string &msg);
-    size_t count_hyphens(const std::string &s);
+    inline void _instant_assert(bool pass, const std::string &msg);
+    inline size_t count_hyphens(const std::string &s);
 
 #if __cplusplus >= 201500 // >= C++17
     template <typename T>
@@ -51,22 +51,22 @@ namespace fire {
         optional<int> _pos;
         bool _vector = false;
 
-        static void _check_name(const std::string &name);
+        inline static void _check_name(const std::string &name);
     public:
-        identifier() { _vector = true; };
-        identifier(std::initializer_list<const char *> lst); // {short name, long name} or {name}
-        identifier(const char *name): identifier{name} {}
-        identifier(int _pos): _pos(_pos) {}
+        inline identifier() { _vector = true; };
+        inline identifier(std::initializer_list<const char *> lst); // {short name, long name} or {name}
+        inline identifier(const char *name): identifier{name} {}
+        inline identifier(int _pos): _pos(_pos) {}
 
-        bool operator<(const identifier &other) const;
-        bool operator==(const identifier &other) const { return !(*this < other || other < *this); }
-        bool overlaps(const identifier &other) const;
-        bool contains(const std::string &name) const;
-        bool contains(int pos) const;
-        std::string help() const;
-        std::string longer() const;
-        optional<int> get_pos() const { return _pos; }
-        bool vector() const { return _vector; };
+        inline bool operator<(const identifier &other) const;
+        inline bool operator==(const identifier &other) const { return !(*this < other || other < *this); }
+        inline bool overlaps(const identifier &other) const;
+        inline bool contains(const std::string &name) const;
+        inline bool contains(int pos) const;
+        inline std::string help() const;
+        inline std::string longer() const;
+        inline optional<int> get_pos() const { return _pos; }
+        inline bool vector() const { return _vector; };
     };
 
     using bool_t = bool;
@@ -88,24 +88,24 @@ namespace fire {
     public:
         enum class arg_type { string_t, bool_t, none_t };
 
-        _matcher() = default;
-        _matcher(int argc, const char **argv, int main_argc, bool positional_mode, bool strict);
+        inline _matcher() = default;
+        inline _matcher(int argc, const char **argv, int main_argc, bool positional_mode, bool strict);
 
-        void check(bool dec_main_argc);
-        void check_named();
-        void check_positional();
+        inline void check(bool dec_main_argc);
+        inline void check_named();
+        inline void check_positional();
 
-        std::pair<std::string, arg_type> get_and_mark_as_queried(const identifier &id);
-        void parse(int argc, const char **argv);
-        std::vector<std::string> to_vector_string(int n_strings, const char **strings);
-        std::tuple<std::vector<std::string>, std::vector<std::string>>
+        inline std::pair<std::string, arg_type> get_and_mark_as_queried(const identifier &id);
+        inline void parse(int argc, const char **argv);
+        inline std::vector<std::string> to_vector_string(int n_strings, const char **strings);
+        inline std::tuple<std::vector<std::string>, std::vector<std::string>>
                 separate_named_positional(const std::vector<std::string> &raw);
-        std::vector<std::string> split_equations(const std::vector<std::string> &named);
-        std::vector<std::pair<std::string, optional<std::string>>>
+        inline std::vector<std::string> split_equations(const std::vector<std::string> &named);
+        inline std::vector<std::pair<std::string, optional<std::string>>>
                 assign_named_values(const std::vector<std::string> &named);
-        const std::string& get_executable() { return _executable; }
-        size_t pos_args() { return _positional.size(); }
-        bool deferred_assert(bool pass, const std::string &msg);
+        inline const std::string& get_executable() { return _executable; }
+        inline size_t pos_args() { return _positional.size(); }
+        inline bool deferred_assert(bool pass, const std::string &msg);
     };
 
 
@@ -121,16 +121,27 @@ namespace fire {
     private:
         std::vector<std::pair<identifier, log_elem>> _params;
 
-        std::string _make_printable(const identifier &id, const log_elem &elem, bool verbose);
-        void _add_to_help(std::string &usage, std::string &options,
+        inline std::string _make_printable(const identifier &id, const log_elem &elem, bool verbose);
+        inline void _add_to_help(std::string &usage, std::string &options,
                                  const identifier &id, const log_elem &elem, size_t margin);
     public:
-        void print_help();
-        void log(const identifier &name, const log_elem &elem);
+        inline void print_help();
+        inline void log(const identifier &name, const log_elem &elem);
     };
 
-    _matcher __matcher;
-    _help_logger __help_logger;
+    template <typename T_VOID = void>
+    struct _storage {
+        static _matcher matcher;
+        static _help_logger help_logger;
+    };
+
+    template <typename T_VOID>
+    _matcher _storage<T_VOID>::matcher;
+
+    template <typename T_VOID>
+    _help_logger _storage<T_VOID>::help_logger;
+
+    using _ = _storage<void>;
 
     class arg {
         identifier _id; // No identifier implies vector positional arguments
@@ -143,41 +154,41 @@ namespace fire {
         template <typename T> optional<T> _get() { T::unimplemented_function; } // no default function
         template <typename T> optional<T> _convert_optional(bool dec_main_argc=true);
         template <typename T> T _convert(bool dec_main_argc=true);
-        void _log(const std::string &type, bool optional);
-        arg() = default;
+        inline void _log(const std::string &type, bool optional);
+        inline arg() = default;
 
     public:
-        explicit arg(identifier _id, std::string _descr = ""):
+        inline explicit arg(identifier _id, std::string _descr = ""):
             _id(_id), _descr(std::move(_descr)) {}
-        arg(identifier _id, std::string _descr, int_t _value):
+        inline arg(identifier _id, std::string _descr, int_t _value):
             _id(_id), _descr(std::move(_descr)), _int_value(_value) {}
-        arg(identifier _id, std::string _descr, float_t _value):
+        inline arg(identifier _id, std::string _descr, float_t _value):
             _id(_id), _descr(std::move(_descr)), _float_value(_value) {}
-        arg(identifier _id, std::string _descr, const string_t &_value):
+        inline arg(identifier _id, std::string _descr, const string_t &_value):
             _id(_id), _descr(std::move(_descr)), _string_value(_value) {}
 
-        explicit arg(std::initializer_list<const char *> init, std::string _descr = ""):
+        inline explicit arg(std::initializer_list<const char *> init, std::string _descr = ""):
             _id(init), _descr(std::move(_descr)) {}
-        arg(std::initializer_list<const char *> init, std::string _descr, int_t _value):
+        inline arg(std::initializer_list<const char *> init, std::string _descr, int_t _value):
             _id(init), _descr(std::move(_descr)), _int_value(_value) {}
-        arg(std::initializer_list<const char *> init, std::string _descr, float_t _value):
+        inline arg(std::initializer_list<const char *> init, std::string _descr, float_t _value):
             _id(init), _descr(std::move(_descr)), _float_value(_value) {}
-        arg(std::initializer_list<const char *> init, std::string _descr, const string_t &_value):
+        inline arg(std::initializer_list<const char *> init, std::string _descr, const string_t &_value):
             _id(init), _descr(std::move(_descr)), _string_value(_value) {}
 
-        static arg vector(std::string _descr = "") { arg a; a._descr = std::move(_descr); return a; }
+        inline static arg vector(std::string _descr = "") { arg a; a._descr = std::move(_descr); return a; }
 
-        operator optional<int_t>() { _log("INTEGER", true); return _convert_optional<int_t>(); }
-        operator optional<float_t>() { _log("REAL", true); return _convert_optional<float_t>(); }
-        operator optional<string_t>() { _log("STRING", true); return _convert_optional<string_t>(); }
+        inline operator optional<int_t>() { _log("INTEGER", true); return _convert_optional<int_t>(); }
+        inline operator optional<float_t>() { _log("REAL", true); return _convert_optional<float_t>(); }
+        inline operator optional<string_t>() { _log("STRING", true); return _convert_optional<string_t>(); }
 
-        operator int_t() { _log("INTEGER", false); return _convert<int_t>(); }
-        operator float_t() { _log("REAL", false); return _convert<float_t>(); }
-        operator string_t() { _log("STRING", false); return _convert<string_t>(); }
-        operator bool();
+        inline operator int_t() { _log("INTEGER", false); return _convert<int_t>(); }
+        inline operator float_t() { _log("REAL", false); return _convert<float_t>(); }
+        inline operator string_t() { _log("STRING", false); return _convert<string_t>(); }
+        inline operator bool();
 
         template <typename T>
-        operator std::vector<T>();
+        inline operator std::vector<T>();
     };
 
     void _instant_assert(bool pass, const std::string &msg) {
@@ -299,7 +310,7 @@ namespace fire {
         if(! _strict || _main_argc > 0) return;
 
         if(_help_flag) {
-            __help_logger.print_help();
+            _::help_logger.print_help();
             exit(0);
         }
 
@@ -499,7 +510,7 @@ namespace fire {
     void _help_logger::print_help() {
         using id2elem = std::pair<identifier, log_elem>;
 
-        std::string usage = "    Usage:\n      " + __matcher.get_executable();
+        std::string usage = "    Usage:\n      " + _::matcher.get_executable();
         std::string options = "    Options:\n";
 
         std::vector<std::pair<identifier, log_elem>> printed(_params);
@@ -528,9 +539,9 @@ namespace fire {
     }
 
     template <>
-    optional<int_t> arg::_get<int_t>() {
-        auto elem = __matcher.get_and_mark_as_queried(_id);
-        __matcher.deferred_assert(elem.second != _matcher::arg_type::bool_t,
+    inline optional<int_t> arg::_get<int_t>() {
+        auto elem = _::matcher.get_and_mark_as_queried(_id);
+        _::matcher.deferred_assert(elem.second != _matcher::arg_type::bool_t,
                                   "argument " + elem.first + " must have value");
         if(elem.second == _matcher::arg_type::string_t) {
             size_t last = 0;
@@ -539,7 +550,7 @@ namespace fire {
             try { converted = std::stoi(elem.first, &last); }
             catch(std::logic_error &) { success = false; }
 
-            __matcher.deferred_assert(success && last == elem.first.size(), // != indicates floating point
+            _::matcher.deferred_assert(success && last == elem.first.size(), // != indicates floating point
                                       "value " + elem.first + " is not an integer");
 
             return converted;
@@ -549,15 +560,15 @@ namespace fire {
     }
 
     template <>
-    optional<float_t> arg::_get<float_t>() {
-        auto elem = __matcher.get_and_mark_as_queried(_id);
-        __matcher.deferred_assert(elem.second != _matcher::arg_type::bool_t,
+    inline optional<float_t> arg::_get<float_t>() {
+        auto elem = _::matcher.get_and_mark_as_queried(_id);
+        _::matcher.deferred_assert(elem.second != _matcher::arg_type::bool_t,
                 "argument " + elem.first + " must have value");
         if(elem.second == _matcher::arg_type::string_t) {
             try {
                 return std::stold(elem.first);
             } catch(std::logic_error &) {
-                __matcher.deferred_assert(false, "value " + elem.first + " is not a real number");
+                _::matcher.deferred_assert(false, "value " + elem.first + " is not a real number");
             }
         }
 
@@ -567,9 +578,9 @@ namespace fire {
     }
 
     template <>
-    optional<string_t> arg::_get<string_t>() {
-        auto elem = __matcher.get_and_mark_as_queried(_id);
-        __matcher.deferred_assert(elem.second != _matcher::arg_type::bool_t,
+    inline optional<string_t> arg::_get<string_t>() {
+        auto elem = _::matcher.get_and_mark_as_queried(_id);
+        _::matcher.deferred_assert(elem.second != _matcher::arg_type::bool_t,
                                   "argument " + elem.first + " must have value");
 
         if(elem.second == _matcher::arg_type::string_t)
@@ -582,15 +593,15 @@ namespace fire {
         _instant_assert(! (_int_value.has_value() || _float_value.has_value() || _string_value.has_value()),
                         "Optional argument has default value");
         optional<T> val = _get<T>();
-        __matcher.check(dec_main_argc);
+        _::matcher.check(dec_main_argc);
         return val;
     }
 
     template <typename T>
     T arg::_convert(bool dec_main_argc) {
         optional<T> val = _get<T>();
-        __matcher.deferred_assert(val.has_value(), "Required argument " + _id.longer() + " not provided");
-        __matcher.check(dec_main_argc);
+        _::matcher.deferred_assert(val.has_value(), "Required argument " + _id.longer() + " not provided");
+        _::matcher.check(dec_main_argc);
         return val.value_or(T());
     }
 
@@ -600,7 +611,7 @@ namespace fire {
         if(_float_value.has_value()) def = std::to_string(_float_value.value());
         if(_string_value.has_value()) def = _string_value.value();
 
-        __help_logger.log(_id, {_descr, type, def, optional});
+        _::help_logger.log(_id, {_descr, type, def, optional});
     }
 
     arg::operator bool() {
@@ -608,20 +619,20 @@ namespace fire {
                 _id.longer() + " flag parameter must not have default value");
 
         _log("", true); // User sees this as flag, not boolean option
-        auto elem = __matcher.get_and_mark_as_queried(_id);
-        __matcher.deferred_assert(elem.second != _matcher::arg_type::string_t,
+        auto elem = _::matcher.get_and_mark_as_queried(_id);
+        _::matcher.deferred_assert(elem.second != _matcher::arg_type::string_t,
                                   "flag " + elem.first + " must not have value");
-        __matcher.check(true);
+        _::matcher.check(true);
         return elem.second == _matcher::arg_type::bool_t;
     }
 
     template <typename T>
     arg::operator std::vector<T>() {
         std::vector<T> ret;
-        for(size_t i = 0; i < __matcher.pos_args(); ++i)
+        for(size_t i = 0; i < _::matcher.pos_args(); ++i)
             ret.push_back(arg(i)._convert<T>(false));
         _log("", true);
-        __matcher.check(true);
+        _::matcher.check(true);
         return std::move(ret);
     }
 }
@@ -632,8 +643,8 @@ template<typename F>
 void init_and_run(int argc, const char ** argv, F main_func, bool positional) {
     std::size_t main_argc = fire::_get_argument_count(main_func);
     bool strict = true;
-    fire::__help_logger = fire::_help_logger();
-    fire::__matcher = fire::_matcher(argc, argv, main_argc, positional, strict);
+    fire::_::help_logger = fire::_help_logger();
+    fire::_::matcher = fire::_matcher(argc, argv, main_argc, positional, strict);
 }
 
 #define FIRE(main_func) \

@@ -46,7 +46,6 @@ This library uses extensive testing. Unit tests are located in `tests/`, while `
 
 ### Todo
 
-* Linking together multiple compilation units
 * Add more types
     * `unsigned`
     * Short/long versions of numeric types, eg. `short`, `long`, `long long`

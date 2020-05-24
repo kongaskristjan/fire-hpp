@@ -13,8 +13,8 @@ void init_args(const vector<string> &args, bool positional, bool strict, int nam
     for(size_t i = 0; i < args.size(); ++i)
         argv[i] = args[i].c_str();
 
-    fire::__help_logger = fire::_help_logger();
-    fire::__matcher = fire::_matcher(args.size(), argv, named_calls, positional, strict);
+    fire::_::help_logger = fire::_help_logger();
+    fire::_::matcher = fire::_matcher(args.size(), argv, named_calls, positional, strict);
 
     delete [] argv;
 }
