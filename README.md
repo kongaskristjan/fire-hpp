@@ -42,7 +42,7 @@ In addition, this library
 
 ## Development
 
-This library uses extensive testing. Unit tests are located in Tests.cpp, while `examples/` are used as integration tests. These integration tests also ensure that examples are always up-to-date and work as intended. Before committing, please verify `./build/run_tests` and `./build/run_examples.py` succeed.
+This library uses extensive testing. Unit tests are located in `tests/`, while `examples/` are used as integration tests. These integration tests also ensure that examples are always up-to-date and work as intended. Before committing, please verify `./build/tests/run_all_tests.py` succeed.
 
 ### Todo
 

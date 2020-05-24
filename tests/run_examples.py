@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import os, subprocess
+from pathlib import Path
 
 fire_failure_code = 1
 
@@ -90,7 +91,7 @@ def run_all_positional(pth_prefix):
 
 
 def main():
-    pth_prefix = os.path.dirname(__file__) + "/examples/"
+    pth_prefix = str(Path(__file__).parent.parent / "examples") + "/"
 
     print("Running tests in {} ...".format(pth_prefix), end="")
 
