@@ -83,10 +83,10 @@ def run_all_positional(pth_prefix):
 
     runner.help_success("-h")
     runner.equal("", "\n")
-    runner.equal("A B", "A B\n")
-    runner.equal("A B -1", "A\nB\n")
-    runner.equal("A B -l", "a b\n")
-    runner.equal("A B -1l", "a\nb\n")
+    runner.equal("b a", "b a\n")
+    runner.equal("b a -1", "b\na\n")
+    runner.equal("b a -s", "a b\n")
+    runner.equal("b a -1s", "a\nb\n")
 
 
 def main():
