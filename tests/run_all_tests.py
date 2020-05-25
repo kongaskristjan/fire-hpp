@@ -12,7 +12,7 @@ def run(cmd):
         sys.exit(1)
 
 def main():
-    pth_prefix = str(Path(__file__).parent.parent) + "/"
+    pth_prefix = str(Path(__file__).absolute().parent.parent) + "/"
     run(pth_prefix + "tests/run_tests")
     run(pth_prefix + "tests/run_examples.py")
     run(pth_prefix + "tests/link_test")
