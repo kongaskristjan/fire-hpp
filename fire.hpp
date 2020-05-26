@@ -10,6 +10,8 @@
 #include <cassert>
 #include <cstdlib>
 #include <algorithm>
+#include <type_traits>
+#include <limits>
 
 #if __cplusplus >= 201500 // C++17
 #include <optional>
@@ -22,7 +24,7 @@ namespace fire {
     template<typename R, typename ... Types>
     constexpr size_t _get_argument_count(R(*f)(Types ...)) { return sizeof...(Types); }
 
-    inline void _instant_assert(bool pass, const std::string &msg);
+    inline void _instant_assert(bool pass, const std::string &msg, bool programmer_side = true);
     inline size_t count_hyphens(const std::string &s);
 
 #if __cplusplus >= 201500 // >= C++17
@@ -70,8 +72,8 @@ namespace fire {
     };
 
     using bool_t = bool;
-    using int_t = int;
-    using float_t = double;
+    using int_t = long long;
+    using float_t = long double;
     using string_t = std::string;
 
     class _matcher {
@@ -151,39 +153,57 @@ namespace fire {
         optional<float_t> _float_value;
         optional<string_t> _string_value;
 
-        template <typename T> optional<T> _get() { T::unimplemented_function; } // no default function
+        template <typename T>
+        optional<T> _get() { T::unimplemented_function; } // no default function
+
+        template <typename T, typename std::enable_if<std::is_integral<T>::value && ! std::is_same<T, bool>::value>::type* = nullptr>
+        optional<T> _get_with_precision();
+        template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
+        optional<T> _get_with_precision();
+        template <typename T, typename std::enable_if<std::is_same<T, bool>::value || std::is_same<T, std::string>::value, bool>::type* = nullptr>
+        optional<T> _get_with_precision() { return _get<T>(); }
+
         template <typename T> optional<T> _convert_optional(bool dec_main_argc=true);
         template <typename T> T _convert(bool dec_main_argc=true);
         inline void _log(const std::string &type, bool optional);
+
         inline arg() = default;
 
     public:
         inline explicit arg(identifier _id, std::string _descr = ""):
             _id(_id), _descr(std::move(_descr)) {}
-        inline arg(identifier _id, std::string _descr, int_t _value):
+        template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+        inline arg(identifier _id, std::string _descr, T _value):
             _id(_id), _descr(std::move(_descr)), _int_value(_value) {}
-        inline arg(identifier _id, std::string _descr, float_t _value):
+        template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
+        inline arg(identifier _id, std::string _descr, T _value):
             _id(_id), _descr(std::move(_descr)), _float_value(_value) {}
         inline arg(identifier _id, std::string _descr, const string_t &_value):
             _id(_id), _descr(std::move(_descr)), _string_value(_value) {}
 
         inline explicit arg(std::initializer_list<const char *> init, std::string _descr = ""):
             _id(init), _descr(std::move(_descr)) {}
-        inline arg(std::initializer_list<const char *> init, std::string _descr, int_t _value):
+        template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+        inline arg(std::initializer_list<const char *> init, std::string _descr, T _value):
             _id(init), _descr(std::move(_descr)), _int_value(_value) {}
-        inline arg(std::initializer_list<const char *> init, std::string _descr, float_t _value):
+        template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
+        inline arg(std::initializer_list<const char *> init, std::string _descr, T _value):
             _id(init), _descr(std::move(_descr)), _float_value(_value) {}
         inline arg(std::initializer_list<const char *> init, std::string _descr, const string_t &_value):
             _id(init), _descr(std::move(_descr)), _string_value(_value) {}
 
         inline static arg vector(std::string _descr = "") { arg a; a._descr = std::move(_descr); return a; }
 
-        inline operator optional<int_t>() { _log("INTEGER", true); return _convert_optional<int_t>(); }
-        inline operator optional<float_t>() { _log("REAL", true); return _convert_optional<float_t>(); }
+        template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+        inline operator optional<T>() { _log("INTEGER", true); return _convert_optional<T>(); }
+        template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
+        inline operator optional<T>() { _log("REAL", true); return _convert_optional<T>(); }
         inline operator optional<string_t>() { _log("STRING", true); return _convert_optional<string_t>(); }
 
-        inline operator int_t() { _log("INTEGER", false); return _convert<int_t>(); }
-        inline operator float_t() { _log("REAL", false); return _convert<float_t>(); }
+        template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+        inline operator T() { _log("INTEGER", false); return _convert<T>(); }
+        template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
+        inline operator T() { _log("REAL", false); return _convert<T>(); }
         inline operator string_t() { _log("STRING", false); return _convert<string_t>(); }
         inline operator bool();
 
@@ -191,12 +211,16 @@ namespace fire {
         inline operator std::vector<T>();
     };
 
-    void _instant_assert(bool pass, const std::string &msg) {
+    void _instant_assert(bool pass, const std::string &msg, bool programmer_side) {
         if (pass)
             return;
 
-        if (!msg.empty())
-            std::cerr << "Error (programmer side): " << msg << std::endl;
+        if (!msg.empty()) {
+            std::cerr << "Error";
+            if(programmer_side)
+                std::cerr << " (programmer side)";
+            std::cerr << ": " << msg << std::endl;
+        }
         exit(_failure_code);
     }
 
@@ -474,7 +498,7 @@ namespace fire {
 
     bool _matcher::deferred_assert(bool pass, const std::string &msg) {
         if(! _strict) {
-            _instant_assert(pass, msg);
+            _instant_assert(pass, msg, false);
             return pass;
         }
         if(! pass)
@@ -546,8 +570,8 @@ namespace fire {
         if(elem.second == _matcher::arg_type::string_t) {
             size_t last = 0;
             bool success = true;
-            int converted = 0;
-            try { converted = std::stoi(elem.first, &last); }
+            int_t converted = 0;
+            try { converted = std::stoll(elem.first, &last); }
             catch(std::logic_error &) { success = false; }
 
             _::matcher.deferred_assert(success && last == elem.first.size(), // != indicates floating point
@@ -588,18 +612,55 @@ namespace fire {
         return _string_value;
     }
 
+    template <typename T, typename std::enable_if<std::is_integral<T>::value && ! std::is_same<T, bool>::value>::type*>
+    optional<T> arg::_get_with_precision() {
+        optional<int_t> opt_value = _get<int_t>();
+        if(! opt_value.has_value())
+            return optional<T>();
+        int_t value = opt_value.value();
+
+        bool is_signed = std::numeric_limits<T>::is_signed;
+        T min = std::numeric_limits<T>::lowest();
+        T max = std::numeric_limits<T>::max();
+
+        _::matcher.deferred_assert(is_signed || value >= 0,
+                "Argument " + _id.help() + " must be positive");
+        _::matcher.deferred_assert(min <= value && value <= max,
+                "Argument " + _id.help() + " value out of range [" +
+                std::to_string(min) + ", " + std::to_string(max) + "]");
+
+        return (T) value;
+    }
+
+    template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type*>
+    optional<T> arg::_get_with_precision() {
+        optional<float_t> opt_value = _get<float_t>();
+        if(! opt_value.has_value())
+            return optional<T>();
+        float_t value = opt_value.value();
+
+        T min = std::numeric_limits<T>::lowest();
+        T max = std::numeric_limits<T>::max();
+
+        _::matcher.deferred_assert(min <= value && value <= max,
+                                   "Argument " + _id.help() + " value out of range [" +
+                                   std::to_string(min) + ", " + std::to_string(max) + "]");
+
+        return (T) value;
+    }
+
     template <typename T>
     optional<T> arg::_convert_optional(bool dec_main_argc) {
         _instant_assert(! (_int_value.has_value() || _float_value.has_value() || _string_value.has_value()),
                         "Optional argument has default value");
-        optional<T> val = _get<T>();
+        optional<T> val = _get_with_precision<T>();
         _::matcher.check(dec_main_argc);
         return val;
     }
 
     template <typename T>
     T arg::_convert(bool dec_main_argc) {
-        optional<T> val = _get<T>();
+        optional<T> val = _get_with_precision<T>();
         _::matcher.deferred_assert(val.has_value(), "Required argument " + _id.longer() + " not provided");
         _::matcher.check(dec_main_argc);
         return val.value_or(T());

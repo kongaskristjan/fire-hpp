@@ -64,9 +64,7 @@ This library uses extensive testing. Unit tests are located in `tests/`, while `
 
 #### Current state
 
-* Add more types
-    * `unsigned`
-    * Short/long versions of numeric types, eg. `short`, `long`, `long long`
+* Fix negative numbers from command line
 * Documentation
 * Systematic, tested examples
 * Test on Windows, Mac

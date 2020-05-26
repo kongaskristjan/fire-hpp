@@ -199,15 +199,15 @@ TEST(help, help_invocation) {
     EXPECT_EXIT_SUCCESS(init_args_strict({"./run_tests", "--help", "1"}, 0));
 
     init_args_strict({"./run_tests", "-h"}, 1);
-    EXPECT_EXIT_SUCCESS(int_t i_undef = arg("i"));
+    EXPECT_EXIT_SUCCESS(int i_undef = arg("i"));
 
     init_args_strict({"./run_tests", "-h", "-i", "1"}, 1);
-    EXPECT_EXIT_SUCCESS(int_t i_undef = arg("i"));
+    EXPECT_EXIT_SUCCESS(int i_undef = arg("i"));
 
     init_args_strict({"./run_tests", "-h"}, 3);
-    int_t i1_undef = arg("i1");
-    int_t i2_undef = arg("i2");
-    EXPECT_EXIT_SUCCESS(int_t i3_undef = arg("i3"));
+    int i1_undef = arg("i1");
+    int i2_undef = arg("i2");
+    EXPECT_EXIT_SUCCESS(int i3_undef = arg("i3"));
 
 }
 
@@ -217,15 +217,15 @@ TEST(help, positional_help_invocation) {
     EXPECT_EXIT_SUCCESS(init_args_positional_strict({"./run_tests", "--help", "1"}, 0));
 
     init_args_positional_strict({"./run_tests", "-h"}, 1);
-    EXPECT_EXIT_SUCCESS(int_t i_undef = arg(0));
+    EXPECT_EXIT_SUCCESS(int i_undef = arg(0));
 
     init_args_positional_strict({"./run_tests", "-h", "1"}, 1);
-    EXPECT_EXIT_SUCCESS(int_t i_undef = arg(0));
+    EXPECT_EXIT_SUCCESS(int i_undef = arg(0));
 
     init_args_positional_strict({"./run_tests", "-h"}, 3);
-    int_t i1_undef = arg(0);
-    int_t i2_undef = arg(1);
-    EXPECT_EXIT_SUCCESS(int_t i3_undef = arg(2));
+    int i1_undef = arg(0);
+    int i2_undef = arg(1);
+    EXPECT_EXIT_SUCCESS(int i3_undef = arg(2));
 
     init_args_positional_strict({"./run_tests", "-h"}, 1);
     EXPECT_EXIT_SUCCESS(vector<string> v_undef = arg::vector());
@@ -320,23 +320,46 @@ TEST(arg, all_positional_parsing) {
     EXPECT_EQ(all2, vector<std::string>({"text"}));
 }
 
+TEST(arg, precision) {
+    init_args({"./run_tests", "--65535", "65535", "--65536", "65536",
+               "--permitted", "1000000000000", "--overflow", "100000000000000000000000000000000000000"});
+
+    EXPECT_EXIT_FAIL((unsigned) arg("a", "", "-1"));
+
+    (uint16_t) arg("65535");
+    EXPECT_EXIT_FAIL((uint16_t) arg("65536"));
+
+    (int32_t) arg("a", "", (1LL << 31) - 1);
+    EXPECT_EXIT_FAIL((int32_t) arg("a", "", 1LL << 31));
+
+    (uint32_t) arg("a", "", (1LL << 32) - 1);
+    EXPECT_EXIT_FAIL((uint32_t) arg("a", "", 1LL << 32));
+
+    (int64_t) arg("a", "", 1LL << 62);
+    (int64_t) arg("permitted");
+    EXPECT_EXIT_FAIL((int64_t) arg("overflow"));
+
+    (double) arg("a", "", 1e100);
+    EXPECT_EXIT_FAIL((float) arg("a", "", 1e100));
+}
+
 TEST(arg, strict_query) {
     init_args_strict({"./run_tests"}, 0);
 
     init_args_strict({"./run_tests", "-x", "0"}, 1);
-    (int_t) arg("x");
+    (int) arg("x");
 
     EXPECT_EXIT_FAIL(init_args_strict({"./run_tests", "-i", "1"}, 0));
 
     init_args_strict({"./run_tests", "-i", "1"}, 2);
-    (int_t) arg("i");
-    EXPECT_EXIT_FAIL((int_t) arg("x"));
+    (int) arg("i");
+    EXPECT_EXIT_FAIL((int) arg("x"));
 
     init_args_strict({"./run_tests", "-i", "1"}, 1);
-    EXPECT_EXIT_FAIL((int_t) arg("x"));
+    EXPECT_EXIT_FAIL((int) arg("x"));
 
     init_args_strict({"./run_tests", "-i", "1"}, 1);
-    EXPECT_EXIT_FAIL((int_t) arg("x", "", 0));
+    EXPECT_EXIT_FAIL((int) arg("x", "", 0));
 }
 
 TEST(arg, strict_query_positional) {
@@ -368,8 +391,8 @@ TEST(arg, strict_query_all_positional) {
 TEST(arg, optional_arguments) {
     init_args({"./run_tests", "-i", "1", "-f", "1.0", "-s", "test"});
 
-    fire::optional<int_t> i_undef = arg("undefined");
-    fire::optional<int_t> i = arg("i");
+    fire::optional<int> i_undef = arg("undefined");
+    fire::optional<int> i = arg("i");
     EXPECT_FALSE(i_undef.has_value());
     EXPECT_EQ(i.value(), 1);
 
@@ -387,13 +410,13 @@ TEST(arg, optional_arguments) {
 TEST(arg, optional_and_default) {
     init_args({"./run_tests", "-i", "0"});
 
-    EXPECT_EXIT_FAIL(fire::optional<int_t> i_undef = arg("undefined", "", 0));
-    EXPECT_EXIT_FAIL(fire::optional<int_t> i = arg("i", "", 0));
+    EXPECT_EXIT_FAIL(fire::optional<int> i_undef = arg("undefined", "", 0));
+    EXPECT_EXIT_FAIL(fire::optional<int> i = arg("i", "", 0));
 }
 
 TEST(arg, duplicate_parameter) {
     init_args_strict({"./run_tests"}, 2);
 
-    int_t i1 = arg("undefined", "", 0);
-    EXPECT_EXIT_FAIL(int_t i2 = arg("undefined", "", 0));
+    int i1 = arg("undefined", "", 0);
+    EXPECT_EXIT_FAIL(int i2 = arg("undefined", "", 0));
 }
