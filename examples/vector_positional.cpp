@@ -10,7 +10,7 @@ using namespace std;
 // Optionally sorts them or prints them line by line.
 
 int fire_main(vector<string> strings = fire::arg::vector("strings to be printed"),
-        bool lines = fire::arg({"1", "one-per-line"}),
+        bool lines = fire::arg({"o", "one-per-line"}),
         bool do_sort = fire::arg({"s", "sort"})) {
     if(do_sort)
         std::sort(strings.begin(), strings.end());

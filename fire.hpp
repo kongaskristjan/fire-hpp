@@ -235,6 +235,8 @@ namespace fire {
     void identifier::_check_name(const std::string &name) {
         _instant_assert(count_hyphens(name) == 0, "argument " + name +
         " hyphens must not prefix declaration");
+        _instant_assert(name.size() >= 1, "Name must contain at least one character");
+        _instant_assert(name.size() >= 2 || !isdigit(name[0]), "Single character name must not be a digit (" + name + ")");
     }
 
     identifier::identifier(std::initializer_list<const char *> lst) { // {short name, long name} or {name}
@@ -246,7 +248,6 @@ namespace fire {
                 "identifier must be initialized with 1 or 2 names when using initializer list");
 
         if(names.size() == 1) {
-            _instant_assert(names[0].size() >= 1, "Name must contain at least one character");
             _check_name(names[0]);
 
             if (names[0].size() == 1)
@@ -441,7 +442,8 @@ namespace fire {
         for(const std::string &s: raw) {
             int hyphens = count_hyphens(s);
             int name_size = s.size() - hyphens;
-            if(hyphens >= 1) {
+            deferred_assert(hyphens <= 2, "Too many hyphens: " + s);
+            if(hyphens == 2 || (hyphens == 1 && name_size >= 1 && !isdigit(s[1]))) {
                 named.push_back(s);
                 to_named = hyphens >= 2 || name_size == 1; // Not "-abc" == "-a -b -c"
                 to_named &= (s.find('=') == std::string::npos); // No equation signs
@@ -484,13 +486,18 @@ namespace fire {
         for(const std::string &hyphened_name: named) {
             int hyphens = count_hyphens(hyphened_name);
             std::string name = hyphened_name.substr(hyphens);
-            if(hyphens >= 2) {
+            if(hyphens == 2) {
                 deferred_assert(name.size() >= 2, "single character parameter " + name + " must have exactly one hyphen");
                 args.emplace_back(name, optional<std::string>());
-            } else if(hyphens == 1) {
-                for (char c: name)
-                    args.emplace_back(std::string(1, c), optional<std::string>());
-            } else
+            }
+            if(hyphens == 1) {
+                if(isdigit(name[0]))
+                    args.back().second = hyphened_name;
+                else
+                    for (char c: name)
+                        args.emplace_back(std::string(1, c), optional<std::string>());
+            }
+            if(hyphens == 0)
                 args.back().second = name;
         }
         return args;

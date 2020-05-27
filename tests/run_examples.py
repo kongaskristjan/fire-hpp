@@ -49,6 +49,7 @@ def run_basic(pth_prefix):
     runner.equal("-x 3", "3 + 0 = 3")
     runner.equal("-y 4", "0 + 4 = 4")
     runner.equal("-x 3 -y 4", "3 + 4 = 7")
+    runner.equal("-x -3 -y 3", "-3 + 3 = 0")
     runner.equal("--x-coord 3 --y-coord 4", "3 + 4 = 7")
     runner.handled_failure("-x test")
     runner.handled_failure("-x")
@@ -77,17 +78,18 @@ def run_positional(pth_prefix):
     runner.equal("2", "2 0")
     runner.equal("2 3", "2 3")
     runner.handled_failure("2 3 4")
+    runner.equal("-1 -3", "-1 -3")
 
 
-def run_all_positional(pth_prefix):
-    runner = assert_runner(pth_prefix + "all_positional")
+def run_vector_positional(pth_prefix):
+    runner = assert_runner(pth_prefix + "vector_positional")
 
     runner.help_success("-h")
     runner.equal("", "\n")
     runner.equal("b a", "b a\n")
-    runner.equal("b a -1", "b\na\n")
+    runner.equal("b a -o", "b\na\n")
     runner.equal("b a -s", "a b\n")
-    runner.equal("b a -1s", "a\nb\n")
+    runner.equal("b a -os", "a\nb\n")
 
 
 def main():
@@ -99,7 +101,7 @@ def main():
     run_basic(pth_prefix)
     run_flags(pth_prefix)
     run_positional(pth_prefix)
-    run_all_positional(pth_prefix)
+    run_vector_positional(pth_prefix)
 
     print(" SUCCESS! (ran {} tests with {} checks)".format(assert_runner.test_count, assert_runner.check_count))
 

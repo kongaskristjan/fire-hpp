@@ -232,7 +232,7 @@ TEST(help, positional_help_invocation) {
 }
 
 
-TEST(arg, false_hyphens) {
+TEST(arg, argument_naming) {
     init_args({"./run_tests"});
 
     EXPECT_EXIT_FAIL(arg("--undefined"));
@@ -240,6 +240,10 @@ TEST(arg, false_hyphens) {
     EXPECT_EXIT_FAIL(arg("-i", "", 0));
     EXPECT_EXIT_FAIL(arg("-f", "", 0.0));
     EXPECT_EXIT_FAIL(arg("-s", "", "test"));
+
+    EXPECT_EXIT_FAIL(arg("1", "", 0));
+    arg("1e3", "", 0);
+    arg("a3");
 }
 
 TEST(arg, defaults) {
@@ -286,6 +290,8 @@ TEST(arg, incorrect_parsing) {
 
     init_args({"./run_tests"});
     EXPECT_EXIT_FAIL((int) arg(0, "", -1));
+
+    EXPECT_EXIT_FAIL(init_args({"./run_tests", "---x"}));
 }
 
 TEST(arg, positional_parsing) {
@@ -419,4 +425,17 @@ TEST(arg, duplicate_parameter) {
 
     int i1 = arg("undefined", "", 0);
     EXPECT_EXIT_FAIL(int i2 = arg("undefined", "", 0));
+}
+
+TEST(arg, negative) {
+    init_args({"./run_tests", "-a", "-1"});
+    EXPECT_EQ((int) arg("a"), -1);
+
+    init_args_positional({"./run_tests", "-1", "-a=-2"});
+    EXPECT_EQ((int) arg(0), -1);
+    EXPECT_EQ((int) arg("a"), -2);
+
+    init_args_positional({"./run_tests", "-10", "-a=-20"});
+    EXPECT_EQ((int) arg(0), -10);
+    EXPECT_EQ((int) arg("a"), -20);
 }
