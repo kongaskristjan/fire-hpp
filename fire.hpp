@@ -566,7 +566,7 @@ namespace fire {
     inline optional<int_t> arg::_get<int_t>() {
         auto elem = _::matcher.get_and_mark_as_queried(_id);
         _::matcher.deferred_assert(elem.second != _matcher::arg_type::bool_t,
-                                  "argument " + elem.first + " must have value");
+                                  "argument " + _id.help() + " must have value");
         if(elem.second == _matcher::arg_type::string_t) {
             size_t last = 0;
             bool success = true;
@@ -587,7 +587,7 @@ namespace fire {
     inline optional<float_t> arg::_get<float_t>() {
         auto elem = _::matcher.get_and_mark_as_queried(_id);
         _::matcher.deferred_assert(elem.second != _matcher::arg_type::bool_t,
-                "argument " + elem.first + " must have value");
+                "argument " + _id.help() + " must have value");
         if(elem.second == _matcher::arg_type::string_t) {
             try {
                 return std::stold(elem.first);
@@ -605,7 +605,7 @@ namespace fire {
     inline optional<string_t> arg::_get<string_t>() {
         auto elem = _::matcher.get_and_mark_as_queried(_id);
         _::matcher.deferred_assert(elem.second != _matcher::arg_type::bool_t,
-                                  "argument " + elem.first + " must have value");
+                                  "argument " + _id.help() + " must have value");
 
         if(elem.second == _matcher::arg_type::string_t)
             return elem.first;

@@ -67,6 +67,7 @@ This library uses extensive testing. Unit tests are located in `tests/`, while `
 * Fix negative numbers from command line
 * Documentation
 * Systematic, tested examples
+* Licence fire.hpp and tests under Boost, examples under Unlicence
 * Test on Windows, Mac
 
 #### v0.1 release
