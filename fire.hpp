@@ -255,6 +255,9 @@ namespace fire {
             else
                 _long_name = names[0];
         } else {
+            if(names[0].size() > names[1].size())
+                std::swap(names[0], names[1]);
+
             _instant_assert(names[0].size() == 1, "Short name must contain exactly one character");
             _instant_assert(names[1].size() >= 2, "Long name must contain at least two characters");
 

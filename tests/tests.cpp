@@ -70,10 +70,10 @@ TEST(optional, no_value) {
 
 TEST(identifier, constructor) {
     identifier({"l", "long"});
+    identifier({"long", "l"});
     identifier({"l"});
     identifier({"long"});
     EXPECT_EXIT_FAIL(identifier({"l", "l"}));
-    EXPECT_EXIT_FAIL(identifier({"long", "l"}));
     EXPECT_EXIT_FAIL(identifier({"long", "long"}));
     EXPECT_EXIT_FAIL(identifier({"", "long"}));
     EXPECT_EXIT_FAIL(identifier({"l", ""}));
@@ -276,6 +276,9 @@ TEST(arg, correct_parsing) {
     EXPECT_NEAR((double) arg("i"), 1.0, 1e-5);
     EXPECT_NEAR((double) arg("f"), 2.0, 1e-5);
     EXPECT_EQ((string) arg("s"), "test");
+
+    EXPECT_EQ((string) arg({"s", "string"}), "test");
+    EXPECT_TRUE((bool) arg({"bool1", "b"}));
 }
 
 TEST(arg, incorrect_parsing) {
