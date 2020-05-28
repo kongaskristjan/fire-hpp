@@ -275,7 +275,7 @@ namespace fire {
 
         std::transform(name.begin(), name.end(), name.begin(), [](char c){ return tolower(c); });
         std::transform(other_name.begin(), other_name.end(), other_name.begin(), [](char c){ return tolower(c); });
-        
+
         if(name != other_name)
             return name < other_name;
         return _pos.value_or(1000000) < other._pos.value_or(1000000);

@@ -2,9 +2,8 @@
 #include "../fire.hpp"
 
 using namespace std;
-using namespace fire;
 
-int fired_main(bool flag_a = arg({"a", "flag-a"}), bool flag_b = arg({"b", "flag-b"})) {
+int fired_main(bool flag_a = fire::arg({"a", "flag-a"}), bool flag_b = fire::arg({"b", "flag-b"})) {
     cout << flag_a << " " << flag_b << endl;
     return 0;
 }
