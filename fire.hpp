@@ -725,11 +725,11 @@ int main(int argc, const char ** argv) {\
     return main_func();\
 }
 
-#define FIRE_POSITIONAL(main_func) \
+#define FIRE_POSITIONAL(fired_main) \
 int main(int argc, const char ** argv) {\
     bool positional = true;\
-    init_and_run(argc, argv, main_func, positional);\
-    return main_func();\
+    init_and_run(argc, argv, fired_main, positional);\
+    return fired_main();\
 }
 
 #endif

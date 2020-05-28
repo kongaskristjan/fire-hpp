@@ -9,9 +9,9 @@ using namespace std;
 // Program inspired by `ls`. Takes a variable number of strings, and prints them.
 // Optionally sorts them or prints them line by line.
 
-int fire_main(vector<string> strings = fire::arg::vector("strings to be printed"),
-        bool lines = fire::arg({"o", "one-per-line"}),
-        bool do_sort = fire::arg({"s", "sort"})) {
+int fired_main(vector<string> strings = fire::arg::vector("strings to be printed"),
+               bool lines = fire::arg({"o", "one-per-line"}),
+               bool do_sort = fire::arg({"s", "sort"})) {
     if(do_sort)
         std::sort(strings.begin(), strings.end());
 
@@ -26,4 +26,4 @@ int fire_main(vector<string> strings = fire::arg::vector("strings to be printed"
     return 0;
 }
 
-FIRE_POSITIONAL(fire_main)
+FIRE_POSITIONAL(fired_main)

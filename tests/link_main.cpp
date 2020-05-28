@@ -1,8 +1,8 @@
 
 #include "../fire.hpp"
 
-int fire_main() {
+int fired_main() {
     return 0;
 }
 
-FIRE(fire_main)
+FIRE(fired_main)

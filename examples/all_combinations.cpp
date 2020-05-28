@@ -4,7 +4,7 @@
 
 using namespace std;
 
-int fire_main(
+int fired_main(
         int i = fire::arg("i", "Integer"),
         double r = fire::arg("r", "Real number"),
         string s = fire::arg("s", "String"),
@@ -17,4 +17,4 @@ int fire_main(
     return 0;
 }
 
-FIRE(fire_main)
+FIRE(fired_main)
