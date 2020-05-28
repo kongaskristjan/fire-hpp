@@ -40,7 +40,7 @@ In addition, this library
 * comes with thorough testing
 * ~~works with Linux, Windows and Mac OS~~
 * is a single header
-* ~~comes under very permissive Boost licence (examples under Unlicence)~~
+* comes under very permissive [Boost licence](https://choosealicense.com/licenses/bsl-1.0/) (examples with [0-clause BSD](https://choosealicense.com/licenses/0bsd/))
 
 ### Requirements
 
@@ -188,7 +188,6 @@ This library uses extensive testing. Unit tests are located in `tests/`, while `
 
 #### Current state
 
-* Licence fire.hpp and tests under Boost, examples under Unlicence
 * Test on Windows, Mac
 
 #### v0.1 release
