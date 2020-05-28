@@ -13,7 +13,14 @@ int fired_main(
         string def_s = fire::arg("def-s", "Default value string", "default text"),
         fire::optional<int> opt_i = fire::arg("opt-i", "Optional integer"),
         fire::optional<double> opt_r = fire::arg("opt-r", "Optional real number"),
-        fire::optional<string> opt_s = fire::arg("opt-s", "Optional string")) {
+        fire::optional<string> opt_s = fire::arg("opt-s", "Optional string"),
+        unsigned pos_i = fire::arg(0),
+        long double pos_r = fire::arg(1),
+        std::string pos_s = fire::arg(2),
+        fire::optional<int> opt_pos_i = fire::arg(3),
+        fire::optional<double> opt_pos_r = fire::arg(4),
+        fire::optional<std::string> opt_pos_s = fire::arg(5)
+        ) {
     return 0;
 }
 

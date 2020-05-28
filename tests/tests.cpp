@@ -150,6 +150,14 @@ TEST(identifier, less) {
 
     EXPECT_TRUE(identifier({"z", "aa"}) < identifier({"a", "az"}));
     EXPECT_FALSE(identifier({"a", "az"}) < identifier({"z", "aa"}));
+
+    EXPECT_TRUE(identifier(0) < identifier(1));
+    EXPECT_FALSE(identifier(1) < identifier(0));
+
+    EXPECT_TRUE(identifier(0) < identifier("a"));
+    EXPECT_FALSE(identifier("a") < identifier(0));
+
+    EXPECT_TRUE(identifier("a") < identifier("B") && identifier("B") < identifier("c"));
 }
 
 TEST(identifier, equals) {

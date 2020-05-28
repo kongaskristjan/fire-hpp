@@ -273,7 +273,12 @@ namespace fire {
         std::string name = _long_name.value_or(_short_name.value_or(""));
         std::string other_name = other._long_name.value_or(other._short_name.value_or(""));
 
-        return name < other_name;
+        std::transform(name.begin(), name.end(), name.begin(), [](char c){ return tolower(c); });
+        std::transform(other_name.begin(), other_name.end(), other_name.begin(), [](char c){ return tolower(c); });
+        
+        if(name != other_name)
+            return name < other_name;
+        return _pos.value_or(1000000) < other._pos.value_or(1000000);
     }
 
     bool identifier::overlaps(const identifier &other) const {
@@ -551,8 +556,6 @@ namespace fire {
         std::sort(printed.begin(), printed.end(), [](const id2elem &a, const id2elem &b) {
             if(a.second.optional != b.second.optional)
                 return a.second.optional < b.second.optional;
-            if(b.first == identifier()) return false;
-            if(a.first == identifier()) return true;
             return a.first < b.first;
         });
 
