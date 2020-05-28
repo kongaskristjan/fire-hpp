@@ -721,11 +721,11 @@ void init_and_run(int argc, const char ** argv, F main_func, bool positional) {
     fire::_::matcher = fire::_matcher(argc, argv, main_argc, positional, strict);
 }
 
-#define FIRE(main_func) \
+#define FIRE(fired_main) \
 int main(int argc, const char ** argv) {\
     bool positional = false;\
-    init_and_run(argc, argv, main_func, positional);\
-    return main_func();\
+    init_and_run(argc, argv, fired_main, positional);\
+    return fired_main();\
 }
 
 #define FIRE_POSITIONAL(fired_main) \

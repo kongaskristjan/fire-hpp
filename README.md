@@ -188,7 +188,6 @@ This library uses extensive testing. Unit tests are located in `tests/`, while `
 
 #### Current state
 
-* Systematic, tested examples
 * Licence fire.hpp and tests under Boost, examples under Unlicence
 * Test on Windows, Mac
 

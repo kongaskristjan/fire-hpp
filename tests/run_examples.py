@@ -45,28 +45,38 @@ def run_all_combinations(pth_prefix):
 def run_basic(pth_prefix):
     runner = assert_runner(pth_prefix + "basic")
 
-    runner.equal("", "0 + 0 = 0")
-    runner.equal("-x 3", "3 + 0 = 3")
-    runner.equal("-y 4", "0 + 4 = 4")
     runner.equal("-x 3 -y 4", "3 + 4 = 7")
     runner.equal("-x -3 -y 3", "-3 + 3 = 0")
-    runner.equal("--x-coord 3 --y-coord 4", "3 + 4 = 7")
+    runner.equal("-x=-3 -y=3", "-3 + 3 = 0")
+    runner.handled_failure("")
+    runner.handled_failure("-x 3")
+    runner.handled_failure("-y 4")
     runner.handled_failure("-x test")
     runner.handled_failure("-x")
     runner.handled_failure("--undefined 0")
     runner.help_success("-h")
     runner.help_success("--help")
     runner.help_success("-x 0 -h")
-    runner.help_success("-h -x 0")
+    runner.help_success("-h --undefined")
 
 
-def run_flags(pth_prefix):
-    runner = assert_runner(pth_prefix + "flags")
+def run_flag(pth_prefix):
+    runner = assert_runner(pth_prefix + "flag")
 
     runner.help_success("-h")
     runner.equal("", "0 0")
     runner.equal("-a -b", "1 1")
     runner.handled_failure("-a 1")
+
+
+def run_optional_and_default(pth_prefix):
+    runner = assert_runner(pth_prefix + "optional_and_default")
+
+    runner.help_success("-h")
+    runner.equal("", "false false")
+    runner.equal("--default 1", "false true")
+    runner.equal("--optional 1", "true false")
+    runner.equal("--optional 1 --default 1", "true true")
 
 
 def run_positional(pth_prefix):
@@ -99,7 +109,8 @@ def main():
 
     run_all_combinations(pth_prefix)
     run_basic(pth_prefix)
-    run_flags(pth_prefix)
+    run_flag(pth_prefix)
+    run_optional_and_default(pth_prefix)
     run_positional(pth_prefix)
     run_vector_positional(pth_prefix)
 
