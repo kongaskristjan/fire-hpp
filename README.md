@@ -185,8 +185,9 @@ A method for getting all positional arguments (requires [positional mode](#quick
 This library uses extensive testing. Unit tests are located in `tests/`, while `examples/` are used as integration tests. The latter also ensure examples are up-to-date. Before committing, please verify `./build/tests/run_all_tests.py` succeed.
 
 All releases are currently tested on:
-* Arch Linux g++==10.1.0: C++11, C++14, C++17 and C++20
-* Arch Linux clang++==10.0.0: C++11, C++14, C++17 and C++20
+* Arch Linux gcc==10.1.0, clang==10.0.0: C++11, C++14, C++17 and C++20
+* Ubuntu 18.04 clang=={3.9, 4.0}: C++11 and clang=={5.0, 6.0, 7.0, 8.0, 9.0}: C++11 and C++17
+* Ubuntu 18.04 gcc=={5.5, 6.5, 7.5, 8.4}: C++11, C++14 and C++17
 
 ### TODO list:
 

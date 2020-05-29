@@ -491,7 +491,7 @@ namespace fire {
             positional.push_back(s);
         }
 
-        return { named, positional };
+        return std::tuple<std::vector<std::string>, std::vector<std::string>>(named, positional);
     }
 
     std::vector<std::string> _matcher::split_equations(const std::vector<std::string> &named) {
