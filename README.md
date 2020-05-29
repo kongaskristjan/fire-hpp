@@ -46,9 +46,13 @@ In addition, this library
 
 * C++11 compatible compiler
 
-Additionally for developing/testing:
+Additionally, for compiling examples
 
-* CMake 3.10+
+* CMake 3
+
+Additionally, for compiling tests
+
+* CMake 3.10
 * GTest
 * Python 3.5+
 

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.1)
 project(fire)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -9,18 +9,20 @@ else()
     add_compile_options(-Wall -Wextra -pedantic -Werror)
 endif()
 
-find_package(GTest REQUIRED)
-add_executable(run_tests tests/tests.cpp fire.hpp)
-target_link_libraries(run_tests GTest::GTest GTest::Main)
-gtest_discover_tests(run_tests)
-add_test(NAME monolithic COMMAND run_tests)
-set_target_properties(run_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests)
-
 add_executable(link_test tests/link_func.cpp tests/link_main.cpp)
 set_target_properties(link_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests)
 
 configure_file(tests/run_examples.py tests/run_examples.py COPYONLY)
-configure_file(tests/run_all_tests.py tests/run_all_tests.py COPYONLY)
+
+find_package(GTest)
+if(GTest_FOUND AND ${CMAKE_VERSION} VERSION_GREATER "3.10.0")
+    add_executable(run_tests tests/tests.cpp fire.hpp)
+    target_link_libraries(run_tests GTest::GTest GTest::Main)
+    gtest_discover_tests(run_tests)
+    add_test(NAME monolithic COMMAND run_tests)
+    set_target_properties(run_tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests)
+    configure_file(tests/run_all_tests.py tests/run_all_tests.py COPYONLY)
+endif()
 
 
 
