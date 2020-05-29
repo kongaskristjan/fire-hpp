@@ -131,7 +131,7 @@ def run_vector_positional(pth_prefix):
 
 
 def main():
-    pth_prefix = str(Path(__file__).parent.parent / "examples") + "/"
+    pth_prefix = str(Path(__file__).absolute().parent.parent / "examples") + "/"
 
     print("Running tests in {} ...".format(pth_prefix), end="")
 
