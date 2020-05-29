@@ -241,8 +241,8 @@ TEST(help, help_invocation) {
     EXPECT_EXIT_SUCCESS((void) (int) arg("i"));
 
     init_args_strict({"./run_tests", "-h"}, 3);
-    int i1_undef = arg("i1");
-    int i2_undef = arg("i2");
+    (void) (int) arg("i1");
+    (void) (int) arg("i2");
     EXPECT_EXIT_SUCCESS((void) (int) arg("i3"));
 
 }
@@ -293,8 +293,8 @@ TEST(arg, defaults) {
     EXPECT_EXIT_FAIL((void) (int) arg("i", "", 1.0));
     EXPECT_EXIT_FAIL((void) (int) arg("i", "", "test"));
     EXPECT_EXIT_FAIL((void) (double) arg("f", "", "test"));
-    EXPECT_EXIT_FAIL((string) arg("s", "", 1));
-    EXPECT_EXIT_FAIL((string) arg("s", "", 1.0));
+    EXPECT_EXIT_FAIL((void) (string) arg("s", "", 1));
+    EXPECT_EXIT_FAIL((void) (string) arg("s", "", 1.0));
 
     EXPECT_EXIT_FAIL((void) (bool) arg("b", "", 1));
 }
@@ -344,7 +344,7 @@ TEST(arg, positional_parsing) {
     EXPECT_EQ((int) arg(0), 0);
     EXPECT_EQ((int) arg(1), 1);
     EXPECT_EQ((int) arg(2, "", -1), -1);
-    optional<int> opt = arg(2);
+    fire::optional<int> opt = arg(2);
     EXPECT_FALSE(opt.has_value());
 
     vector<int> all1 = arg::vector();
@@ -455,8 +455,8 @@ TEST(arg, optional_arguments) {
 TEST(arg, optional_and_default) {
     init_args({"./run_tests", "-i", "0"});
 
-    EXPECT_EXIT_FAIL(fire::optional<int> i_undef = arg("undefined", "", 0));
-    EXPECT_EXIT_FAIL(fire::optional<int> i = arg("i", "", 0));
+    EXPECT_EXIT_FAIL({ fire::optional<int> x = arg("undefined", "", 0); (void) x; });
+    EXPECT_EXIT_FAIL({ fire::optional<int> x = arg("i", "", 0); (void) x; });
 }
 
 TEST(arg, duplicate_parameter) {

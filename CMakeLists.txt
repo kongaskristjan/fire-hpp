@@ -3,6 +3,12 @@ project(fire)
 
 set(CMAKE_CXX_STANDARD 11)
 
+if(MSVC)
+    add_compile_options(/W4 /WX)
+else()
+    add_compile_options(-Wall -Wextra -pedantic -Werror)
+endif()
+
 find_package(GTest REQUIRED)
 add_executable(run_tests tests/tests.cpp fire.hpp)
 target_link_libraries(run_tests GTest::GTest GTest::Main)

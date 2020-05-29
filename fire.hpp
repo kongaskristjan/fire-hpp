@@ -42,24 +42,16 @@
 #include <type_traits>
 #include <limits>
 
-#if __cplusplus >= 201500 // C++17
-#include <optional>
-#endif
-
 
 namespace fire {
     constexpr int _failure_code = 1;
 
     template<typename R, typename ... Types>
-    constexpr size_t _get_argument_count(R(*f)(Types ...)) { return sizeof...(Types); }
+    constexpr size_t _get_argument_count(R(*)(Types ...)) { return sizeof...(Types); }
 
     inline void _instant_assert(bool pass, const std::string &msg, bool programmer_side = true);
     inline size_t count_hyphens(const std::string &s);
 
-#if __cplusplus >= 201500 // >= C++17
-    template <typename T>
-    using optional = std::optional<T>;
-#else // <= C++14
     template <typename T>
     class optional {
         T _value = T();
@@ -75,28 +67,27 @@ namespace fire {
         T value_or(const T& def) const { return _exists ? _value : def; }
         T value() const { _instant_assert(_exists, "Accessing unassigned optional"); return _value; }
     };
-#endif
 
     class identifier {
         optional<std::string> _short_name, _long_name;
-        optional<int> _pos;
+        optional<size_t> _pos;
         bool _vector = false;
 
         inline static void _check_name(const std::string &name);
     public:
         inline identifier() { _vector = true; };
-        inline identifier(std::initializer_list<const char *> lst); // {short name, long name} or {name}
-        inline identifier(const char *name): identifier{name} {}
-        inline identifier(int _pos): _pos(_pos) {}
+        explicit inline identifier(std::initializer_list<std::string> lst); // {short name, long name} or {name}
+        explicit inline identifier(std::string name): identifier{std::move(name)} {}
+        explicit inline identifier(size_t _pos): _pos(_pos) {}
 
         inline bool operator<(const identifier &other) const;
         inline bool operator==(const identifier &other) const { return !(*this < other || other < *this); }
         inline bool overlaps(const identifier &other) const;
         inline bool contains(const std::string &name) const;
-        inline bool contains(int pos) const;
+        inline bool contains(size_t pos) const;
         inline std::string help() const;
         inline std::string longer() const;
-        inline optional<int> get_pos() const { return _pos; }
+        inline optional<size_t> get_pos() const { return _pos; }
         inline bool vector() const { return _vector; };
     };
 
@@ -194,26 +185,37 @@ namespace fire {
         inline arg() = default;
 
     public:
-        inline explicit arg(identifier _id, std::string _descr = ""):
-            _id(_id), _descr(std::move(_descr)) {}
+        inline explicit arg(std::string _id, std::string _descr = ""):
+                _id(std::move(_id)), _descr(std::move(_descr)) {}
         template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-        inline arg(identifier _id, std::string _descr, T _value):
-            _id(_id), _descr(std::move(_descr)), _int_value(_value) {}
+        inline arg(std::string _id, std::string _descr, T _value):
+                _id(std::move(_id)), _descr(std::move(_descr)), _int_value(_value) {}
         template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
-        inline arg(identifier _id, std::string _descr, T _value):
-            _id(_id), _descr(std::move(_descr)), _float_value(_value) {}
-        inline arg(identifier _id, std::string _descr, const std::string &_value):
-            _id(_id), _descr(std::move(_descr)), _string_value(_value) {}
+        inline arg(std::string _id, std::string _descr, T _value):
+                _id(std::move(_id)), _descr(std::move(_descr)), _float_value(_value) {}
+        inline arg(std::string _id, std::string _descr, const std::string &_value):
+                _id(std::move(_id)), _descr(std::move(_descr)), _string_value(_value) {}
 
-        inline explicit arg(std::initializer_list<const char *> init, std::string _descr = ""):
+        inline explicit arg(size_t _id, std::string _descr = ""):
+                _id(_id), _descr(std::move(_descr)) {}
+        template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+        inline arg(size_t _id, std::string _descr, T _value):
+                _id(_id), _descr(std::move(_descr)), _int_value(_value) {}
+        template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
+        inline arg(size_t _id, std::string _descr, T _value):
+                _id(_id), _descr(std::move(_descr)), _float_value(_value) {}
+        inline arg(size_t _id, std::string _descr, const std::string &_value):
+                _id(_id), _descr(std::move(_descr)), _string_value(_value) {}
+
+        inline explicit arg(std::initializer_list<std::string> init, std::string _descr = ""):
             _id(init), _descr(std::move(_descr)) {}
         template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-        inline arg(std::initializer_list<const char *> init, std::string _descr, T _value):
+        inline arg(std::initializer_list<std::string> init, std::string _descr, T _value):
             _id(init), _descr(std::move(_descr)), _int_value(_value) {}
         template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
-        inline arg(std::initializer_list<const char *> init, std::string _descr, T _value):
+        inline arg(std::initializer_list<std::string> init, std::string _descr, T _value):
             _id(init), _descr(std::move(_descr)), _float_value(_value) {}
-        inline arg(std::initializer_list<const char *> init, std::string _descr, const std::string &_value):
+        inline arg(std::initializer_list<std::string> init, std::string _descr, const std::string &_value):
             _id(init), _descr(std::move(_descr)), _string_value(_value) {}
 
         inline static arg vector(std::string _descr = "") { arg a; a._descr = std::move(_descr); return a; }
@@ -249,7 +251,7 @@ namespace fire {
     }
 
     size_t count_hyphens(const std::string &s) {
-        int hyphens;
+        size_t hyphens;
         for(hyphens = 0; hyphens < s.size() && s[hyphens] == '-'; ++hyphens)
             ;
         return hyphens;
@@ -263,7 +265,7 @@ namespace fire {
         _instant_assert(name.size() >= 2 || !isdigit(name[0]), "Single character name must not be a digit (" + name + ")");
     }
 
-    identifier::identifier(std::initializer_list<const char *> lst) { // {short name, long name} or {name}
+    identifier::identifier(std::initializer_list<std::string> lst) { // {short name, long name} or {name}
         std::vector<std::string> names;
         for(auto x: lst)
             names.emplace_back(x);
@@ -324,7 +326,7 @@ namespace fire {
         return false;
     }
 
-    bool identifier::contains(int pos) const {
+    bool identifier::contains(size_t pos) const {
         if(_pos.has_value() && pos == _pos.value()) return true;
         return false;
     }
@@ -406,7 +408,7 @@ namespace fire {
 
     void _matcher::check_positional() {
         std::string invalid;
-        for(int i = 0; i < _positional.size(); ++i) {
+        for(size_t i = 0; i < _positional.size(); ++i) {
             for(const auto &it: _queried)
                 if(it.contains(i))
                     goto VALID;
@@ -437,7 +439,7 @@ namespace fire {
         }
 
         if(id.get_pos().has_value()) {
-            int pos = id.get_pos().value();
+            size_t pos = id.get_pos().value();
             if(pos >= _positional.size())
                 return {"", arg_type::none_t};
 
@@ -731,7 +733,7 @@ namespace fire {
             ret.push_back(arg(i)._convert<T>(false));
         _log("", true);
         _::matcher.check(true);
-        return std::move(ret);
+        return ret;
     }
 }
 

@@ -158,7 +158,7 @@ Converts the argument value on command line to respective type. Displayes an err
 
 Used for optional arguments without a reasonable default value. This way the default value doesn't get printed in a help message. The underlying type can be `std::string`, integral or floating point.
 
-In C++11 and C++14, `fire::optional` is a tear-down version of [`std::optional`](https://en.cppreference.com/w/cpp/utility/optional), with compatible implementations for `has_value()`, `value_or()` and `value()`. In C++17 and beyond, `fire::optional` is same as `std::optional`.
+`fire::optional` is a tear-down version of [`std::optional`](https://en.cppreference.com/w/cpp/utility/optional), with compatible implementations for [`has_value()`](https://en.cppreference.com/w/cpp/utility/optional/operator_bool), [`value_or()`](https://en.cppreference.com/w/cpp/utility/optional/value_or) and [`value()`](https://en.cppreference.com/w/cpp/utility/optional/value).
 
 * Example: `int fired_main(fire::optional<std::string> name = fire::arg("name"));`
 * CLI usage: `program` -> `name.has_value()=false`
@@ -182,7 +182,11 @@ A method for getting all positional arguments (requires [positional mode](#quick
 
 ## Development
 
-This library uses extensive testing. Unit tests are located in `tests/`, while `examples/` are used as integration tests. These integration tests also ensure that examples are up-to-date. Before committing, please verify `./build/tests/run_all_tests.py` succeed.
+This library uses extensive testing. Unit tests are located in `tests/`, while `examples/` are used as integration tests. The latter also ensure examples are up-to-date. Before committing, please verify `./build/tests/run_all_tests.py` succeed.
+
+All releases are currently tested on:
+* Arch Linux g++==10.1.0: C++11, C++14, C++17 and C++20
+* Arch Linux clang++==10.0.0: C++11, C++14, C++17 and C++20
 
 ### TODO list:
 
