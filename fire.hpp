@@ -100,11 +100,6 @@ namespace fire {
         inline bool vector() const { return _vector; };
     };
 
-    using bool_t = bool;
-    using int_t = long long;
-    using float_t = long double;
-    using string_t = std::string;
-
     class _matcher {
         std::string _executable;
         std::vector<std::string> _positional;
@@ -178,9 +173,9 @@ namespace fire {
         identifier _id; // No identifier implies vector positional arguments
         std::string _descr;
 
-        optional<int_t> _int_value;
-        optional<float_t> _float_value;
-        optional<string_t> _string_value;
+        optional<long long> _int_value;
+        optional<long double> _float_value;
+        optional<std::string> _string_value;
 
         template <typename T>
         optional<T> _get() { T::unimplemented_function; } // no default function
@@ -207,7 +202,7 @@ namespace fire {
         template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
         inline arg(identifier _id, std::string _descr, T _value):
             _id(_id), _descr(std::move(_descr)), _float_value(_value) {}
-        inline arg(identifier _id, std::string _descr, const string_t &_value):
+        inline arg(identifier _id, std::string _descr, const std::string &_value):
             _id(_id), _descr(std::move(_descr)), _string_value(_value) {}
 
         inline explicit arg(std::initializer_list<const char *> init, std::string _descr = ""):
@@ -218,7 +213,7 @@ namespace fire {
         template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
         inline arg(std::initializer_list<const char *> init, std::string _descr, T _value):
             _id(init), _descr(std::move(_descr)), _float_value(_value) {}
-        inline arg(std::initializer_list<const char *> init, std::string _descr, const string_t &_value):
+        inline arg(std::initializer_list<const char *> init, std::string _descr, const std::string &_value):
             _id(init), _descr(std::move(_descr)), _string_value(_value) {}
 
         inline static arg vector(std::string _descr = "") { arg a; a._descr = std::move(_descr); return a; }
@@ -227,13 +222,13 @@ namespace fire {
         inline operator optional<T>() { _log("INTEGER", true); return _convert_optional<T>(); }
         template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
         inline operator optional<T>() { _log("REAL", true); return _convert_optional<T>(); }
-        inline operator optional<string_t>() { _log("STRING", true); return _convert_optional<string_t>(); }
+        inline operator optional<std::string>() { _log("STRING", true); return _convert_optional<std::string>(); }
 
         template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
         inline operator T() { _log("INTEGER", false); return _convert<T>(); }
         template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
         inline operator T() { _log("REAL", false); return _convert<T>(); }
-        inline operator string_t() { _log("STRING", false); return _convert<string_t>(); }
+        inline operator std::string() { _log("STRING", false); return _convert<std::string>(); }
         inline operator bool();
 
         template <typename T>
@@ -605,14 +600,14 @@ namespace fire {
     }
 
     template <>
-    inline optional<int_t> arg::_get<int_t>() {
+    inline optional<long long> arg::_get<long long>() {
         auto elem = _::matcher.get_and_mark_as_queried(_id);
         _::matcher.deferred_assert(elem.second != _matcher::arg_type::bool_t,
                                   "argument " + _id.help() + " must have value");
         if(elem.second == _matcher::arg_type::string_t) {
             size_t last = 0;
             bool success = true;
-            int_t converted = 0;
+            long long converted = 0;
             try { converted = std::stoll(elem.first, &last); }
             catch(std::logic_error &) { success = false; }
 
@@ -626,7 +621,7 @@ namespace fire {
     }
 
     template <>
-    inline optional<float_t> arg::_get<float_t>() {
+    inline optional<long double> arg::_get<long double>() {
         auto elem = _::matcher.get_and_mark_as_queried(_id);
         _::matcher.deferred_assert(elem.second != _matcher::arg_type::bool_t,
                 "argument " + _id.help() + " must have value");
@@ -644,7 +639,7 @@ namespace fire {
     }
 
     template <>
-    inline optional<string_t> arg::_get<string_t>() {
+    inline optional<std::string> arg::_get<std::string>() {
         auto elem = _::matcher.get_and_mark_as_queried(_id);
         _::matcher.deferred_assert(elem.second != _matcher::arg_type::bool_t,
                                   "argument " + _id.help() + " must have value");
@@ -656,10 +651,10 @@ namespace fire {
 
     template <typename T, typename std::enable_if<std::is_integral<T>::value && ! std::is_same<T, bool>::value>::type*>
     optional<T> arg::_get_with_precision() {
-        optional<int_t> opt_value = _get<int_t>();
+        optional<long long> opt_value = _get<long long>();
         if(! opt_value.has_value())
             return optional<T>();
-        int_t value = opt_value.value();
+        long long value = opt_value.value();
 
         bool is_signed = std::numeric_limits<T>::is_signed;
         T min = std::numeric_limits<T>::lowest();
@@ -676,10 +671,10 @@ namespace fire {
 
     template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type*>
     optional<T> arg::_get_with_precision() {
-        optional<float_t> opt_value = _get<float_t>();
+        optional<long double> opt_value = _get<long double>();
         if(! opt_value.has_value())
             return optional<T>();
-        float_t value = opt_value.value();
+        long double value = opt_value.value();
 
         T min = std::numeric_limits<T>::lowest();
         T max = std::numeric_limits<T>::max();

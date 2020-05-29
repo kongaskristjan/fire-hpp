@@ -441,13 +441,13 @@ TEST(arg, optional_arguments) {
     EXPECT_FALSE(i_undef.has_value());
     EXPECT_EQ(i.value(), 1);
 
-    fire::optional<float_t> f_undef = arg("undefined");
-    fire::optional<float_t> f = arg("f");
+    fire::optional<long double> f_undef = arg("undefined");
+    fire::optional<long double> f = arg("f");
     EXPECT_FALSE(f_undef.has_value());
     EXPECT_NEAR(f.value(), 1.0, 1e-5);
 
-    fire::optional<string_t> s_undef = arg("undefined");
-    fire::optional<string_t> s = arg("s");
+    fire::optional<std::string> s_undef = arg("undefined");
+    fire::optional<std::string> s = arg("s");
     EXPECT_FALSE(s_undef.has_value());
     EXPECT_EQ(s.value(), "test");
 }
