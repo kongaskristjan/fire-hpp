@@ -421,7 +421,7 @@ namespace fire {
 
     std::pair<std::string, _matcher::arg_type> _matcher::get_and_mark_as_queried(const identifier &id) {
         if(! _positional_mode)
-            deferred_assert(! id.get_pos().has_value(), "positional argument used in non-positional mode");
+            _instant_assert(! id.get_pos().has_value(), "positional argument used in non-positional mode: (enable positional mode by calling FIRE_POSITIONAL(...) instead of FIRE(...))");
 
         for(const auto& it: _queried)
             deferred_assert(! it.overlaps(id), "double query for argument " + id.longer());

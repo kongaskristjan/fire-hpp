@@ -39,4 +39,4 @@ int fired_main(
     return 0;
 }
 
-FIRE(fired_main)
+FIRE_POSITIONAL(fired_main)

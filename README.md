@@ -37,7 +37,6 @@ All the standard stuff, like
 * typical constructs, such as expanding `-abc <=> -a -b -c` and `-x=1 <=> -x 1`
 
 In addition, this library
-* comes with thorough testing
 * ~~works with Linux, Windows and Mac OS~~
 * is a single header
 * comes under very permissive [Boost licence](https://choosealicense.com/licenses/bsl-1.0/) (examples with [0-clause BSD](https://choosealicense.com/licenses/0bsd/))

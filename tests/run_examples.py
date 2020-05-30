@@ -68,6 +68,8 @@ def run_all_combinations(pth_prefix):
     runner = assert_runner(pth_prefix + "all_combinations")
 
     runner.help_success("-h")
+    runner.equal("0 1 2 -i=0 -r=1 -s=2", "")
+    runner.equal("0 1 2 3 4 5 -i=0 -r=1.0 -s=2 --def-i=-1 --def-r=-2.0 --def-s=text --opt-i=10 --opt-r=0.5 --opt-s=text", "")
 
 
 def run_basic(pth_prefix):
