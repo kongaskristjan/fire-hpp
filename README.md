@@ -47,13 +47,14 @@ In addition, this library
 
 Additionally, for compiling examples
 
-* CMake 3
+* CMake 3.1
 
 Additionally, for compiling tests
 
-* CMake 3.10
-* GTest
+* CMake 3.14
 * Python 3.5+
+
+GTest gets downloaded, compiled and linked automatically.
 
 ## Q. Quick start
 
