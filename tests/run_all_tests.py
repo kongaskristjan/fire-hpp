@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 
 """
     Copyright Kristjan Kongas 2020
@@ -42,7 +41,7 @@ def print_result(success):
 
 def run(cmd):
     print("Running " + cmd)
-    result = subprocess.run(cmd)
+    result = subprocess.run(cmd.split())
     if result.returncode != 0:
         print_result(False)
         sys.exit(1)
@@ -51,7 +50,7 @@ def run(cmd):
 def main():
     pth_prefix = str(Path(__file__).absolute().parent.parent) + "/"
     run(pth_prefix + "tests/run_tests")
-    run(pth_prefix + "tests/run_examples.py")
+    run("python3 " + pth_prefix + "tests/run_examples.py")
     run(pth_prefix + "tests/link_test")
     print_result(True)
 

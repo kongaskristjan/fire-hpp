@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 
 """
     Copyright Kristjan Kongas 2020
