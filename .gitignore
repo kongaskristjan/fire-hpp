@@ -1,4 +1,5 @@
 build
 cmake-build-*
 .idea
+.release_tests.json
 

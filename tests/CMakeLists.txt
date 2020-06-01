@@ -18,7 +18,7 @@ if(${CMAKE_VERSION} VERSION_GREATER "3.14.0")
     target_link_libraries(run_tests gmock gmock_main)
     gtest_discover_tests(run_tests)
 
-    configure_file(run_all_tests.py run_all_tests.py COPYONLY)
+    configure_file(run_standard_tests.py run_standard_tests.py COPYONLY)
 endif()
 
 configure_file(run_examples.py run_examples.py COPYONLY)
