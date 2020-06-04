@@ -36,31 +36,31 @@
 using namespace std;
 using namespace fire;
 
-void init_args(const vector<string> &args, bool positional, bool strict, int named_calls = 1000000) {
+void init_args(const vector<string> &args, bool space_assignment, bool strict, int named_calls = 1000000) {
     const char ** argv = new const char *[args.size()];
     for(size_t i = 0; i < args.size(); ++i)
         argv[i] = args[i].c_str();
 
     fire::_::help_logger = fire::_help_logger();
-    fire::_::matcher = fire::_matcher(args.size(), argv, named_calls, positional, strict);
+    fire::_::matcher = fire::_matcher(args.size(), argv, named_calls, space_assignment, strict);
 
     delete [] argv;
 }
 
 void init_args(const vector<string> &args) {
-    init_args(args, false, false);
-}
-
-void init_args_strict(const vector<string> &args, int named_calls) {
-    init_args(args, false, true, named_calls);
-}
-
-void init_args_positional(const vector<string> &args) {
     init_args(args, true, false);
 }
 
-void init_args_positional_strict(const vector<string> &args, int named_calls) {
+void init_args_strict(const vector<string> &args, int named_calls) {
     init_args(args, true, true, named_calls);
+}
+
+void init_args_no_space(const vector<string> &args) {
+    init_args(args, false, false);
+}
+
+void init_args_no_space_strict(const vector<string> &args, int named_calls) {
+    init_args(args, false, true, named_calls);
 }
 
 
@@ -220,11 +220,11 @@ TEST(matcher, equations) {
     EXPECT_EXIT_FAIL(init_args({"./run_tests", "-a=b", "123"}));
 }
 
-TEST(matcher, positional_mode) {
-    init_args_positional({"./run_tests"});
-    init_args_positional({"./run_tests", "0"});
-    init_args_positional({"./run_tests", "0", "0"});
-    init_args_positional({"./run_tests", "-x", "0"}); // there's no equals sign, so "0" is positional
+TEST(matcher, no_space_assignment) {
+    init_args_no_space({"./run_tests"});
+    init_args_no_space({"./run_tests", "0"});
+    init_args_no_space({"./run_tests", "0", "0"});
+    init_args_no_space({"./run_tests", "-x", "0"}); // there's no equals sign, so "0" is positional
     EXPECT_EXIT_FAIL((void) (int) arg("x"));
 }
 
@@ -247,23 +247,23 @@ TEST(help, help_invocation) {
 
 }
 
-TEST(help, positional_help_invocation) {
-    EXPECT_EXIT_SUCCESS(init_args_positional_strict({"./run_tests", "-h"}, 0));
-    EXPECT_EXIT_SUCCESS(init_args_positional_strict({"./run_tests", "--help"}, 0));
-    EXPECT_EXIT_SUCCESS(init_args_positional_strict({"./run_tests", "--help", "1"}, 0));
+TEST(help, no_space_assignment_help_invocation) {
+    EXPECT_EXIT_SUCCESS(init_args_no_space_strict({"./run_tests", "-h"}, 0));
+    EXPECT_EXIT_SUCCESS(init_args_no_space_strict({"./run_tests", "--help"}, 0));
+    EXPECT_EXIT_SUCCESS(init_args_no_space_strict({"./run_tests", "--help", "1"}, 0));
 
-    init_args_positional_strict({"./run_tests", "-h"}, 1);
+    init_args_no_space_strict({"./run_tests", "-h"}, 1);
     EXPECT_EXIT_SUCCESS((void) (int) arg(0));
 
-    init_args_positional_strict({"./run_tests", "-h", "1"}, 1);
+    init_args_no_space_strict({"./run_tests", "-h", "1"}, 1);
     EXPECT_EXIT_SUCCESS((void) (int) arg(0));
 
-    init_args_positional_strict({"./run_tests", "-h"}, 3);
+    init_args_no_space_strict({"./run_tests", "-h"}, 3);
     (void) (int) arg(0);
     (void) (int) arg(1);
     EXPECT_EXIT_SUCCESS((void) (int) arg(2));
 
-    init_args_positional_strict({"./run_tests", "-h"}, 1);
+    init_args_no_space_strict({"./run_tests", "-h"}, 1);
     EXPECT_EXIT_SUCCESS(vector<string> v_undef = arg::vector());
 }
 
@@ -334,12 +334,12 @@ TEST(arg, incorrect_parsing) {
 }
 
 TEST(arg, positional_parsing) {
-    init_args_positional({"./run_tests", "0", "1"});
+    init_args_no_space({"./run_tests", "0", "1"});
     EXPECT_EQ((int) arg(0), 0);
     EXPECT_EQ((int) arg(1), 1);
     EXPECT_EXIT_FAIL((void) (int) arg(2));
 
-    init_args_positional({"./run_tests", "0", "-x=3", "1"});
+    init_args_no_space({"./run_tests", "0", "-x=3", "1"});
     EXPECT_EQ((int) arg("x"), 3);
     EXPECT_EQ((int) arg(0), 0);
     EXPECT_EQ((int) arg(1), 1);
@@ -352,15 +352,15 @@ TEST(arg, positional_parsing) {
 }
 
 TEST(arg, all_positional_parsing) {
-    init_args_positional({"./run_tests"});
+    init_args_no_space({"./run_tests"});
     vector<int> all0 = arg::vector();
     EXPECT_EQ(all0, vector<int>({}));
 
-    init_args_positional({"./run_tests", "0", "1"});
+    init_args_no_space({"./run_tests", "0", "1"});
     vector<int> all1 = arg::vector();
     EXPECT_EQ(all1, vector<int>({0, 1}));
 
-    init_args_positional({"./run_tests", "text"});
+    init_args_no_space({"./run_tests", "text"});
     vector<std::string> all2 = arg::vector();
     EXPECT_EQ(all2, vector<std::string>({"text"}));
 }
@@ -408,27 +408,27 @@ TEST(arg, strict_query) {
 }
 
 TEST(arg, strict_query_positional) {
-    init_args_positional_strict({"./run_tests", "0", "1"}, 1);
+    init_args_no_space_strict({"./run_tests", "0", "1"}, 1);
     EXPECT_EXIT_FAIL((void) (int) arg(0)); // Invalid 2-nd argument
 
-    init_args_positional_strict({"./run_tests", "1"}, 2);
+    init_args_no_space_strict({"./run_tests", "1"}, 2);
     fire::optional<int> x0 = arg(0), x1 = arg(1);
     EXPECT_EQ(x0.value(), 1);
     EXPECT_FALSE(x1.has_value());
 
-    init_args_positional_strict({"./run_tests", "0", "1"}, 1);
+    init_args_no_space_strict({"./run_tests", "0", "1"}, 1);
     EXPECT_EXIT_FAIL((void) (int) arg(0));
 
-    init_args_positional_strict({"./run_tests", "0", "1"}, 1);
+    init_args_no_space_strict({"./run_tests", "0", "1"}, 1);
     vector<int> all0 = arg::vector();
 }
 
 TEST(arg, strict_query_all_positional) {
-    init_args_positional_strict({"./run_tests", "0", "1"}, 2);
+    init_args_no_space_strict({"./run_tests", "0", "1"}, 2);
     vector<int> all1 = arg::vector();
     EXPECT_EXIT_FAIL((void) (int) arg(0));
 
-    init_args_positional_strict({"./run_tests", "0", "1"}, 2);
+    init_args_no_space_strict({"./run_tests", "0", "1"}, 2);
     (void) (int) arg(0);
     EXPECT_EXIT_FAIL(vector<int> all2 = arg::vector());
 }
@@ -470,11 +470,11 @@ TEST(arg, negative) {
     init_args({"./run_tests", "-a", "-1"});
     EXPECT_EQ((int) arg("a"), -1);
 
-    init_args_positional({"./run_tests", "-1", "-a=-2"});
+    init_args_no_space({"./run_tests", "-1", "-a=-2"});
     EXPECT_EQ((int) arg(0), -1);
     EXPECT_EQ((int) arg("a"), -2);
 
-    init_args_positional({"./run_tests", "-10", "-a=-20"});
+    init_args_no_space({"./run_tests", "-10", "-a=-20"});
     EXPECT_EQ((int) arg(0), -10);
     EXPECT_EQ((int) arg("a"), -20);
 }

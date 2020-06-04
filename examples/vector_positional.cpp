@@ -41,4 +41,4 @@ int fired_main(vector<string> strings = fire::arg::vector("strings to be printed
     return 0;
 }
 
-FIRE_POSITIONAL(fired_main)
+FIRE_NO_SPACE_ASSIGNMENT(fired_main)

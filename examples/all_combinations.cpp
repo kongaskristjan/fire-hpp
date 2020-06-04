@@ -39,4 +39,4 @@ int fired_main(
     return 0;
 }
 
-FIRE_POSITIONAL(fired_main)
+FIRE_NO_SPACE_ASSIGNMENT(fired_main)

@@ -98,7 +98,7 @@ namespace fire {
         std::vector<identifier> _queried;
         std::vector<std::string> _deferred_errors;
         int _main_argc = 0;
-        bool _positional_mode = false;
+        bool _space_assignment = false;
         bool _strict = false;
         bool _help_flag = false;
 
@@ -106,7 +106,7 @@ namespace fire {
         enum class arg_type { string_t, bool_t, none_t };
 
         inline _matcher() = default;
-        inline _matcher(int argc, const char **argv, int main_argc, bool positional_mode, bool strict);
+        inline _matcher(int argc, const char **argv, int main_argc, bool space_assignment, bool strict);
 
         inline void check(bool dec_main_argc);
         inline void check_named();
@@ -354,9 +354,9 @@ namespace fire {
     }
 
 
-    _matcher::_matcher(int argc, const char **argv, int main_argc, bool positional_mode, bool strict) {
+    _matcher::_matcher(int argc, const char **argv, int main_argc, bool space_assignment, bool strict) {
         _main_argc = main_argc;
-        _positional_mode = positional_mode;
+        _space_assignment = space_assignment;
         _strict = strict;
 
         parse(argc, argv);
@@ -420,8 +420,8 @@ namespace fire {
     }
 
     std::pair<std::string, _matcher::arg_type> _matcher::get_and_mark_as_queried(const identifier &id) {
-        if(! _positional_mode)
-            _instant_assert(! id.get_pos().has_value(), "positional argument used in non-positional mode: (enable positional mode by calling FIRE_POSITIONAL(...) instead of FIRE(...))");
+        if(_space_assignment)
+            _instant_assert(! id.get_pos().has_value(), "positional argument used with space assignement enabled: (disable space assignement by calling FIRE_NO_SPACE_ASSIGNMENT(...) instead of FIRE(...))");
 
         for(const auto& it: _queried)
             deferred_assert(! it.overlaps(id), "double query for argument " + id.longer());
@@ -457,7 +457,7 @@ namespace fire {
         named = split_equations(named);
         _named = assign_named_values(named);
 
-        if(! _positional_mode)
+        if(_space_assignment)
             deferred_assert(_positional.empty(), "positional arguments given, but not accepted");
     }
 
@@ -483,7 +483,7 @@ namespace fire {
                 to_named &= (s.find('=') == std::string::npos); // No equation signs
                 continue;
             }
-            if(! _positional_mode && to_named) {
+            if(_space_assignment && to_named) {
                 named.push_back(s);
                 to_named = false;
                 continue;
@@ -740,24 +740,24 @@ namespace fire {
 
 
 template<typename F>
-void init_and_run(int argc, const char ** argv, F main_func, bool positional) {
+void init_and_run(int argc, const char ** argv, F main_func, bool space_assignment) {
     std::size_t main_argc = fire::_get_argument_count(main_func);
     bool strict = true;
     fire::_::help_logger = fire::_help_logger();
-    fire::_::matcher = fire::_matcher(argc, argv, main_argc, positional, strict);
+    fire::_::matcher = fire::_matcher(argc, argv, main_argc, space_assignment, strict);
 }
 
 #define FIRE(fired_main) \
 int main(int argc, const char ** argv) {\
-    bool positional = false;\
-    init_and_run(argc, argv, fired_main, positional);\
+    bool space_assignment = true;\
+    init_and_run(argc, argv, fired_main, space_assignment);\
     return fired_main();\
 }
 
-#define FIRE_POSITIONAL(fired_main) \
+#define FIRE_NO_SPACE_ASSIGNMENT(fired_main) \
 int main(int argc, const char ** argv) {\
-    bool positional = true;\
-    init_and_run(argc, argv, fired_main, positional);\
+    bool space_assignment = false;\
+    init_and_run(argc, argv, fired_main, space_assignment);\
     return fired_main();\
 }
 

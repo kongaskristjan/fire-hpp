@@ -80,11 +80,11 @@ This is your perceived program entry point. All arguments must be arithmetic or 
 
 ## D. Documentation
 
-### <a id="fire_positional"></a> D.1 FIRE(...) and FIRE_POSITIONAL(...)
+### <a id="fire_positional"></a> D.1 FIRE(...) and FIRE_NO_SPACE_ASSIGNMENT(...)
 
 See `FIRE(...)` [quick start](#quickfire).
 
-`FIRE(...)` and `FIRE_POSITIONAL(...)` both create a main function to parse arguments and call `...`, however they differ in how arguments are parsed. `FIRE(...)` parses `program -x 1` as `program -x=1`, but `FIRE_POSITIONAL(...)` parses `-x` as a flag and `1` as a separate positional argument. Thus in order to use valued named arguments in positional mode, `-x=1` need to be used. There a two reasons:
+`FIRE(...)` and `FIRE_NO_SPACE_ASSIGNMENT(...)` both create a main function to parse arguments and call `...`, however they differ in how arguments are parsed. `FIRE(...)` parses `program -x 1` as `program -x=1`, but `FIRE_NO_SPACE_ASSIGNMENT(...)` parses `-x` as a flag and `1` as a separate positional argument. Thus in order to use valued named arguments in positional mode, `-x=1` need to be used. There a two reasons:
 
 * Mixing positional and named arguments with space separated values makes a bad CLI anyway, eg: `program a -x b c` doesn't seem like `-x=b` with `a` and `c` as positional.
 * Implementing such CLI is likely impossible due to the Fire API.
@@ -183,7 +183,6 @@ v0.1 release tested on:
 
 #### Current state
 
-* `FIRE_POSITIONAL(...)` -> `FIRE_FORCE_EQUALS(...)`
 * `fire::pos<index>(...)` enclosing `fire::arg` (better: fire::arg({0, "name"}))
 * Improve CLI user errors
 * Improve API user errors
@@ -196,9 +195,10 @@ v0.1 release tested on:
     * Refactor `log_elem::type` from `std::string` -> `enum class`
     * Help messages with better organization (separate positional arguments, named arguments, flags, etc. in `Usage` and descriptions)
     * Program description
+* Ensure API user gets error message when using required positional arguments after optional positional arguments
 * `save(...)` keyword enclosing `arg`, which will save program from exiting even if not all required arguments are present or correct (eg. for `--version`)
 * Remove exceptions
-* If exceptions are still enabled, allow positional arguments in both FIRE(...) and FIRE_FORCE_EQUALS(...)
+* If exceptions are still enabled, allow positional arguments in both FIRE(...) and FIRE_NO_SPACE_ASSIGNMENT(...)
 
 #### v0.2 release
 

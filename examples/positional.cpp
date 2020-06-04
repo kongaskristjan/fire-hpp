@@ -24,4 +24,4 @@ int fired_main(int x0 = fire::arg(0), fire::optional<int> x1 = fire::arg(1)) {
     return 0;
 }
 
-FIRE_POSITIONAL(fired_main)
+FIRE_NO_SPACE_ASSIGNMENT(fired_main)
