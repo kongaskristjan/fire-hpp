@@ -38,6 +38,7 @@
 #include <unordered_set>
 #include <cassert>
 #include <cstdlib>
+#include <cstddef>
 #include <algorithm>
 #include <type_traits>
 #include <limits>
@@ -182,41 +183,27 @@ namespace fire {
         template <typename T> T _convert(bool dec_main_argc=true);
         inline void _log(const std::string &type, bool optional);
 
+        template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+        inline void init_default(T value) { _int_value = value; }
+        template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
+        inline void init_default(T value) { _float_value = value; }
+        inline void init_default(const std::string &value) { _string_value = value; }
+        inline void init_default(std::nullptr_t) {}
+
         inline arg() = default;
 
     public:
-        inline explicit arg(std::string _id, std::string _descr = ""):
-                _id(std::move(_id)), _descr(std::move(_descr)) {}
-        template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-        inline arg(std::string _id, std::string _descr, T _value):
-                _id(std::move(_id)), _descr(std::move(_descr)), _int_value(_value) {}
-        template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
-        inline arg(std::string _id, std::string _descr, T _value):
-                _id(std::move(_id)), _descr(std::move(_descr)), _float_value(_value) {}
-        inline arg(std::string _id, std::string _descr, const std::string &_value):
-                _id(std::move(_id)), _descr(std::move(_descr)), _string_value(_value) {}
+        template<typename T=std::nullptr_t>
+        inline explicit arg(std::string _id, std::string _descr = "", T value=T()):
+                _id(std::move(_id)), _descr(std::move(_descr)) { init_default(value); }
 
-        inline explicit arg(size_t _id, std::string _descr = ""):
-                _id(_id), _descr(std::move(_descr)) {}
-        template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-        inline arg(size_t _id, std::string _descr, T _value):
-                _id(_id), _descr(std::move(_descr)), _int_value(_value) {}
-        template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
-        inline arg(size_t _id, std::string _descr, T _value):
-                _id(_id), _descr(std::move(_descr)), _float_value(_value) {}
-        inline arg(size_t _id, std::string _descr, const std::string &_value):
-                _id(_id), _descr(std::move(_descr)), _string_value(_value) {}
+        template<typename T=std::nullptr_t>
+        inline explicit arg(size_t _id, std::string _descr = "", T value=T()):
+                _id(_id), _descr(std::move(_descr)) { init_default(value); }
 
-        inline explicit arg(std::initializer_list<std::string> init, std::string _descr = ""):
-            _id(init), _descr(std::move(_descr)) {}
-        template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-        inline arg(std::initializer_list<std::string> init, std::string _descr, T _value):
-            _id(init), _descr(std::move(_descr)), _int_value(_value) {}
-        template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
-        inline arg(std::initializer_list<std::string> init, std::string _descr, T _value):
-            _id(init), _descr(std::move(_descr)), _float_value(_value) {}
-        inline arg(std::initializer_list<std::string> init, std::string _descr, const std::string &_value):
-            _id(init), _descr(std::move(_descr)), _string_value(_value) {}
+        template<typename T=std::nullptr_t>
+        inline explicit arg(std::initializer_list<std::string> init, std::string _descr = "", T value=T()):
+                _id(init), _descr(std::move(_descr)) { init_default(value); }
 
         inline static arg vector(std::string _descr = "") { arg a; a._descr = std::move(_descr); return a; }
 
