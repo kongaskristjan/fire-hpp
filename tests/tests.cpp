@@ -97,15 +97,20 @@ TEST(optional, no_value) {
 
 
 TEST(identifier, constructor) {
-    identifier({"l", "long"});
-    identifier({"long", "l"});
-    identifier({"l"});
-    identifier({"long"});
-    EXPECT_EXIT_FAIL(identifier({"l", "l"}));
-    EXPECT_EXIT_FAIL(identifier({"long", "long"}));
-    EXPECT_EXIT_FAIL(identifier({"", "long"}));
-    EXPECT_EXIT_FAIL(identifier({"l", ""}));
+    identifier("l", "long");
+    identifier("long", "l");
+    identifier("l");
+    identifier("long");
+    identifier(0, "long");
+    identifier(0, "l");
+    identifier("l", 0);
+    EXPECT_EXIT_FAIL(identifier("l", "l"));
+    EXPECT_EXIT_FAIL(identifier("long", "long"));
+    EXPECT_EXIT_FAIL(identifier("", "long"));
+    EXPECT_EXIT_FAIL(identifier("l", ""));
+    EXPECT_EXIT_FAIL(identifier(0, ""));
 
+    identifier(0);
     identifier("l");
     identifier("long");
     EXPECT_EXIT_FAIL(identifier(""));
@@ -116,7 +121,7 @@ TEST(identifier, constructor) {
 TEST(identifier, overlap) {
     identifier long0("l"), long1({"l", "long"}), long2("long");
     identifier short0("s"), short1({"s", "short"}), short2("short");
-    identifier pos0(0), pos1(1);
+    identifier pos0(0), pos1(1), pos1_named({1, "positional"});
 
     EXPECT_TRUE(long0.overlaps(long1));
     EXPECT_TRUE(long1.overlaps(long2));
@@ -126,15 +131,24 @@ TEST(identifier, overlap) {
     EXPECT_FALSE(long1.overlaps(short1));
     EXPECT_FALSE(long2.overlaps(short2));
 
+    EXPECT_FALSE(long0.overlaps(pos0));
+    EXPECT_FALSE(long1.overlaps(pos0));
+    EXPECT_FALSE(long2.overlaps(pos0));
+    EXPECT_FALSE(long0.overlaps(pos1_named));
+    EXPECT_FALSE(long1.overlaps(pos1_named));
+    EXPECT_FALSE(long2.overlaps(pos1_named));
+
     EXPECT_FALSE(pos0.overlaps(long0));
     EXPECT_FALSE(pos0.overlaps(long2));
     EXPECT_TRUE(pos0.overlaps(pos0));
+    EXPECT_TRUE(pos1.overlaps(pos1_named));
     EXPECT_FALSE(pos0.overlaps(pos1));
+    EXPECT_FALSE(pos0.overlaps(pos1_named));
 }
 
 TEST(identifier, contains) {
     identifier long0("l"), long1({"l", "long"}), long2("long");
-    identifier pos0(0);
+    identifier pos(0), pos_named({0, "zeroth"});
 
     EXPECT_FALSE(long0.contains("long"));
     EXPECT_TRUE(long1.contains("long"));
@@ -147,8 +161,9 @@ TEST(identifier, contains) {
     EXPECT_FALSE(long0.contains(0));
     EXPECT_FALSE(long2.contains(0));
 
-    EXPECT_TRUE(pos0.contains(0));
-    EXPECT_FALSE(pos0.contains(1));
+    EXPECT_TRUE(pos.contains(0));
+    EXPECT_FALSE(pos.contains("zeroth"));
+    EXPECT_FALSE(pos.contains(1));
 }
 
 TEST(identifier, help) {
@@ -156,6 +171,7 @@ TEST(identifier, help) {
     EXPECT_EQ(identifier({"l", "long"}).help(), "-l|--long");
     EXPECT_EQ(identifier("long").help(), "--long");
 
+    EXPECT_EQ(identifier({0, "zeroth"}).help(), "zeroth");
     EXPECT_EQ(identifier(0).help(), "<0>");
     EXPECT_EQ(identifier().help(), "...");
 }
@@ -165,6 +181,7 @@ TEST(identifier, longer) {
     EXPECT_EQ(identifier({"l", "long"}).longer(), "--long");
     EXPECT_EQ(identifier("long").longer(), "--long");
 
+    EXPECT_EQ(identifier({0, "zeroth"}).longer(), "zeroth");
     EXPECT_EQ(identifier(0).longer(), "<0>");
     EXPECT_EQ(identifier().longer(), "...");
 }
@@ -185,14 +202,8 @@ TEST(identifier, less) {
     EXPECT_TRUE(identifier(0) < identifier("a"));
     EXPECT_FALSE(identifier("a") < identifier(0));
 
+    EXPECT_TRUE(identifier(0) < identifier({1, "first"}) && identifier({1, "first"}) < identifier(2));
     EXPECT_TRUE(identifier("a") < identifier("B") && identifier("B") < identifier("c"));
-}
-
-TEST(identifier, equals) {
-    EXPECT_TRUE(identifier() == identifier());
-    EXPECT_FALSE(identifier() == identifier("a"));
-    EXPECT_FALSE(identifier("a") == identifier("b"));
-    EXPECT_FALSE(identifier("bca") == identifier("abc"));
 }
 
 
@@ -314,7 +325,9 @@ TEST(arg, correct_parsing) {
     EXPECT_EQ((string) arg("s"), "test");
 
     EXPECT_EQ((string) arg({"s", "string"}), "test");
+    EXPECT_EQ((string) arg({"string", "s"}), "test");
     EXPECT_TRUE((bool) arg({"bool1", "b"}));
+    EXPECT_TRUE((bool) arg({"b", "bool1"}));
 }
 
 TEST(arg, incorrect_parsing) {
@@ -337,10 +350,13 @@ TEST(arg, positional_parsing) {
     init_args_no_space({"./run_tests", "0", "1"});
     EXPECT_EQ((int) arg(0), 0);
     EXPECT_EQ((int) arg(1), 1);
+    EXPECT_EQ((int) arg({0, "zeroth"}), 0);
+    EXPECT_EQ((int) arg({"first", 1}), 1);
     EXPECT_EXIT_FAIL((void) (int) arg(2));
 
     init_args_no_space({"./run_tests", "0", "-x=3", "1"});
     EXPECT_EQ((int) arg("x"), 3);
+    EXPECT_EXIT_FAIL((void) (int) arg({"x", 3}));
     EXPECT_EQ((int) arg(0), 0);
     EXPECT_EQ((int) arg(1), 1);
     EXPECT_EQ((int) arg(2, "", -1), -1);

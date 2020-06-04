@@ -183,7 +183,6 @@ v0.1 release tested on:
 
 #### Current state
 
-* `fire::pos<index>(...)` enclosing `fire::arg` (better: fire::arg({0, "name"}))
 * Improve CLI user errors
 * Improve API user errors
 * Test on Windows, Mac

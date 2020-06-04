@@ -19,7 +19,7 @@
 
 using namespace std;
 
-int fired_main(int x0 = fire::arg(0), fire::optional<int> x1 = fire::arg(1)) {
+int fired_main(int x0 = fire::arg({0, "zeroth"}), fire::optional<int> x1 = fire::arg({1, "first"})) {
     std::cout << x0 << " " << x1.value_or(0) << endl;
     return 0;
 }

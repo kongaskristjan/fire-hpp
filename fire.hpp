@@ -71,24 +71,27 @@ namespace fire {
 
     class identifier {
         optional<std::string> _short_name, _long_name;
-        optional<size_t> _pos;
+        optional<int> _pos;
         bool _vector = false;
+
+        std::string _help, _longer;
 
         inline static void _check_name(const std::string &name);
     public:
-        inline identifier() { _vector = true; };
-        explicit inline identifier(std::initializer_list<std::string> lst); // {short name, long name} or {name}
-        explicit inline identifier(std::string name): identifier{std::move(name)} {}
-        explicit inline identifier(size_t _pos): _pos(_pos) {}
+        inline identifier(): _help("..."), _longer("...") { _vector = true; };
+        inline identifier(const char *name_c);
+        inline identifier(int pos): _pos(pos), _help("<" + std::to_string(pos) + ">"), _longer(_help) {}
+        inline identifier(const char *name_c1, const char *name_c2);
+        inline identifier(int pos, const char *help): _pos(pos), _help(help), _longer(help) { _check_name(_help); }
+        inline identifier(const char *help, int pos): _pos(pos), _help(help), _longer(help) { _check_name(_help); }
 
         inline bool operator<(const identifier &other) const;
-        inline bool operator==(const identifier &other) const { return !(*this < other || other < *this); }
         inline bool overlaps(const identifier &other) const;
         inline bool contains(const std::string &name) const;
-        inline bool contains(size_t pos) const;
-        inline std::string help() const;
-        inline std::string longer() const;
-        inline optional<size_t> get_pos() const { return _pos; }
+        inline bool contains(int pos) const;
+        inline std::string help() const { return _help; }
+        inline std::string longer() const { return _longer; }
+        inline optional<int> get_pos() const { return _pos; }
         inline bool vector() const { return _vector; };
     };
 
@@ -192,20 +195,38 @@ namespace fire {
 
         inline arg() = default;
 
+        struct convertible {
+            optional<int> _int_value;
+            optional<const char *> _char_value;
+
+            convertible(int value): _int_value(value) {}
+            convertible(const char *value): _char_value(value) {}
+        };
+
     public:
-        template<typename T=std::nullptr_t>
-        inline explicit arg(std::string _id, std::string _descr = "", T value=T()):
-                _id(std::move(_id)), _descr(std::move(_descr)) { init_default(value); }
+        inline arg(std::initializer_list<convertible> init) {
+            _instant_assert(init.size() == 2, "Exactly two arguments must be given as initializer list arguments");
+            optional<int> int_value;
+            std::vector<const char *> char_values;
+            for(const convertible &val: init) {
+                if(val._int_value.has_value())
+                    int_value = val._int_value.value();
+                else
+                    char_values.push_back(val._char_value.value());
+            }
+            _instant_assert(char_values.size() >= 1, "Both initializer list arguments can't be ints");
+
+            if(char_values.size() == 2)
+                _id = identifier(char_values[0], char_values[1]);
+            if(char_values.size() == 1)
+                _id = identifier(char_values[0], int_value.value());
+        }
 
         template<typename T=std::nullptr_t>
-        inline explicit arg(size_t _id, std::string _descr = "", T value=T()):
-                _id(_id), _descr(std::move(_descr)) { init_default(value); }
+        inline arg(identifier _id, const char *_descr = "", T value=T()):
+                _id(std::move(_id)), _descr(_descr) { init_default(value); }
 
-        template<typename T=std::nullptr_t>
-        inline explicit arg(std::initializer_list<std::string> init, std::string _descr = "", T value=T()):
-                _id(init), _descr(std::move(_descr)) { init_default(value); }
-
-        inline static arg vector(std::string _descr = "") { arg a; a._descr = std::move(_descr); return a; }
+        inline static arg vector(std::string _descr = "");
 
         template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
         inline operator optional<T>() { _log("INTEGER", true); return _convert_optional<T>(); }
@@ -252,34 +273,31 @@ namespace fire {
         _instant_assert(name.size() >= 2 || !isdigit(name[0]), "Single character name must not be a digit (" + name + ")");
     }
 
-    identifier::identifier(std::initializer_list<std::string> lst) { // {short name, long name} or {name}
-        std::vector<std::string> names;
-        for(auto x: lst)
-            names.emplace_back(x);
+    identifier::identifier(const char *name_c) {
+        std::string name = name_c;
+        _check_name(name);
 
-        _instant_assert(names.size() == 1 || names.size() == 2,
-                "identifier must be initialized with 1 or 2 names when using initializer list");
+        if(name.size() == 1) _short_name = name;
+        else _long_name = name;
 
-        if(names.size() == 1) {
-            _check_name(names[0]);
+        _help = _long_name.has_value() ? ("--" + name) : ("-" + name);
+        _longer = _help;
+    }
 
-            if (names[0].size() == 1)
-                _short_name = names[0];
-            else
-                _long_name = names[0];
-        } else {
-            if(names[0].size() > names[1].size())
-                std::swap(names[0], names[1]);
+    identifier::identifier(const char *name1_c, const char *name2_c) {
+        std::string name1 = name1_c, name2 = name2_c;
+        _check_name(name1);
+        _check_name(name2);
 
-            _instant_assert(names[0].size() == 1, "Short name must contain exactly one character");
-            _instant_assert(names[1].size() >= 2, "Long name must contain at least two characters");
+        if(name2.size() < name1.size())
+            std::swap(name1, name2);
+        _instant_assert(name1.size() == 1, "One of the two names given must be a shorthand (single character)");
+        _instant_assert(name2.size() >= 2, "One of the two names given must be longer than one character");
 
-            _check_name(names[0]);
-            _check_name(names[1]);
-
-            _short_name = names[0];
-            _long_name = names[1];
-        }
+        _short_name = name1;
+        _long_name = name2;
+        _help = "-" + name1 + "|--" + name2;
+        _longer = "--" + name2;
     }
 
     bool identifier::operator<(const identifier &other) const {
@@ -313,31 +331,9 @@ namespace fire {
         return false;
     }
 
-    bool identifier::contains(size_t pos) const {
+    bool identifier::contains(int pos) const {
         if(_pos.has_value() && pos == _pos.value()) return true;
         return false;
-    }
-
-    std::string identifier::help() const {
-        if(_long_name.has_value() && _short_name.has_value())
-            return "-" + _short_name.value() + "|--" + _long_name.value();
-        if(_long_name.has_value())
-            return "--" + _long_name.value();
-        if(_short_name.has_value())
-            return "-" + _short_name.value();
-        if(_pos.has_value())
-            return "<" + std::to_string(_pos.value()) + ">";
-        return "...";
-    }
-
-    std::string identifier::longer() const {
-        if(_long_name.has_value())
-            return "--" + _long_name.value();
-        if(_short_name.has_value())
-            return "-" + _short_name.value();
-        if(_pos.has_value())
-            return "<" + std::to_string(_pos.value()) + ">";
-        return "...";
     }
 
 
@@ -538,7 +534,7 @@ namespace fire {
         std::string printable;
         if(elem.optional || elem.type == "") printable += "[";
         printable += verbose ? id.help() : id.longer();
-        if(elem.type != "") {
+        if(elem.type != "" && ! (! verbose && id.get_pos().has_value())) {
             printable += "=<";
             printable += elem.type;
             printable += ">";
@@ -699,6 +695,12 @@ namespace fire {
         if(_string_value.has_value()) def = _string_value.value();
 
         _::help_logger.log(_id, {_descr, type, def, optional});
+    }
+
+    arg arg::vector(std::string descr) {
+        arg a;
+        a._descr = std::move(descr);
+        return a;
     }
 
     arg::operator bool() {
