@@ -66,7 +66,7 @@ namespace fire {
         explicit operator bool() const { return _exists; }
         bool has_value() const { return _exists; }
         T value_or(const T& def) const { return _exists ? _value : def; }
-        T value() const { _instant_assert(_exists, "Accessing unassigned optional"); return _value; }
+        T value() const { _instant_assert(_exists, "accessing unassigned optional"); return _value; }
     };
 
     class identifier {
@@ -207,7 +207,7 @@ namespace fire {
 
     public:
         inline arg(std::initializer_list<convertible> init) {
-            _instant_assert(init.size() == 2, "Exactly two arguments must be given as initializer list arguments");
+            _instant_assert(init.size() == 2, "exactly two arguments must be given as initializer list arguments");
             optional<int> int_value;
             std::vector<const char *> char_values;
             for(const convertible &val: init) {
@@ -216,7 +216,7 @@ namespace fire {
                 else
                     char_values.push_back(val._char_value.value());
             }
-            _instant_assert(char_values.size() >= 1, "Both initializer list arguments can't be ints");
+            _instant_assert(char_values.size() >= 1, "both initializer list arguments can't be ints");
 
             if(char_values.size() == 2)
                 _id = identifier(char_values[0], char_values[1]);
@@ -278,9 +278,9 @@ namespace fire {
 
     void identifier::_check_name(const std::string &name) {
         _instant_assert(count_hyphens(name) == 0, "argument " + name +
-        " hyphens must not prefix declaration");
-        _instant_assert(name.size() >= 1, "Name must contain at least one character");
-        _instant_assert(name.size() >= 2 || !isdigit(name[0]), "Single character name must not be a digit (" + name + ")");
+        " has hyphens prefixed in declaration");
+        _instant_assert(name.size() >= 1, "name must contain at least one character");
+        _instant_assert(name.size() >= 2 || !isdigit(name[0]), "single character name must not be a digit (" + name + ")");
     }
 
     identifier::identifier(const char *name_c) {
@@ -301,8 +301,8 @@ namespace fire {
 
         if(name2.size() < name1.size())
             std::swap(name1, name2);
-        _instant_assert(name1.size() == 1, "One of the two names given must be a shorthand (single character)");
-        _instant_assert(name2.size() >= 2, "One of the two names given must be longer than one character");
+        _instant_assert(name1.size() == 1, "one of the two names given must be a shorthand (single character)");
+        _instant_assert(name2.size() >= 2, "one of the two names given must be longer than one character");
 
         _short_name = name1;
         _long_name = name2;
@@ -677,7 +677,7 @@ namespace fire {
     template <typename T>
     optional<T> arg::_convert_optional(bool dec_main_argc) {
         _instant_assert(! (_int_value.has_value() || _float_value.has_value() || _string_value.has_value()),
-                        "Optional argument has default value");
+                        "optional argument has default value");
         optional<T> val = _get_with_precision<T>();
         _::matcher.check(dec_main_argc);
         return val;

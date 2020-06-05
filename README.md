@@ -183,7 +183,6 @@ v0.1 release tested on:
 
 #### Current state
 
-* Improve API user errors
 * Test on Windows, Mac
 
 #### v0.1 release
@@ -196,8 +195,8 @@ v0.1 release tested on:
 * Ensure API user gets error message when using required positional arguments after optional positional arguments
 * `save(...)` keyword enclosing `arg`, which will save program from exiting even if not all required arguments are present or correct (eg. for `--version`)
 * Remove exceptions
-* If exceptions are still enabled, allow positional arguments in both FIRE(...) and FIRE_NO_SPACE_ASSIGNMENT(...)
 
 #### v0.2 release
 
+* If exceptions are still enabled, allow positional arguments in both FIRE(...) and FIRE_NO_SPACE_ASSIGNMENT(...)
 * Modules (with separate help messages for each module (otherwise impossible without exceptions))
