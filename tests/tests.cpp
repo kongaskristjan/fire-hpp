@@ -96,6 +96,13 @@ TEST(optional, no_value) {
 }
 
 
+TEST(identifier, prepend_hyphens) {
+    EXPECT_EQ(identifier::prepend_hyphens(""), "");
+    EXPECT_EQ(identifier::prepend_hyphens("a"), "-a");
+    EXPECT_EQ(identifier::prepend_hyphens("ab"), "--ab");
+    EXPECT_EQ(identifier::prepend_hyphens("abc"), "--abc");
+}
+
 TEST(identifier, constructor) {
     identifier("l", "long");
     identifier("long", "l");

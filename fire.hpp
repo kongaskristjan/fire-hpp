@@ -78,6 +78,8 @@ namespace fire {
 
         inline static void _check_name(const std::string &name);
     public:
+        inline static std::string prepend_hyphens(const std::string &name);
+
         inline identifier(): _help("..."), _longer("...") { _vector = true; };
         inline identifier(const char *name_c);
         inline identifier(int pos): _pos(pos), _help("<" + std::to_string(pos) + ">"), _longer(_help) {}
@@ -266,6 +268,14 @@ namespace fire {
     }
 
 
+    std::string identifier::prepend_hyphens(const std::string &name) {
+        if(name.size() == 1)
+            return "-" + name;
+        if(name.size() >= 2)
+            return "--" + name;
+        return name;
+    }
+
     void identifier::_check_name(const std::string &name) {
         _instant_assert(count_hyphens(name) == 0, "argument " + name +
         " hyphens must not prefix declaration");
@@ -358,17 +368,6 @@ namespace fire {
 
         check_named();
         check_positional();
-        std::string invalid;
-        for(const auto &it: _named) {
-            for(const auto &jt: _queried)
-                if(jt.contains(it.first))
-                    goto VALID;
-
-            invalid += " " + it.first;
-            VALID:;
-        }
-        deferred_assert(invalid.empty(), std::string("Invalid argument") + (invalid.size() > 1 ? "s" : "") + invalid);
-
 
         if(! _deferred_errors.empty()) {
             std::cerr << "Error: " << _deferred_errors[0] << std::endl;
@@ -377,29 +376,33 @@ namespace fire {
     }
 
     void _matcher::check_named() {
+        int invalid_count = 0;
         std::string invalid;
         for(const auto &it: _named) {
             for(const auto &jt: _queried)
                 if(jt.contains(it.first))
                     goto VALID;
 
-            invalid += " " + it.first;
+            ++invalid_count;
+            invalid += " " + identifier::prepend_hyphens(it.first);
             VALID:;
         }
-        deferred_assert(invalid.empty(), std::string("Invalid argument") + (invalid.size() > 1 ? "s" : "") + invalid);
+        deferred_assert(invalid.empty(), std::string("invalid argument") + (invalid_count > 1 ? "s" : "") + invalid);
     }
 
     void _matcher::check_positional() {
+        int invalid_count = 0;
         std::string invalid;
         for(size_t i = 0; i < _positional.size(); ++i) {
             for(const auto &it: _queried)
                 if(it.contains(i))
                     goto VALID;
 
+            ++invalid_count;
             invalid += " " + std::to_string(i);
             VALID:;
         }
-        deferred_assert(invalid.empty(), "Invalid positional arguments" + invalid);
+        deferred_assert(invalid.empty(), std::string("invalid positional argument") + (invalid_count > 1 ? "s" : "") + invalid);
     }
 
     std::pair<std::string, _matcher::arg_type> _matcher::get_and_mark_as_queried(const identifier &id) {
@@ -407,7 +410,7 @@ namespace fire {
             _instant_assert(! id.get_pos().has_value(), "positional argument used with space assignement enabled: (disable space assignement by calling FIRE_NO_SPACE_ASSIGNMENT(...) instead of FIRE(...))");
 
         for(const auto& it: _queried)
-            deferred_assert(! it.overlaps(id), "double query for argument " + id.longer());
+            _instant_assert(! it.overlaps(id), "double query for argument " + id.longer());
 
         if (_strict)
             _queried.push_back(id);
@@ -459,7 +462,7 @@ namespace fire {
         for(const std::string &s: raw) {
             int hyphens = count_hyphens(s);
             int name_size = s.size() - hyphens;
-            deferred_assert(hyphens <= 2, "Too many hyphens: " + s);
+            deferred_assert(hyphens <= 2, "too many hyphens: " + s);
             if(hyphens == 2 || (hyphens == 1 && name_size >= 1 && !isdigit(s[1]))) {
                 named.push_back(s);
                 to_named = hyphens >= 2 || name_size == 1; // Not "-abc" == "-a -b -c"
@@ -488,7 +491,7 @@ namespace fire {
             }
             int name_size = eq - hyphens;
 
-            if(!deferred_assert(name_size == 1 || hyphens >= 2, "expanding single-hyphen arguments must not have value")) continue;
+            if(!deferred_assert(name_size == 1 || hyphens >= 2, "expanding single-hyphen arguments can't have value (" + hyphened_name + ")")) continue;
 
             split.push_back(hyphened_name.substr(0, eq));
             split.push_back(hyphened_name.substr(eq + 1));
@@ -504,7 +507,7 @@ namespace fire {
             int hyphens = count_hyphens(hyphened_name);
             std::string name = hyphened_name.substr(hyphens);
             if(hyphens == 2) {
-                deferred_assert(name.size() >= 2, "single character parameter " + name + " must have exactly one hyphen");
+                deferred_assert(name.size() >= 2, "single character parameter " + hyphened_name + " must have exactly one hyphen");
                 args.emplace_back(name, optional<std::string>());
             }
             if(hyphens == 1) {
@@ -646,9 +649,9 @@ namespace fire {
         T max = std::numeric_limits<T>::max();
 
         _::matcher.deferred_assert(is_signed || value >= 0,
-                "Argument " + _id.help() + " must be positive");
+                "argument " + _id.help() + " must be positive");
         _::matcher.deferred_assert(min <= value && value <= max,
-                "Argument " + _id.help() + " value out of range [" +
+                "argument " + _id.help() + " value out of range [" +
                 std::to_string(min) + ", " + std::to_string(max) + "]");
 
         return (T) value;
@@ -665,7 +668,7 @@ namespace fire {
         T max = std::numeric_limits<T>::max();
 
         _::matcher.deferred_assert(min <= value && value <= max,
-                                   "Argument " + _id.help() + " value out of range [" +
+                                   "argument " + _id.help() + " value out of range [" +
                                    std::to_string(min) + ", " + std::to_string(max) + "]");
 
         return (T) value;
@@ -683,7 +686,7 @@ namespace fire {
     template <typename T>
     T arg::_convert(bool dec_main_argc) {
         optional<T> val = _get_with_precision<T>();
-        _::matcher.deferred_assert(val.has_value(), "Required argument " + _id.longer() + " not provided");
+        _::matcher.deferred_assert(val.has_value(), "required argument " + _id.longer() + " not provided");
         _::matcher.check(dec_main_argc);
         return val.value_or(T());
     }
@@ -710,7 +713,7 @@ namespace fire {
         _log("", true); // User sees this as flag, not boolean option
         auto elem = _::matcher.get_and_mark_as_queried(_id);
         _::matcher.deferred_assert(elem.second != _matcher::arg_type::string_t,
-                                  "flag " + elem.first + " must not have value");
+                                  "flag " + _id.help() + " must not have value");
         _::matcher.check(true);
         return elem.second == _matcher::arg_type::bool_t;
     }

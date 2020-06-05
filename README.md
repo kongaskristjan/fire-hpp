@@ -183,7 +183,6 @@ v0.1 release tested on:
 
 #### Current state
 
-* Improve CLI user errors
 * Improve API user errors
 * Test on Windows, Mac
 
