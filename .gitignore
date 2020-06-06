@@ -2,4 +2,5 @@ build
 cmake-build-*
 .idea
 .release_tests.json
-
+CMakeSettings.json
+.vs

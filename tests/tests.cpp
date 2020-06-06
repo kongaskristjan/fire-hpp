@@ -42,7 +42,7 @@ void init_args(const vector<string> &args, bool space_assignment, bool strict, i
         argv[i] = args[i].c_str();
 
     fire::_::help_logger = fire::_help_logger();
-    fire::_::matcher = fire::_matcher(args.size(), argv, named_calls, space_assignment, strict);
+    fire::_::matcher = fire::_matcher((int) args.size(), argv, named_calls, space_assignment, strict);
 
     delete [] argv;
 }
@@ -467,7 +467,7 @@ TEST(arg, optional_arguments) {
     fire::optional<long double> f_undef = arg("undefined");
     fire::optional<long double> f = arg("f");
     EXPECT_FALSE(f_undef.has_value());
-    EXPECT_NEAR(f.value(), 1.0, 1e-5);
+    EXPECT_NEAR((double) f.value(), 1.0, 1e-5);
 
     fire::optional<std::string> s_undef = arg("undefined");
     fire::optional<std::string> s = arg("s");

@@ -51,7 +51,7 @@ namespace fire {
     constexpr size_t _get_argument_count(R(*)(Types ...)) { return sizeof...(Types); }
 
     inline void _instant_assert(bool pass, const std::string &msg, bool programmer_side = true);
-    inline size_t count_hyphens(const std::string &s);
+    inline int count_hyphens(const std::string &s);
 
     template <typename T>
     class optional {
@@ -260,9 +260,9 @@ namespace fire {
         exit(_failure_code);
     }
 
-    size_t count_hyphens(const std::string &s) {
-        size_t hyphens;
-        for(hyphens = 0; hyphens < s.size() && s[hyphens] == '-'; ++hyphens)
+    int count_hyphens(const std::string &s) {
+        int hyphens;
+        for(hyphens = 0; hyphens < (int) s.size() && s[hyphens] == '-'; ++hyphens)
             ;
         return hyphens;
     }
@@ -314,8 +314,8 @@ namespace fire {
         std::string name = _long_name.value_or(_short_name.value_or(""));
         std::string other_name = other._long_name.value_or(other._short_name.value_or(""));
 
-        std::transform(name.begin(), name.end(), name.begin(), [](char c){ return tolower(c); });
-        std::transform(other_name.begin(), other_name.end(), other_name.begin(), [](char c){ return tolower(c); });
+        std::transform(name.begin(), name.end(), name.begin(), [](char c){ return (char) tolower(c); });
+        std::transform(other_name.begin(), other_name.end(), other_name.begin(), [](char c){ return (char) tolower(c); });
 
         if(name != other_name)
             return name < other_name;
@@ -395,7 +395,7 @@ namespace fire {
         std::string invalid;
         for(size_t i = 0; i < _positional.size(); ++i) {
             for(const auto &it: _queried)
-                if(it.contains(i))
+                if(it.contains((int) i))
                     goto VALID;
 
             ++invalid_count;
@@ -461,7 +461,7 @@ namespace fire {
         bool to_named = false;
         for(const std::string &s: raw) {
             int hyphens = count_hyphens(s);
-            int name_size = s.size() - hyphens;
+            int name_size = (int) s.size() - hyphens;
             deferred_assert(hyphens <= 2, "too many hyphens: " + s);
             if(hyphens == 2 || (hyphens == 1 && name_size >= 1 && !isdigit(s[1]))) {
                 named.push_back(s);
@@ -489,7 +489,7 @@ namespace fire {
                 split.push_back(hyphened_name);
                 continue;
             }
-            int name_size = eq - hyphens;
+            int name_size = (int) eq - hyphens;
 
             if(!deferred_assert(name_size == 1 || hyphens >= 2, "expanding single-hyphen arguments can't have value (" + hyphened_name + ")")) continue;
 
@@ -622,7 +622,7 @@ namespace fire {
         }
 
         if(_float_value.has_value()) return _float_value;
-        if(_int_value.has_value()) return _int_value.value();
+        if(_int_value.has_value()) return (long double) _int_value.value();
         return {};
     }
 
@@ -722,7 +722,7 @@ namespace fire {
     arg::operator std::vector<T>() {
         std::vector<T> ret;
         for(size_t i = 0; i < _::matcher.pos_args(); ++i)
-            ret.push_back(arg(i)._convert<T>(false));
+            ret.push_back(arg((int) i)._convert<T>(false));
         _log("", true);
         _::matcher.check(true);
         return ret;
@@ -733,7 +733,7 @@ namespace fire {
 
 template<typename F>
 void init_and_run(int argc, const char ** argv, F main_func, bool space_assignment) {
-    std::size_t main_argc = fire::_get_argument_count(main_func);
+    int main_argc = (int) fire::_get_argument_count(main_func);
     bool strict = true;
     fire::_::help_logger = fire::_help_logger();
     fire::_::matcher = fire::_matcher(argc, argv, main_argc, space_assignment, strict);
