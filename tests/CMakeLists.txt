@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-if(${CMAKE_VERSION} VERSION_GREATER "3.14.0")
+if(${CMAKE_VERSION} VERSION_GREATER "3.11.0")
     include(CTest)
     include(FetchContent)
     include(GoogleTest)
@@ -12,10 +12,15 @@ if(${CMAKE_VERSION} VERSION_GREATER "3.14.0")
             GIT_REPOSITORY https://github.com/google/googletest.git
             GIT_TAG        release-1.10.0
     )
-    FetchContent_MakeAvailable(googletest)  # (3)
 
-    add_executable(run_tests tests.cpp ../fire.hpp)  # (4)
-    target_link_libraries(run_tests gmock gmock_main)
+    FetchContent_GetProperties(googletest)
+    if(NOT googletest_POPULATED)
+        FetchContent_Populate(googletest)
+        add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
+    endif()
+
+    add_executable(run_tests tests.cpp ../fire.hpp)
+    target_link_libraries(run_tests gtest gtest_main)
     gtest_discover_tests(run_tests)
 
     configure_file(run_standard_tests.py run_standard_tests.py COPYONLY)

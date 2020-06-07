@@ -51,7 +51,7 @@ Additionally, for compiling examples
 
 Additionally, for compiling tests
 
-* CMake 3.14+
+* CMake 3.11+
 * Python 3.5+
 
 GTest gets downloaded, compiled and linked automatically.
