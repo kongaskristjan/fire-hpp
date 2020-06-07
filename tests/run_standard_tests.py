@@ -27,7 +27,8 @@
     DEALINGS IN THE SOFTWARE.
 """
 
-import sys, subprocess
+import subprocess, sys, json
+import run_examples
 from pathlib import Path
 
 def print_result(success):
@@ -39,19 +40,27 @@ def print_result(success):
     print()
 
 
-def run(cmd):
-    print("Running " + cmd)
-    result = subprocess.run(cmd.split())
+def run(pth):
+    pth = str(pth)
+    print("Running " + pth)
+    result = subprocess.run(pth.split())
     if result.returncode != 0:
         print_result(False)
         sys.exit(1)
 
 
+def get_path_prefix(subdir):
+    cur_dir = Path(__file__).absolute().parent
+    with (cur_dir / "build_dirs.json").open() as json_file:
+        json_obj = json.load(json_file)
+        return cur_dir, cur_dir / json_obj[subdir]
+
+
 def main():
-    pth_prefix = str(Path(__file__).absolute().parent.parent) + "/"
-    run(pth_prefix + "tests/run_tests")
-    run("python3 " + pth_prefix + "tests/run_examples.py")
-    run(pth_prefix + "tests/link_test")
+    cur_dir, path_prefix = get_path_prefix("run_tests")
+    run(path_prefix / "run_tests")
+    run_examples.main()
+    run(path_prefix / "link_test")
     print_result(True)
 
 

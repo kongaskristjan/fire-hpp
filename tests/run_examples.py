@@ -27,7 +27,7 @@
     DEALINGS IN THE SOFTWARE.
 """
 
-import os, subprocess
+import subprocess, json
 from pathlib import Path
 
 fire_failure_code = 1
@@ -37,7 +37,7 @@ class assert_runner:
     check_count = 0
 
     def __init__(self, pth):
-        self.pth = pth
+        self.pth = str(pth)
         assert_runner.test_count += 1
 
     def equal(self, cmd, out):
@@ -63,16 +63,16 @@ class assert_runner:
         return str(b, "utf-8")
 
 
-def run_all_combinations(pth_prefix):
-    runner = assert_runner(pth_prefix + "all_combinations")
+def run_all_combinations(path_prefix):
+    runner = assert_runner(path_prefix / "all_combinations")
 
     runner.help_success("-h")
     runner.equal("0 1 2 -i=0 -r=1 -s=2", "")
     runner.equal("0 1 2 3 4 5 -i=0 -r=1.0 -s=2 --def-i=-1 --def-r=-2.0 --def-s=text --opt-i=10 --opt-r=0.5 --opt-s=text", "")
 
 
-def run_basic(pth_prefix):
-    runner = assert_runner(pth_prefix + "basic")
+def run_basic(path_prefix):
+    runner = assert_runner(path_prefix / "basic")
 
     runner.equal("-x 3 -y 4", "3 + 4 = 7")
     runner.equal("-x -3 -y 3", "-3 + 3 = 0")
@@ -89,8 +89,8 @@ def run_basic(pth_prefix):
     runner.help_success("-h --undefined")
 
 
-def run_flag(pth_prefix):
-    runner = assert_runner(pth_prefix + "flag")
+def run_flag(path_prefix):
+    runner = assert_runner(path_prefix / "flag")
 
     runner.help_success("-h")
     runner.equal("", "0 0")
@@ -98,8 +98,8 @@ def run_flag(pth_prefix):
     runner.handled_failure("-a 1")
 
 
-def run_optional_and_default(pth_prefix):
-    runner = assert_runner(pth_prefix + "optional_and_default")
+def run_optional_and_default(path_prefix):
+    runner = assert_runner(path_prefix / "optional_and_default")
 
     runner.help_success("-h")
     runner.equal("", "false false")
@@ -108,8 +108,8 @@ def run_optional_and_default(pth_prefix):
     runner.equal("--optional 1 --default 1", "true true")
 
 
-def run_positional(pth_prefix):
-    runner = assert_runner(pth_prefix + "positional")
+def run_positional(path_prefix):
+    runner = assert_runner(path_prefix / "positional")
 
     runner.help_success("-h")
     runner.handled_failure("")
@@ -120,8 +120,8 @@ def run_positional(pth_prefix):
     runner.equal("-1 -3", "-1 -3")
 
 
-def run_vector_positional(pth_prefix):
-    runner = assert_runner(pth_prefix + "vector_positional")
+def run_vector_positional(path_prefix):
+    runner = assert_runner(path_prefix / "vector_positional")
 
     runner.help_success("-h")
     runner.equal("", "\n")
@@ -131,17 +131,24 @@ def run_vector_positional(pth_prefix):
     runner.equal("b a -os", "a\nb\n")
 
 
+def get_path_prefix(subdir):
+    cur_dir = Path(__file__).absolute().parent
+    with (cur_dir / "build_dirs.json").open("r") as json_file:
+        json_obj = json.load(json_file)
+        return cur_dir / json_obj[subdir]
+
+
 def main():
-    pth_prefix = str(Path(__file__).absolute().parent.parent / "examples") + "/"
+    path_prefix = get_path_prefix("examples")
 
-    print("Running tests in {} ...".format(pth_prefix), end="")
+    print("Running tests in {} ...".format(path_prefix), end="")
 
-    run_all_combinations(pth_prefix)
-    run_basic(pth_prefix)
-    run_flag(pth_prefix)
-    run_optional_and_default(pth_prefix)
-    run_positional(pth_prefix)
-    run_vector_positional(pth_prefix)
+    run_all_combinations(path_prefix)
+    run_basic(path_prefix)
+    run_flag(path_prefix)
+    run_optional_and_default(path_prefix)
+    run_positional(path_prefix)
+    run_vector_positional(path_prefix)
 
     print(" SUCCESS! (ran {} tests with {} checks)".format(assert_runner.test_count, assert_runner.check_count))
 

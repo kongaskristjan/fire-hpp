@@ -24,6 +24,15 @@ if(${CMAKE_VERSION} VERSION_GREATER "3.11.0")
     gtest_discover_tests(run_tests)
 
     configure_file(run_standard_tests.py run_standard_tests.py COPYONLY)
+
+    set(RUN_TESTS_BUILD_DIR $<TARGET_FILE_DIR:run_tests>)
+    add_custom_command(TARGET run_tests
+            COMMAND ${CMAKE_COMMAND}
+            -D RUN_TESTS_BUILD_DIR=${RUN_TESTS_BUILD_DIR}
+            -D EXAMPLES_BUILD_DIR=${EXAMPLES_BUILD_DIR}
+            -D FILE_DIR=${CMAKE_CURRENT_BINARY_DIR}
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/create_build_dirs_txt.cmake"
+    )
 endif()
 
 configure_file(run_examples.py run_examples.py COPYONLY)
