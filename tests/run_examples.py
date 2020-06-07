@@ -43,7 +43,7 @@ class assert_runner:
     def equal(self, cmd, out):
         result = subprocess.run([self.pth] + cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         assert result.returncode == 0
-        assert self.b2str(result.stdout.strip()) == out.strip()
+        assert self.remove_carriage(self.b2str(result.stdout.strip())) == out.strip()
         assert result.stderr == b""
         assert_runner.check_count += 1
 
@@ -58,6 +58,9 @@ class assert_runner:
         result = subprocess.run([self.pth] + cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         assert result.returncode == 0
         assert_runner.check_count += 1
+
+    def remove_carriage(self, strn):
+        return strn.replace("\r\n", "\n")
 
     def b2str(self, b):
         return str(b, "utf-8")

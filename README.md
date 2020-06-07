@@ -178,12 +178,13 @@ v0.1 release tested on:
 * Arch Linux gcc==10.1.0, clang==10.0.0: C++11, C++14, C++17 and C++20
 * Ubuntu 18.04 clang=={3.5, 3.6, 3.7, 3.8, 3.9}: C++11, C++14 and clang=={4.0, 5.0, 6.0, 7.0, 8.0, 9.0}: C++11, C++14 and C++17
 * Ubuntu 18.04 gcc=={4.8, 4.9}: C++11 and gcc=={5.5, 6.5, 7.5, 8.4}: C++11, C++14 and C++17
+* Windows 10, MSVC=={19.26} (2019 Build Tools): C++11, C++14 and C++17
 
 ### TODO list:
 
 #### Current state
 
-* Test on Windows, Mac
+* Test on Mac
 
 #### v0.1 release
 
