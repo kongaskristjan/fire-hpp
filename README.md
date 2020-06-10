@@ -1,7 +1,7 @@
 
 # Fire for C++
 
-Fire for C++ is a library for creating a command line interface directly from function signature, inspired by [python-fire](https://github.com/google/python-fire). Here's a complete example of adding two numbers with a CLI:
+Fire for C++, inspired by [python-fire](https://github.com/google/python-fire), is a library that creates a command line interface from function signature. Here's a program that adds two numbers from command line:
  ```
 #include <iostream>
 #include <fire.hpp>
@@ -22,17 +22,15 @@ $ ./add -x=1 -y=2
 ```
 
 As you likely expect,
-* a meaningful help message is generated if prompted with `--help`, stating required arguments and their types.
+* `--help` prints a meaningful message with required arguments and their types.
 * an error message is displayed for incorrect usage.
 
 ### What's covered?
 
 All the standard stuff, like
-* flags
-* named and positional parameters
-* required and optional parameters
-* variable number of parameters (through `std::vector`)
-* automatic conversions to integer, floating-point and `std::string`, with proper error reporting
+* flags; named and positional parameters; variable number of parameters
+* optional parameters/default values
+* conversions to integer, floating-point and `std::string`
 * parameter descriptions
 * typical constructs, such as expanding `-abc <=> -a -b -c` and `-x=1 <=> -x 1`
 
@@ -41,24 +39,27 @@ In addition, this library
 * is a single header
 * comes under very permissive [Boost licence](https://choosealicense.com/licenses/bsl-1.0/) (examples with [0-clause BSD](https://choosealicense.com/licenses/0bsd/))
 
-### Requirements
-
-* C++11 compatible compiler
-
-Additionally, for compiling examples
-
-* CMake 3.1+
-
-Additionally, for compiling tests
-
-* CMake 3.11+
-* Python 3.5+
-
-GTest gets downloaded, compiled and linked automatically.
-
 ## Q. Quick start
 
-Let's go through each part of the above example.
+### Q.1 Requirements
+
+* C++11 compatible compiler
+* Compiling examples: CMake 3.1+
+* Compiling/running tests: CMake 3.11+ and Python 3.5+
+
+GTest is downloaded, compiled and linked automatically.
+
+### Q.2 Running examples
+
+Steps to run examples:
+* Clone repo: `git clone https://github.com/kongaskristjan/fire-hpp`
+* Create build and change directory: `cd fire-hpp && mkdir build && cd build`
+* Configure/build: `cmake .. && cmake --build .` (or substitute latter command with appropriate build system invocation, eg. `make -j8` or `ninja`)
+* Run: `./examples/basic --help` or `./examples/basic -x=3 -y=5` 
+
+## T. Tutorial
+
+Let's go through each part of the following example.
 
 ```
 int fired_main(int x = fire::arg("x"), int y = fire::arg("y")) { // Define and convert arguments
@@ -69,49 +70,58 @@ int fired_main(int x = fire::arg("x"), int y = fire::arg("y")) { // Define and c
 FIRE(fired_main) // call fired_main()
 ```
 
-* <a id="quickfire"></a> __FIRE(...)__
-`FIRE(fired_main)` expands into the actual `main()` function that defines your program's entry point and calls (fires off) `fired_main()`. `fired_main` is called without arguments, thus compiler is forced to use the default `fire::arg` values.
+* <a id="tutorialfire"></a> __FIRE(function name)__
+`FIRE(fired_main)` expands into the actual `main()` function that defines your program's entry point and fires off `fired_main()`. `fired_main` is called without arguments, thus compiler is forced to use the default `fire::arg` values.
 
 * __fire::arg(identifier)__
- A constructor that accepts the name/shorthand/position of the argument. The library prepends a single dash to single-character shorthands and two dashes to multi-character names: `-x` and `--longer-name`. `fire::arg` objects should be used as default values for fired function parameters and implicitly converted to arithmetic or `std::string` type. An error is reported when conversion is impossible.
+ A constructor that accepts the name/shorthand/position of the argument. The library prepends a single dash to single-character shorthands and two dashes to multi-character names (eg. `-x` and `--longer-name`). `fire::arg` objects should be used as default values for fired function parameters. See [documentation](#d_fire_arg) for more options.
 
-* __int fired_main(...)__
-This is your perceived program entry point. All arguments must be arithmetic or `std::string` type and default initialized with `fire::arg` objects (Failing to do so results in undefined behaviour!).
+* __int fired_main(arguments)__
+This is your perceived program entry point. All arguments must be `bool`, integral, floating-point, `fire::optional<T>`, `std::string` or `std::vector<T>` type and default initialized with `fire::arg` objects (Failing to initialize properly results in undefined behaviour!). See [conversions](#d_arg_conversions) to learn how each of them changes the CLI.
 
 ## D. Documentation
 
-### <a id="fire_positional"></a> D.1 FIRE(...) and FIRE_NO_SPACE_ASSIGNMENT(...)
+### <a id="d_fire"></a> D.1 FIRE(...) and FIRE_NO_SPACE_ASSIGNMENT(...)
 
-See `FIRE(...)` [quick start](#quickfire).
+See `FIRE(...)` [quick start](#tutorialfire).
 
-`FIRE(...)` and `FIRE_NO_SPACE_ASSIGNMENT(...)` both create a main function to parse arguments and call `...`, however they differ in how arguments are parsed. `FIRE(...)` parses `program -x 1` as `program -x=1`, but `FIRE_NO_SPACE_ASSIGNMENT(...)` parses `-x` as a flag and `1` as a separate positional argument. Thus in order to use valued named arguments in positional mode, `-x=1` need to be used. There a two reasons:
+`FIRE(...)` and `FIRE_NO_SPACE_ASSIGNMENT(...)` both create a main function to parse arguments and call `...`, however they differ in how arguments are parsed. `FIRE(...)` parses `program -x 1` as `program -x=1`, but `FIRE_NO_SPACE_ASSIGNMENT(...)` parses `-x` as a flag and `1` as a positional argument.
+
+In order to use positional or vector arguments, `FIRE_NO_SPACE_ASSIGNMENT(...)` must be used. There a two reasons:
 
 * Mixing positional and named arguments with space separated values makes a bad CLI anyway, eg: `program a -x b c` doesn't seem like `-x=b` with `a` and `c` as positional.
-* Implementing such CLI is likely impossible due to the Fire API.
+* Implementing such a CLI within Fire API is rather complex, and likely even impossible without using exceptions.
+ 
+ There is plan to lift this restriction in v0.3 for builds supporting exceptions.
 
-### D.2 fire::arg(identifier[, description[, default_value]])
+### D.2 <a id="d_fire_arg"></a> fire::arg(identifier[, description[, default_value]])
 
 #### D.2.1 Identifier
 
 Identifier used to find arguments from command line. Can either be
-* `const char *`: named argument
+* `const char * name`: named argument
     * Example: `int fired_main(int x = fire::arg("x"));`
     * CLI usage: `program -x=1`
 
 
-* `initializer_list<const char *>`: named argument with a short-hand (single character) and long name
+* `{const char * shorthand, const char * full_name}`: named argument with a short-hand (single character) and long name
     * Example: `int fired_main(int x = fire::arg({"x", "long-name"}));`
     * CLI usage: `program -x=1`
     * CLI usage: `program --long-name=1`
 
 
-* `int`: positional argument (requires [positional mode](#fire_positional))
+* `int position`: positional argument (requires [no space assignment mode](#d_fire))
+    * Example: `int fired_main(int x = fire::arg(0));`
+    * CLI usage: `program 1`
+
+
+* `{int position, const char * name}`: positional argument with name (name is only used for help) (requires [no space assignment mode](#d_fire))
     * Example: `int fired_main(int x = fire::arg(0));`
     * CLI usage: `program 1`
 
 #### D.2.2 Descrpition (optional)
 
-`std::string` that gets printed when the program is prompted with `--help`.
+`std::string` argument description for `--help` message.
 
 * Example: `int fired_main(int x = fire::arg("x", "an argument"));`
 * CLI usage: `program --help`
@@ -130,19 +140,19 @@ Identifier used to find arguments from command line. Can either be
 Default value if no value is provided through command line. `std::string`, integral or floating point type. This default is also displayed in help page.
 
 * Example: `int fired_main(int x = fire::arg("x", "", 0));`
-* CLI usage: `program` -> `x=0`
-* CLI usage: `program -x=1` -> `x=1`
+* CLI usage: `program` -> `x==0`
+* CLI usage: `program -x=1` -> `x==1`
 
-### D.3 fire::arg conversions
+### <a id="d_arg_conversions"></a> D.3 fire::arg conversions
 
 In order to conveniently obtain parsed arguments and automatically check the validity of input, `fire::arg` class defines several implicit conversions.
 
 #### D.3.1 std::string, integral, or floating point
 
-Converts the argument value on command line to respective type. Displayes an error if conversion is impossible or default value is of wrong type.
+Converts the argument value on command line to respective type. Displayes an error if conversion is impossible or default value has wrong type.
 
 * Example: `int fired_main(std::string name = fire::arg("name"));`
-* CLI usage: `program --name=fire` -> `name="fire"`
+* CLI usage: `program --name=fire` -> `name=="fire"`
 
 #### D.3.2 fire::optional
 
@@ -151,30 +161,30 @@ Used for optional arguments without a reasonable default value. This way the def
 `fire::optional` is a tear-down version of [`std::optional`](https://en.cppreference.com/w/cpp/utility/optional), with compatible implementations for [`has_value()`](https://en.cppreference.com/w/cpp/utility/optional/operator_bool), [`value_or()`](https://en.cppreference.com/w/cpp/utility/optional/value_or) and [`value()`](https://en.cppreference.com/w/cpp/utility/optional/value).
 
 * Example: `int fired_main(fire::optional<std::string> name = fire::arg("name"));`
-* CLI usage: `program` -> `name.has_value()=false`
-* CLI usage: `program --name="fire"` -> `name.has_value()=true` and `name.value()="fire"`
+* CLI usage: `program` -> `name.has_value()==false`
+* CLI usage: `program --name="fire"` -> `name.has_value()==true` and `name.value()=="fire"`
 
 #### D.3.3 bool: flag argument
 
 Boolean flags are `true` when they exist on command line and `false` when they don't. Multiple single-character flags can be packed on command line by prefixing with a single hyphen: `-abc <=> -a -b -c`
 
 * Example: `int fired_main(bool flag = fire::arg("flag"));`
-* CLI usage: `program` -> `flag=false`
-* CLI usage: `program --flag` -> `flag=true`
+* CLI usage: `program` -> `flag==false`
+* CLI usage: `program --flag` -> `flag==true`
 
 ### D.4 fire::arg::vector([description])
 
-A method for getting all positional arguments (requires [positional mode](#fire_positional)). The constructed object can be converted to `std::vector<std::string>`, `std::vector<integral type>` or `std::vector<floating point type>`. Description can be supplied for help message. Using `fire::arg::vector` forbids extracting positional arguments with `fire::arg(index)`.
+A method for getting all positional arguments (requires [no space assignment mode](#d_fire)). The constructed object can be converted to `std::vector<std::string>`, `std::vector<integral type>` or `std::vector<floating-point type>`. Description can be supplied for help message. Using `fire::arg::vector` forbids extracting positional arguments with `fire::arg(index)`.
 
 * Example: `int fired_main(vector<std::string> params = fire::arg::vector());`
-* CLI usage: `program abc xyz` -> `params={"abc", "xyz"}`
-* CLI usage: `program` -> `params={}`
+* CLI usage: `program abc xyz` -> `params=={"abc", "xyz"}`
+* CLI usage: `program` -> `params=={}`
 
 ## Development
 
-This library uses extensive testing. Unit tests are located in `tests/`, while `examples/` are used as integration tests. The latter also ensure examples are up-to-date. Before committing, please verify `python3 ./build/tests/run_standard_tests.py` succeed. Releases must be tested on as many platforms as possible. The recommended way is by batch-testing with `python3 ../tests/run_release_tests.py ..` from `build/`. See it's `--help` page for more info.
+This library uses extensive testing. Unit tests are located in `tests/`, while `examples/` are used as integration tests. The latter also ensure examples are up-to-date. Before committing, please verify `python3 ./build/tests/run_standard_tests.py` succeed.
 
-v0.1 release tested on:
+v0.1 release is tested on:
 * Arch Linux gcc==10.1.0, clang==10.0.0: C++11, C++14, C++17 and C++20
 * Ubuntu 18.04 clang=={3.5, 3.6, 3.7, 3.8, 3.9}: C++11, C++14 and clang=={4.0, 5.0, 6.0, 7.0, 8.0, 9.0}: C++11, C++14 and C++17
 * Ubuntu 18.04 gcc=={4.8, 4.9}: C++11 and gcc=={5.5, 6.5, 7.5, 8.4}: C++11, C++14 and C++17
@@ -195,9 +205,10 @@ v0.1 release tested on:
     * Program description
 * Ensure API user gets error message when using required positional arguments after optional positional arguments
 * `save(...)` keyword enclosing `arg`, which will save program from exiting even if not all required arguments are present or correct (eg. for `--version`)
+* `program --flags  --  --interpret-everything-as-positional-arguments-after-double-dash`
 * Remove exceptions
 
 #### v0.2 release
 
 * If exceptions are still enabled, allow positional arguments in both FIRE(...) and FIRE_NO_SPACE_ASSIGNMENT(...)
-* Modules (with separate help messages for each module (otherwise impossible without exceptions))
+* Subcommands (with separate help messages for each subcommand)
