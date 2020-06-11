@@ -39,11 +39,13 @@ class assert_runner:
     def __init__(self, pth):
         self.pth = str(pth)
         assert_runner.test_count += 1
+        self.help_success("-h")
+        self.help_success("--help")
 
     def equal(self, cmd, out):
         result = subprocess.run([self.pth] + cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         assert result.returncode == 0
-        assert self.remove_carriage(self.b2str(result.stdout.strip())) == out.strip()
+        assert self.remove_newline(self.b2str(result.stdout.strip())) == self.remove_newline(out.strip())
         assert result.stderr == b""
         assert_runner.check_count += 1
 
@@ -59,8 +61,8 @@ class assert_runner:
         assert result.returncode == 0
         assert_runner.check_count += 1
 
-    def remove_carriage(self, strn):
-        return strn.replace("\r\n", "\n")
+    def remove_newline(self, strn):
+        return strn.replace("\r", "").replace("\n", "")
 
     def b2str(self, b):
         return str(b, "utf-8")
@@ -69,7 +71,6 @@ class assert_runner:
 def run_all_combinations(path_prefix):
     runner = assert_runner(path_prefix / "all_combinations")
 
-    runner.help_success("-h")
     runner.equal("0 1 2 -i=0 -r=1 -s=2", "")
     runner.equal("0 1 2 3 4 5 -i=0 -r=1.0 -s=2 --def-i=-1 --def-r=-2.0 --def-s=text --opt-i=10 --opt-r=0.5 --opt-s=text", "")
 
@@ -86,8 +87,6 @@ def run_basic(path_prefix):
     runner.handled_failure("-x test")
     runner.handled_failure("-x")
     runner.handled_failure("--undefined 0")
-    runner.help_success("-h")
-    runner.help_success("--help")
     runner.help_success("-x 0 -h")
     runner.help_success("-h --undefined")
 
@@ -95,26 +94,26 @@ def run_basic(path_prefix):
 def run_flag(path_prefix):
     runner = assert_runner(path_prefix / "flag")
 
-    runner.help_success("-h")
-    runner.equal("", "0 0")
-    runner.equal("-a -b", "1 1")
+    runner.equal("", "flag-a: false   flag-b: false")
+    runner.equal("-a -b", "flag-a: true   flag-b: true")
+    runner.equal("-ab", "flag-a: true   flag-b: true")
+    runner.equal("--flag-a", "flag-a: true   flag-b: false")
+    runner.equal("--flag-b", "flag-a: false   flag-b: true")
     runner.handled_failure("-a 1")
 
 
 def run_optional_and_default(path_prefix):
     runner = assert_runner(path_prefix / "optional_and_default")
 
-    runner.help_success("-h")
-    runner.equal("", "false false")
-    runner.equal("--default 1", "false true")
-    runner.equal("--optional 1", "true false")
-    runner.equal("--optional 1 --default 1", "true true")
+    runner.equal("", "optional: [no value]\ndefault: 0")
+    runner.equal("--default 1", "optional: [no value]\ndefault: 1")
+    runner.equal("--optional -1", "optional: -1\ndefault: 0")
+    runner.equal("--optional -1 --default 1", "optional: -1\ndefault: 1")
 
 
 def run_positional(path_prefix):
     runner = assert_runner(path_prefix / "positional")
 
-    runner.help_success("-h")
     runner.handled_failure("")
     runner.handled_failure("test")
     runner.equal("2", "2 0")
@@ -126,7 +125,6 @@ def run_positional(path_prefix):
 def run_vector_positional(path_prefix):
     runner = assert_runner(path_prefix / "vector_positional")
 
-    runner.help_success("-h")
     runner.equal("", "\n")
     runner.equal("b a", "b a\n")
     runner.equal("b a -o", "b\na\n")

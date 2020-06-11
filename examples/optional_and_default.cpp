@@ -20,7 +20,12 @@
 using namespace std;
 
 int fired_main(fire::optional<int> opt = fire::arg("optional"), int def = fire::arg("default", "", 0)) {
-    cout << (opt.has_value() ? "true" : "false") << " " << (def != 0 ? "true" : "false") << endl;
+    if(opt.has_value())
+        cout << "optional: " << to_string(opt.value()) << endl;
+    else
+        cout << "optional: [no value]" << endl;
+
+    cout << "default: " << def << endl;
     return 0;
 }
 

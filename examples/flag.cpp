@@ -20,7 +20,7 @@
 using namespace std;
 
 int fired_main(bool flag_a = fire::arg({"a", "flag-a"}), bool flag_b = fire::arg({"b", "flag-b"})) {
-    cout << flag_a << " " << flag_b << endl;
+    cout << "flag-a: " << (flag_a ? "true" : "false") << "   flag-b: " << (flag_b ? "true" : "false") << endl;
     return 0;
 }
 
