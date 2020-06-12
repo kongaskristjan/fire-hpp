@@ -123,9 +123,9 @@ namespace fire {
         inline std::vector<std::string> to_vector_string(int n_strings, const char **strings);
         inline std::tuple<std::vector<std::string>, std::vector<std::string>>
                 separate_named_positional(const std::vector<std::string> &raw);
-        inline std::vector<std::string> split_equations(const std::vector<std::string> &named);
+        inline std::vector<std::pair<std::string, bool>> split_equations(const std::vector<std::string> &named);
         inline std::vector<std::pair<std::string, optional<std::string>>>
-                assign_named_values(const std::vector<std::string> &named);
+                assign_named_values(const std::vector<std::pair<std::string, bool>> &named);
         inline const std::string& get_executable() { return _executable; }
         inline size_t pos_args() { return _positional.size(); }
         inline bool deferred_assert(bool pass, const std::string &msg);
@@ -440,8 +440,8 @@ namespace fire {
         std::vector<std::string> raw = to_vector_string(argc - 1, argv + 1);
         std::vector<std::string> named;
         tie(named, _positional) = separate_named_positional(raw);
-        named = split_equations(named);
-        _named = assign_named_values(named);
+        std::vector<std::pair<std::string, bool>> split = split_equations(named);
+        _named = assign_named_values(split);
 
         if(_space_assignment)
             deferred_assert(_positional.empty(), "positional arguments given, but not accepted");
@@ -480,44 +480,47 @@ namespace fire {
         return std::tuple<std::vector<std::string>, std::vector<std::string>>(named, positional);
     }
 
-    std::vector<std::string> _matcher::split_equations(const std::vector<std::string> &named) {
-        std::vector<std::string> split;
+    std::vector<std::pair<std::string, bool>> _matcher::split_equations(const std::vector<std::string> &named) {
+        std::vector<std::pair<std::string, bool>> split; // std::string: parsed string, bool: is certainly value
         for(const std::string &hyphened_name: named) {
             int hyphens = count_hyphens(hyphened_name);
             size_t eq = hyphened_name.find('=');
             if(eq == std::string::npos) {
-                split.push_back(hyphened_name);
+                split.emplace_back(hyphened_name, false);
                 continue;
             }
             int name_size = (int) eq - hyphens;
 
             if(!deferred_assert(name_size == 1 || hyphens >= 2, "expanding single-hyphen arguments can't have value (" + hyphened_name + ")")) continue;
 
-            split.push_back(hyphened_name.substr(0, eq));
-            split.push_back(hyphened_name.substr(eq + 1));
+            split.emplace_back(hyphened_name.substr(0, eq), false);
+            split.emplace_back(hyphened_name.substr(eq + 1), true);
         }
         return split;
     }
 
     std::vector<std::pair<std::string, optional<std::string>>>
-            _matcher::assign_named_values(const std::vector<std::string> &named) {
+            _matcher::assign_named_values(const std::vector<std::pair<std::string, bool>> &named) {
         std::vector<std::pair<std::string, optional<std::string>>> args;
 
-        for(const std::string &hyphened_name: named) {
+        for(const std::pair<std::string, bool> &p: named) {
+            const std::string &hyphened_name = p.first;
+            bool certainly_value = p.second;
+
             int hyphens = count_hyphens(hyphened_name);
             std::string name = hyphened_name.substr(hyphens);
-            if(hyphens == 2) {
+            if(certainly_value) {
+                args.back().second = hyphened_name;
+            } else if(hyphens == 2) {
                 deferred_assert(name.size() >= 2, "single character parameter " + hyphened_name + " must have exactly one hyphen");
                 args.emplace_back(name, optional<std::string>());
-            }
-            if(hyphens == 1) {
+            } else if(hyphens == 1) {
                 if(isdigit(name[0]))
                     args.back().second = hyphened_name;
                 else
                     for (char c: name)
                         args.emplace_back(std::string(1, c), optional<std::string>());
-            }
-            if(hyphens == 0)
+            } else if(hyphens == 0)
                 args.back().second = name;
         }
         return args;

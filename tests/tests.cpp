@@ -411,6 +411,16 @@ TEST(arg, precision) {
     EXPECT_EXIT_FAIL((void) (float) arg("a", "", 1e100));
 }
 
+TEST(arg, dashed_values) {
+    init_args({"./run_tests", "-x", "-1", "-y=-1", "-z=-name", "-w=--name", "-q=---name"});
+
+    EXPECT_EQ((int) arg("x"), -1);
+    EXPECT_EQ((int) arg("y"), -1);
+    EXPECT_EQ((string) arg("z"), "-name");
+    EXPECT_EQ((string) arg("w"), "--name");
+    EXPECT_EQ((string) arg("q"), "---name");
+}
+
 TEST(arg, strict_query) {
     init_args_strict({"./run_tests"}, 0);
 
