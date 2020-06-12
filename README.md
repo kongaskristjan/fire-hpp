@@ -42,10 +42,10 @@ With fire-hpp, you only call `FIRE(...)` and define arguments. When `fired_main(
 ### What's covered?
 
 All the standard stuff, like
-* flags; named and positional parameters; variable number of parameters
-* optional parameters/default values
-* conversions to integer, floating-point and `std::string`
-* parameter descriptions
+* [flags](#flag); [named and positional](#identifier) parameters; [variable number of parameters](#vector)
+* [optional parameters](#optional)/[default values](#default)
+* conversions to [integer, floating-point and `std::string`](#standard)
+* [parameter descriptions](#description)
 * typical constructs, such as expanding `-abc <=> -a -b -c` and `-x=1 <=> -x 1`
 
 In addition, this library
@@ -110,7 +110,7 @@ In order to use positional or vector arguments, `FIRE_NO_SPACE_ASSIGNMENT(...)` 
 
 ### D.2 <a id="d_fire_arg"></a> fire::arg(identifier[, description[, default_value]])
 
-#### D.2.1 Identifier
+#### <a id="identifier"></a> D.2.1 Identifier
 
 Identifier used to find arguments from command line. Can either be
 * `const char * name`: named argument
@@ -133,7 +133,7 @@ Identifier used to find arguments from command line. Can either be
     * Example: `int fired_main(int x = fire::arg(0));`
     * CLI usage: `program 1`
 
-#### D.2.2 Descrpition (optional)
+#### <a id="description"></a> D.2.2 Descrpition (optional)
 
 `std::string` argument description for `--help` message.
 
@@ -149,7 +149,7 @@ Identifier used to find arguments from command line. Can either be
       -x=<INTEGER>  an argument
 ```
 
-#### D.2.3 Default value (optional)
+#### <a id="default"></a> D.2.3 Default value (optional)
 
 Default value if no value is provided through command line. `std::string`, integral or floating point type. This default is also displayed in help page.
 
@@ -161,14 +161,14 @@ Default value if no value is provided through command line. `std::string`, integ
 
 In order to conveniently obtain parsed arguments and automatically check the validity of input, `fire::arg` class defines several implicit conversions.
 
-#### D.3.1 std::string, integral, or floating point
+#### <a id="standard"></a> D.3.1 std::string, integral, or floating point
 
 Converts the argument value on command line to respective type. Displayes an error if conversion is impossible or default value has wrong type.
 
 * Example: `int fired_main(std::string name = fire::arg("name"));`
 * CLI usage: `program --name=fire` -> `name=="fire"`
 
-#### D.3.2 fire::optional
+#### <a id="optional"></a> D.3.2 fire::optional
 
 Used for optional arguments without a reasonable default value. This way the default value doesn't get printed in a help message. The underlying type can be `std::string`, integral or floating point.
 
@@ -178,7 +178,7 @@ Used for optional arguments without a reasonable default value. This way the def
 * CLI usage: `program` -> `name.has_value()==false`
 * CLI usage: `program --name="fire"` -> `name.has_value()==true` and `name.value()=="fire"`
 
-#### D.3.3 bool: flag argument
+#### <a id="flag"></a> D.3.3 bool: flag argument
 
 Boolean flags are `true` when they exist on command line and `false` when they don't. Multiple single-character flags can be packed on command line by prefixing with a single hyphen: `-abc <=> -a -b -c`
 
@@ -186,7 +186,7 @@ Boolean flags are `true` when they exist on command line and `false` when they d
 * CLI usage: `program` -> `flag==false`
 * CLI usage: `program --flag` -> `flag==true`
 
-### D.4 fire::arg::vector([description])
+### <a id="vector"></a> D.4 fire::arg::vector([description])
 
 A method for getting all positional arguments (requires [no space assignment mode](#d_fire)). The constructed object can be converted to `std::vector<std::string>`, `std::vector<integral type>` or `std::vector<floating-point type>`. Description can be supplied for help message. Using `fire::arg::vector` forbids extracting positional arguments with `fire::arg(index)`.
 
