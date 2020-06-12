@@ -219,6 +219,11 @@ TEST(matcher, invalid_input) {
     EXPECT_EXIT_FAIL(init_args({"./run_tests", "--i", "0"}));
     EXPECT_EXIT_FAIL(init_args({"./run_tests", "-ab", "0"}));
     EXPECT_EXIT_FAIL(init_args({"./run_tests", "0"}));
+
+    EXPECT_EXIT_FAIL(init_args({"./run_tests", "-aa"}));
+    EXPECT_EXIT_FAIL(init_args({"./run_tests", "--flag", "--flag"}));
+    EXPECT_EXIT_FAIL(init_args({"./run_tests", "-x=0", "-x", "0"}));
+    EXPECT_EXIT_FAIL(init_args({"./run_tests", "--name=abc",  "--name=bcd"}));
 }
 
 TEST(matcher, boolean_flags) {

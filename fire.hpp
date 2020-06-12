@@ -443,6 +443,11 @@ namespace fire {
         std::vector<std::pair<std::string, bool>> split = split_equations(named);
         _named = assign_named_values(split);
 
+        for(size_t i = 0; i < _named.size(); ++i)
+            for(size_t j = 0; j < i; ++j)
+                deferred_assert(_named[i].first != _named[j].first,
+                                "multiple occurrences of argument " + identifier::prepend_hyphens(_named[i].first));
+
         if(_space_assignment)
             deferred_assert(_positional.empty(), "positional arguments given, but not accepted");
     }
