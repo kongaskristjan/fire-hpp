@@ -602,13 +602,18 @@ namespace fire {
                                   "argument " + _id.help() + " must have value");
         if(elem.second == _matcher::arg_type::string_t) {
             size_t last = 0;
-            bool success = true;
+            bool is_int = true;
             long long converted = 0;
-            try { converted = std::stoll(elem.first, &last); }
-            catch(std::logic_error &) { success = false; }
+            try {
+                converted = std::stoll(elem.first, &last);
+            } catch(std::out_of_range &) {
+                _::matcher.deferred_assert(false, "value " + elem.first + " out of range");
+            } catch(std::invalid_argument &) {
+                is_int = false;
+            }
 
-            _::matcher.deferred_assert(success && last == elem.first.size(), // != indicates floating point
-                                      "value " + elem.first + " is not an integer");
+            _::matcher.deferred_assert(is_int && last == elem.first.size(), // last != elem.first.size() indicates floating point
+                    "value " + elem.first + " is not an integer");
 
             return converted;
         }
@@ -624,7 +629,9 @@ namespace fire {
         if(elem.second == _matcher::arg_type::string_t) {
             try {
                 return std::stold(elem.first);
-            } catch(std::logic_error &) {
+            } catch(std::out_of_range &) {
+                _::matcher.deferred_assert(false, "value " + elem.first + " out of range");
+            } catch(std::invalid_argument &) {
                 _::matcher.deferred_assert(false, "value " + elem.first + " is not a real number");
             }
         }
@@ -659,8 +666,7 @@ namespace fire {
         _::matcher.deferred_assert(is_signed || value >= 0,
                 "argument " + _id.help() + " must be positive");
         _::matcher.deferred_assert(min <= value && value <= max,
-                "argument " + _id.help() + " value out of range [" +
-                std::to_string(min) + ", " + std::to_string(max) + "]");
+                "value " + std::to_string(value) + " out of range");
 
         return (T) value;
     }
@@ -676,8 +682,7 @@ namespace fire {
         T max = std::numeric_limits<T>::max();
 
         _::matcher.deferred_assert(min <= value && value <= max,
-                                   "argument " + _id.help() + " value out of range [" +
-                                   std::to_string(min) + ", " + std::to_string(max) + "]");
+                "value " + std::to_string(value) + " out of range");
 
         return (T) value;
     }
