@@ -84,20 +84,18 @@ int fired_main(int x = fire::arg("x"), int y = fire::arg("y")) { // Define and c
 FIRE(fired_main) // call fired_main()
 ```
 
-* <a id="tutorialfire"></a> __FIRE(function name)__
+* __FIRE(function name)__
 `FIRE(fired_main)` expands into the actual `main()` function that defines your program's entry point and fires off `fired_main()`. `fired_main` is called without arguments, thus compiler is forced to use the default `fire::arg` values.
 
 * __fire::arg(identifier)__
- A constructor that accepts the name/shorthand/position of the argument. The library prepends a single dash to single-character shorthands and two dashes to multi-character names (eg. `-x` and `--longer-name`). `fire::arg` objects should be used as default values for fired function parameters. See [documentation](#d_fire_arg) for more options.
+ A constructor that accepts the name/shorthand/position of the argument. The library prepends a single dash to single-character shorthands and two dashes to multi-character names (eg. `-x` and `--longer-name`). `fire::arg` objects should be used as default values for fired function parameters. See [documentation](#fire_arg) for more options.
 
 * __int fired_main(arguments)__
-This is your perceived program entry point. All arguments must be `bool`, integral, floating-point, `fire::optional<T>`, `std::string` or `std::vector<T>` type and default initialized with `fire::arg` objects (Failing to initialize properly results in undefined behaviour!). See [conversions](#d_arg_conversions) to learn how each of them changes the CLI.
+This is your perceived program entry point. All arguments must be `bool`, integral, floating-point, `fire::optional<T>`, `std::string` or `std::vector<T>` type and default initialized with `fire::arg` objects (Failing to initialize properly results in undefined behaviour!). See [conversions](#conversions) to learn how each of them changes the CLI.
 
 ## D. Documentation
 
-### <a id="d_fire"></a> D.1 FIRE(...) and FIRE_NO_SPACE_ASSIGNMENT(...)
-
-See `FIRE(...)` [quick start](#tutorialfire).
+### <a id="fire"></a> D.1 FIRE(...) and FIRE_NO_SPACE_ASSIGNMENT(...)
 
 `FIRE(...)` and `FIRE_NO_SPACE_ASSIGNMENT(...)` both create a main function to parse arguments and call `...`, however they differ in how arguments are parsed. `FIRE(...)` parses `program -x 1` as `program -x=1`, but `FIRE_NO_SPACE_ASSIGNMENT(...)` parses `-x` as a flag and `1` as a positional argument.
 
@@ -108,7 +106,7 @@ In order to use positional or vector arguments, `FIRE_NO_SPACE_ASSIGNMENT(...)` 
  
  There is plan to lift this restriction in v0.3 for builds supporting exceptions.
 
-### D.2 <a id="d_fire_arg"></a> fire::arg(identifier[, description[, default_value]])
+### D.2 <a id="fire_arg"></a> fire::arg(identifier[, description[, default_value]])
 
 #### <a id="identifier"></a> D.2.1 Identifier
 
@@ -124,12 +122,12 @@ Identifier used to find arguments from command line. Can either be
     * CLI usage: `program --long-name=1`
 
 
-* `int position`: positional argument (requires [no space assignment mode](#d_fire))
+* `int position`: positional argument (requires [no space assignment mode](#fire))
     * Example: `int fired_main(int x = fire::arg(0));`
     * CLI usage: `program 1`
 
 
-* `{int position, const char * name}`: positional argument with name (name is only used for help) (requires [no space assignment mode](#d_fire))
+* `{int position, const char * name}`: positional argument with name (name is only used for help) (requires [no space assignment mode](#fire))
     * Example: `int fired_main(int x = fire::arg(0));`
     * CLI usage: `program 1`
 
@@ -157,7 +155,7 @@ Default value if no value is provided through command line. `std::string`, integ
 * CLI usage: `program` -> `x==0`
 * CLI usage: `program -x=1` -> `x==1`
 
-### <a id="d_arg_conversions"></a> D.3 fire::arg conversions
+### <a id="conversions"></a> D.3 fire::arg conversions
 
 In order to conveniently obtain parsed arguments and automatically check the validity of input, `fire::arg` class defines several implicit conversions.
 
@@ -188,7 +186,7 @@ Boolean flags are `true` when they exist on command line and `false` when they d
 
 ### <a id="vector"></a> D.4 fire::arg::vector([description])
 
-A method for getting all positional arguments (requires [no space assignment mode](#d_fire)). The constructed object can be converted to `std::vector<std::string>`, `std::vector<integral type>` or `std::vector<floating-point type>`. Description can be supplied for help message. Using `fire::arg::vector` forbids extracting positional arguments with `fire::arg(index)`.
+A method for getting all positional arguments (requires [no space assignment mode](#fire)). The constructed object can be converted to `std::vector<std::string>`, `std::vector<integral type>` or `std::vector<floating-point type>`. Description can be supplied for help message. Using `fire::arg::vector` forbids extracting positional arguments with `fire::arg(index)`.
 
 * Example: `int fired_main(vector<std::string> params = fire::arg::vector());`
 * CLI usage: `program abc xyz` -> `params=={"abc", "xyz"}`
