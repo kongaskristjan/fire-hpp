@@ -73,7 +73,13 @@ def batch_test(cmake_root, prefix, compilers, cmake_build_types):
                 print_build = "Default" if build_type == "" else build_type
                 print("Testing " + print_build + " mode, C++" + str(standard))
 
-                cmd = ["cmake", "-D", "CMAKE_CXX_STANDARD=" + str(standard), "CMAKE_BUILD_TYPE=" + build_type, cmake_root]
+                # Build and test
+                cmd = [
+                    "cmake", cmake_root,
+                    "-D", "CMAKE_CXX_STANDARD=" + str(standard),
+                    "-D", "CMAKE_BUILD_TYPE=" + build_type
+                ]
+
                 env = dict(os.environ, CC=cc, CXX=cxx)
                 run(cmd, env=env)
                 run(["cmake", "--build", "."])
