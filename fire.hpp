@@ -97,12 +97,24 @@ namespace fire {
         inline bool vector() const { return _vector; };
     };
 
+    template<typename ORDER, typename VALUE>
+    class _first {
+        ORDER _order;
+        VALUE _value;
+        bool _empty = true;
+
+    public:
+        void set(const ORDER &__order, const VALUE &__value);
+        const VALUE & get() const;
+        bool empty() const { return _empty; }
+    };
+
     class _matcher {
         std::string _executable;
         std::vector<std::string> _positional;
         std::vector<std::pair<std::string, optional<std::string>>> _named;
         std::vector<identifier> _queried;
-        std::vector<std::string> _deferred_errors;
+        _first<identifier, std::string> _deferred_error;
         int _main_argc = 0;
         bool _space_assignment = false;
         bool _strict = false;
@@ -128,7 +140,7 @@ namespace fire {
                 assign_named_values(const std::vector<std::pair<std::string, bool>> &named);
         inline const std::string& get_executable() { return _executable; }
         inline size_t pos_args() { return _positional.size(); }
-        inline bool deferred_assert(bool pass, const std::string &msg);
+        inline bool deferred_assert(const identifier &id, bool pass, const std::string &msg);
     };
 
 
@@ -347,6 +359,21 @@ namespace fire {
     }
 
 
+    template<typename ORDER, typename VALUE>
+    void _first<ORDER, VALUE>::set(const ORDER &__order, const VALUE &__value) {
+        if(_empty || __order < _order) {
+            _order = __order;
+            _value = __value;
+            _empty = false;
+        }
+    }
+
+    template<typename ORDER, typename VALUE>
+    const VALUE & _first<ORDER, VALUE>::get() const {
+        return _value;
+    }
+
+
     _matcher::_matcher(int argc, const char **argv, int main_argc, bool space_assignment, bool strict) {
         _main_argc = main_argc;
         _space_assignment = space_assignment;
@@ -369,8 +396,8 @@ namespace fire {
         check_named();
         check_positional();
 
-        if(! _deferred_errors.empty()) {
-            std::cerr << "Error: " << _deferred_errors[0] << std::endl;
+        if(! _deferred_error.empty()) {
+            std::cerr << "Error: " << _deferred_error.get() << std::endl;
             exit(_failure_code);
         }
     }
@@ -387,7 +414,8 @@ namespace fire {
             invalid += " " + identifier::prepend_hyphens(it.first);
             VALID:;
         }
-        deferred_assert(invalid.empty(), std::string("invalid argument") + (invalid_count > 1 ? "s" : "") + invalid);
+        deferred_assert(identifier(), invalid.empty(),
+                        std::string("invalid argument") + (invalid_count > 1 ? "s" : "") + invalid);
     }
 
     void _matcher::check_positional() {
@@ -402,7 +430,8 @@ namespace fire {
             invalid += " " + std::to_string(i);
             VALID:;
         }
-        deferred_assert(invalid.empty(), std::string("invalid positional argument") + (invalid_count > 1 ? "s" : "") + invalid);
+        deferred_assert(identifier(), invalid.empty(),
+                        std::string("invalid positional argument") + (invalid_count > 1 ? "s" : "") + invalid);
     }
 
     std::pair<std::string, _matcher::arg_type> _matcher::get_and_mark_as_queried(const identifier &id) {
@@ -445,11 +474,11 @@ namespace fire {
 
         for(size_t i = 0; i < _named.size(); ++i)
             for(size_t j = 0; j < i; ++j)
-                deferred_assert(_named[i].first != _named[j].first,
+                deferred_assert(identifier(), _named[i].first != _named[j].first,
                                 "multiple occurrences of argument " + identifier::prepend_hyphens(_named[i].first));
 
         if(_space_assignment)
-            deferred_assert(_positional.empty(), "positional arguments given, but not accepted");
+            deferred_assert(identifier(), _positional.empty(), "positional arguments given, but not accepted");
     }
 
     std::vector<std::string> _matcher::to_vector_string(int n_strings, const char **strings) {
@@ -467,7 +496,7 @@ namespace fire {
         for(const std::string &s: raw) {
             int hyphens = count_hyphens(s);
             int name_size = (int) s.size() - hyphens;
-            deferred_assert(hyphens <= 2, "too many hyphens: " + s);
+            deferred_assert(identifier(), hyphens <= 2, "too many hyphens: " + s);
             if(hyphens == 2 || (hyphens == 1 && name_size >= 1 && !isdigit(s[1]))) {
                 named.push_back(s);
                 to_named = hyphens >= 2 || name_size == 1; // Not "-abc" == "-a -b -c"
@@ -496,7 +525,8 @@ namespace fire {
             }
             int name_size = (int) eq - hyphens;
 
-            if(!deferred_assert(name_size == 1 || hyphens >= 2, "expanding single-hyphen arguments can't have value (" + hyphened_name + ")")) continue;
+            if(!deferred_assert(identifier(), name_size == 1 || hyphens >= 2,
+                                "expanding single-hyphen arguments can't have value (" + hyphened_name + ")")) continue;
 
             split.emplace_back(hyphened_name.substr(0, eq), false);
             split.emplace_back(hyphened_name.substr(eq + 1), true);
@@ -517,7 +547,8 @@ namespace fire {
             if(certainly_value) {
                 args.back().second = hyphened_name;
             } else if(hyphens == 2) {
-                deferred_assert(name.size() >= 2, "single character parameter " + hyphened_name + " must have exactly one hyphen");
+                deferred_assert(identifier(), name.size() >= 2,
+                                "single character parameter " + hyphened_name + " must have exactly one hyphen");
                 args.emplace_back(name, optional<std::string>());
             } else if(hyphens == 1) {
                 if(isdigit(name[0]))
@@ -531,13 +562,13 @@ namespace fire {
         return args;
     }
 
-    bool _matcher::deferred_assert(bool pass, const std::string &msg) {
+    bool _matcher::deferred_assert(const identifier &id, bool pass, const std::string &msg) {
         if(! _strict) {
             _instant_assert(pass, msg, false);
             return pass;
         }
         if(! pass)
-            _deferred_errors.push_back(msg);
+            _deferred_error.set(id, msg);
         return pass;
     }
 
@@ -598,8 +629,8 @@ namespace fire {
     template <>
     inline optional<long long> arg::_get<long long>() {
         auto elem = _::matcher.get_and_mark_as_queried(_id);
-        _::matcher.deferred_assert(elem.second != _matcher::arg_type::bool_t,
-                                  "argument " + _id.help() + " must have value");
+        _::matcher.deferred_assert(_id, elem.second != _matcher::arg_type::bool_t,
+                                   "argument " + _id.help() + " must have value");
         if(elem.second == _matcher::arg_type::string_t) {
             size_t last = 0;
             bool is_int = true;
@@ -607,13 +638,13 @@ namespace fire {
             try {
                 converted = std::stoll(elem.first, &last);
             } catch(std::out_of_range &) {
-                _::matcher.deferred_assert(false, "value " + elem.first + " out of range");
+                _::matcher.deferred_assert(_id, false, "value " + elem.first + " out of range");
             } catch(std::invalid_argument &) {
                 is_int = false;
             }
 
-            _::matcher.deferred_assert(is_int && last == elem.first.size(), // last != elem.first.size() indicates floating point
-                    "value " + elem.first + " is not an integer");
+            _::matcher.deferred_assert(_id, is_int && last == elem.first.size(), // last != elem.first.size() indicates floating point
+                                       "value " + elem.first + " is not an integer");
 
             return converted;
         }
@@ -624,15 +655,15 @@ namespace fire {
     template <>
     inline optional<long double> arg::_get<long double>() {
         auto elem = _::matcher.get_and_mark_as_queried(_id);
-        _::matcher.deferred_assert(elem.second != _matcher::arg_type::bool_t,
-                "argument " + _id.help() + " must have value");
+        _::matcher.deferred_assert(_id, elem.second != _matcher::arg_type::bool_t,
+                                   "argument " + _id.help() + " must have value");
         if(elem.second == _matcher::arg_type::string_t) {
             try {
                 return std::stold(elem.first);
             } catch(std::out_of_range &) {
-                _::matcher.deferred_assert(false, "value " + elem.first + " out of range");
+                _::matcher.deferred_assert(_id, false, "value " + elem.first + " out of range");
             } catch(std::invalid_argument &) {
-                _::matcher.deferred_assert(false, "value " + elem.first + " is not a real number");
+                _::matcher.deferred_assert(_id, false, "value " + elem.first + " is not a real number");
             }
         }
 
@@ -644,8 +675,8 @@ namespace fire {
     template <>
     inline optional<std::string> arg::_get<std::string>() {
         auto elem = _::matcher.get_and_mark_as_queried(_id);
-        _::matcher.deferred_assert(elem.second != _matcher::arg_type::bool_t,
-                                  "argument " + _id.help() + " must have value");
+        _::matcher.deferred_assert(_id, elem.second != _matcher::arg_type::bool_t,
+                                   "argument " + _id.help() + " must have value");
 
         if(elem.second == _matcher::arg_type::string_t)
             return elem.first;
@@ -663,10 +694,10 @@ namespace fire {
         T min = std::numeric_limits<T>::lowest();
         T max = std::numeric_limits<T>::max();
 
-        _::matcher.deferred_assert(is_signed || value >= 0,
-                "argument " + _id.help() + " must be positive");
-        _::matcher.deferred_assert(min <= value && value <= max,
-                "value " + std::to_string(value) + " out of range");
+        _::matcher.deferred_assert(_id, is_signed || value >= 0,
+                                   "argument " + _id.help() + " must be positive");
+        _::matcher.deferred_assert(_id, min <= value && value <= max,
+                                   "value " + std::to_string(value) + " out of range");
 
         return (T) value;
     }
@@ -681,8 +712,8 @@ namespace fire {
         T min = std::numeric_limits<T>::lowest();
         T max = std::numeric_limits<T>::max();
 
-        _::matcher.deferred_assert(min <= value && value <= max,
-                "value " + std::to_string(value) + " out of range");
+        _::matcher.deferred_assert(_id, min <= value && value <= max,
+                                   "value " + std::to_string(value) + " out of range");
 
         return (T) value;
     }
@@ -699,7 +730,8 @@ namespace fire {
     template <typename T>
     T arg::_convert(bool dec_main_argc) {
         optional<T> val = _get_with_precision<T>();
-        _::matcher.deferred_assert(val.has_value(), "required argument " + _id.longer() + " not provided");
+        _::matcher.deferred_assert(_id, val.has_value(),
+                                   "required argument " + _id.longer() + " not provided");
         _::matcher.check(dec_main_argc);
         return val.value_or(T());
     }
@@ -725,8 +757,8 @@ namespace fire {
 
         _log("", true); // User sees this as flag, not boolean option
         auto elem = _::matcher.get_and_mark_as_queried(_id);
-        _::matcher.deferred_assert(elem.second != _matcher::arg_type::string_t,
-                                  "flag " + _id.help() + " must not have value");
+        _::matcher.deferred_assert(_id, elem.second != _matcher::arg_type::string_t,
+                                   "flag " + _id.help() + " must not have value");
         _::matcher.check(true);
         return elem.second == _matcher::arg_type::bool_t;
     }
