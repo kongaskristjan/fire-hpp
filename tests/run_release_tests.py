@@ -27,10 +27,9 @@
     DEALINGS IN THE SOFTWARE.
 """
 
-import json
-import argparse
 from pathlib import Path
-import os, shutil, subprocess, sys
+import os, shutil, subprocess, sys, argparse, json, functools
+print = functools.partial(print, flush=True)
 
 description = """Batch-test combinations of compilers and cmake settings. CMake root directory needs to contain a file called `.release_tests.json`. Example contents:
 {
