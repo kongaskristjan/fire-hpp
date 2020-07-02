@@ -94,7 +94,7 @@ def batch_test(cmake_root, prefix, compilers, cmake_build_types):
 
                 run(cmd, env=env)
                 run(["cmake", "--build", "."])
-                run(["python3", "tests/run_standard_tests.py"])
+                run([sys.executable, "tests/run_standard_tests.py"])
 
     print()
     print("++++++++++        SUCCESS        ++++++++++")
