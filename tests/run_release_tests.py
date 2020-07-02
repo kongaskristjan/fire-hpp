@@ -30,14 +30,15 @@
 import json
 import argparse
 from pathlib import Path
-import os, subprocess, sys
+import os, shutil, subprocess, sys
 
 description = """Batch-test combinations of compilers and cmake settings. CMake root directory needs to contain a file called `.release_tests.json`. Example contents:
 {
   "compiler_prefix": "/usr/bin/",
   "compilers": [
     {"cc": "gcc", "cxx": "g++", "standards": [11, 14, 17, 20]},
-    {"cc": "clang", "cxx": "clang++", "standards": [11, 14, 17, 20]}
+    {"cc": "clang", "cxx": "clang++", "standards": [11, 14, 17, 20]},
+    {"generator": "Unix Makefiles", "standards": [11, 14, 17, 20]}
   ],
   "cmake_build_types": ["Debug", "", "Release"]
 }
@@ -53,25 +54,30 @@ def main():
     with open(json_path, "r") as json_file:
         setup = json.load(json_file)
         try:
-            batch_test(args.cmake_root, setup["compiler_prefix"], setup["compilers"], setup["cmake_build_types"])
+            batch_test(args.cmake_root, setup.get("compiler_prefix"), setup["compilers"], setup["cmake_build_types"])
         except KeyboardInterrupt:
-            clean()
             print("Tests interrupted")
+
+    clear_cmake_cache()
 
 
 def batch_test(cmake_root, prefix, compilers, cmake_build_types):
     for comp in compilers:
-        cc = str(Path(prefix) / comp["cc"])
-        cxx = str(Path(prefix) / comp["cxx"])
+        assert ("cc" in comp and "cxx" in comp) or "generator" in comp
 
         print()
         print()
-        print("Testing " + cc + " and " + cxx)
+        if "cc" in comp and "cxx" in comp:
+            print("Testing {} and {}".format(comp["cc"], comp["cxx"]))
+        if "generator" in comp:
+            print("Testing {}".format(comp["generator"]))
         print()
         for standard in comp["standards"]:
             for build_type in cmake_build_types:
                 print_build = "Default" if build_type == "" else build_type
                 print("Testing " + print_build + " mode, C++" + str(standard))
+
+                clear_cmake_cache()
 
                 # Build and test
                 cmd = [
@@ -80,11 +86,15 @@ def batch_test(cmake_root, prefix, compilers, cmake_build_types):
                     "-D", "CMAKE_BUILD_TYPE=" + build_type
                 ]
 
-                env = dict(os.environ, CC=cc, CXX=cxx)
+                env = dict(os.environ)
+                if "cc" in comp and "cxx" in comp:
+                    env.update({"CC": str(Path(prefix) / comp["cc"]), "CXX": str(Path(prefix) / comp["cxx"])})
+                if "generator" in comp:
+                    env.update({"CMAKE_GENERATOR": comp["generator"]})
+
                 run(cmd, env=env)
                 run(["cmake", "--build", "."])
                 run(["python3", "tests/run_standard_tests.py"])
-    clean()
 
     print()
     print("++++++++++        SUCCESS        ++++++++++")
@@ -92,7 +102,7 @@ def batch_test(cmake_root, prefix, compilers, cmake_build_types):
 
 
 def run(cmd, env=None):
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=env)
+    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
     if result.returncode != 0:
         print("STDOUT:")
         print(str(result.stdout, "utf-8"))
@@ -106,12 +116,13 @@ def run(cmd, env=None):
         sys.exit(1)
 
 
-def clean():
-    try: os.remove("CMakeCache.txt")
-    except OSError: pass
-
-    try: os.removedirs("CMakeFiles")
-    except OSError: pass
+def clear_cmake_cache():
+    for dir_path, _, files in os.walk("."):
+        if dir_path[-len("CMakeLists"):] == "CMakeLists":
+            shutil.rmtree(dir_path)
+        for file in files:
+            if file == "CMakeCache.txt":
+                os.remove(Path(dir_path) / file)
 
 
 if __name__ == "__main__":
