@@ -28,7 +28,7 @@
 """
 
 from pathlib import Path
-import os, shutil, subprocess, sys, argparse, json, functools
+import os, shutil, subprocess, sys, argparse, json, functools, random
 print = functools.partial(print, flush=True)
 
 description = """Batch-test combinations of compilers and cmake settings. CMake root directory needs to contain a file called `.release_tests.json`. Example contents:
@@ -47,17 +47,24 @@ description = """Batch-test combinations of compilers and cmake settings. CMake 
 def main():
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("cmake_root")
-
     args = parser.parse_args()
-    json_path = Path(args.cmake_root) / ".release_tests.json"
+    cmake_root = Path(args.cmake_root).absolute()
+
+    # A separate build directory is created to ensure clearing cache doesn't unintentionally remove other files
+    build_dir = "build_" + str(random.randint(0, 100 * 1000 * 1000))
+    os.mkdir(build_dir)
+    os.chdir(build_dir)
+
+    json_path = cmake_root / ".release_tests.json"
     with open(json_path, "r") as json_file:
         setup = json.load(json_file)
         try:
-            batch_test(args.cmake_root, setup.get("compiler_prefix"), setup["compilers"], setup["cmake_build_types"])
+            batch_test(cmake_root, setup.get("compiler_prefix"), setup["compilers"], setup["cmake_build_types"])
         except KeyboardInterrupt:
             print("Tests interrupted")
 
-    clear_cmake_cache()
+    os.chdir("..")
+    shutil.rmtree(build_dir)
 
 
 def batch_test(cmake_root, prefix, compilers, cmake_build_types):
