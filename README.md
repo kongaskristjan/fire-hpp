@@ -68,6 +68,7 @@ Steps to run examples:
 * Clone repo: `git clone https://github.com/kongaskristjan/fire-hpp`
 * Create build and change directory: `cd fire-hpp && mkdir build && cd build`
 * Configure/build: `cmake .. && cmake --build .` (or substitute latter command with appropriate build system invocation, eg. `make -j8` or `ninja`)
+* If errors are encountered, disable pedantic warnings and treating warnings as errors with `cmake -D DISABLE_PEDANTIC= ..` (though you are encouraged to open an issue) (you likely need to clear the build directory).
 * Run: `./examples/basic --help` or `./examples/basic -x=3 -y=5` 
 
 ## T. Tutorial
@@ -197,16 +198,14 @@ This library uses extensive testing. Unit tests are located in `tests/`, while `
 
 v0.1 release is tested on:
 * Arch Linux gcc==10.1.0, clang==10.0.0: C++11, C++14, C++17 and C++20
-* Ubuntu 18.04 clang=={3.5, 3.6, 3.7, 3.8, 3.9}: C++11, C++14 and clang=={4.0, 5.0, 6.0, 7.0, 8.0, 9.0}: C++11, C++14 and C++17
+* Ubuntu 18.04 clang=={3.5, 3.6, 3.7, 3.8, 3.9, 4.0}: C++11, C++14 and clang=={5.0, 6.0, 7.0, 8.0, 9.0}: C++11, C++14 and C++17
 * Ubuntu 18.04 gcc=={4.8, 4.9}: C++11 and gcc=={5.5, 6.5, 7.5, 8.4}: C++11, C++14 and C++17
 * Windows 10, MSVC=={19.26} (2019 Build Tools): C++11, C++14 and C++17
 * Mac OS, XCode=={10.4}: C++11
 
 ### TODO list:
 
-#### Current state
-
-#### v0.1 release
+#### Current status
 
 * Automatic testing for error messages
 * Improve help messages
