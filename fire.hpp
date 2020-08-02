@@ -52,6 +52,7 @@ namespace fire {
 
     inline void _instant_assert(bool pass, const std::string &msg, bool programmer_side = true);
     inline int count_hyphens(const std::string &s);
+    inline std::string without_hyphens(const std::string &s);
 
     template <typename T>
     class optional {
@@ -70,8 +71,8 @@ namespace fire {
     };
 
     class identifier {
-        optional<std::string> _short_name, _long_name;
         optional<int> _pos;
+        optional<std::string> _short_name, _long_name, _descr;
         bool _vector = false;
 
         std::string _help, _longer;
@@ -80,12 +81,8 @@ namespace fire {
     public:
         inline static std::string prepend_hyphens(const std::string &name);
 
-        inline identifier(): _help("..."), _longer("...") { _vector = true; };
-        inline identifier(const char *name_c);
-        inline identifier(int pos): _pos(pos), _help("<" + std::to_string(pos) + ">"), _longer(_help) {}
-        inline identifier(const char *name_c1, const char *name_c2);
-        inline identifier(int pos, const char *help): _pos(pos), _help(help), _longer(help) { _check_name(_help); }
-        inline identifier(const char *help, int pos): _pos(pos), _help(help), _longer(help) { _check_name(_help); }
+        inline identifier(optional<std::string> descr=optional<std::string>());
+        inline identifier(const std::vector<std::string> &names, optional<int> pos);
 
         inline bool operator<(const identifier &other) const;
         inline bool overlaps(const identifier &other) const;
@@ -94,7 +91,9 @@ namespace fire {
         inline std::string help() const { return _help; }
         inline std::string longer() const { return _longer; }
         inline optional<int> get_pos() const { return _pos; }
-        inline bool vector() const { return _vector; };
+        inline bool vector() const { return _vector; }
+
+        inline std::string get_descr() const { return _descr.value_or(""); }
     };
 
     template<typename ORDER, typename VALUE>
@@ -137,7 +136,7 @@ namespace fire {
                 separate_named_positional(const std::vector<std::string> &raw);
         inline std::vector<std::pair<std::string, bool>> split_equations(const std::vector<std::string> &named);
         inline std::vector<std::pair<std::string, optional<std::string>>>
-                assign_named_values(const std::vector<std::pair<std::string, bool>> &named);
+                assign_named_values(const std::vector<std::pair<std::string, bool>> &split);
         inline const std::string& get_executable() { return _executable; }
         inline size_t pos_args() { return _positional.size(); }
         inline bool deferred_assert(const identifier &id, bool pass, const std::string &msg);
@@ -180,7 +179,6 @@ namespace fire {
 
     class arg {
         identifier _id; // No identifier implies vector positional arguments
-        std::string _descr;
 
         optional<long long> _int_value;
         optional<long double> _float_value;
@@ -218,27 +216,24 @@ namespace fire {
         };
 
     public:
-        inline arg(std::initializer_list<convertible> init) {
-            _instant_assert(init.size() == 2, "exactly two arguments must be given as initializer list arguments");
+        template<typename T=std::nullptr_t>
+        inline arg(std::initializer_list<convertible> init, T value=T()) {
             optional<int> int_value;
-            std::vector<const char *> char_values;
+            std::vector<std::string> string_values;
             for(const convertible &val: init) {
                 if(val._int_value.has_value())
                     int_value = val._int_value.value();
                 else
-                    char_values.push_back(val._char_value.value());
+                    string_values.push_back(val._char_value.value());
             }
-            _instant_assert(char_values.size() >= 1, "both initializer list arguments can't be ints");
 
-            if(char_values.size() == 2)
-                _id = identifier(char_values[0], char_values[1]);
-            if(char_values.size() == 1)
-                _id = identifier(char_values[0], int_value.value());
+            _id = identifier(string_values, int_value);
+            init_default(value);
         }
 
         template<typename T=std::nullptr_t>
-        inline arg(identifier _id, const char *_descr = "", T value=T()):
-                _id(std::move(_id)), _descr(_descr) { init_default(value); }
+        inline arg(convertible _id, T value=T()):
+            arg({_id}, value) {}
 
         inline static arg vector(std::string _descr = "");
 
@@ -269,6 +264,7 @@ namespace fire {
                 std::cerr << " (programmer side)";
             std::cerr << ": " << msg << std::endl;
         }
+
         exit(_failure_code);
     }
 
@@ -277,6 +273,12 @@ namespace fire {
         for(hyphens = 0; hyphens < (int) s.size() && s[hyphens] == '-'; ++hyphens)
             ;
         return hyphens;
+    }
+
+    std::string without_hyphens(const std::string &s) {
+        int hyphens = count_hyphens(s);
+        std::string wo_hyphens = s.substr(hyphens);
+        return wo_hyphens;
     }
 
 
@@ -295,36 +297,66 @@ namespace fire {
         _instant_assert(name.size() >= 2 || !isdigit(name[0]), "single character name must not be a digit (" + name + ")");
     }
 
-    identifier::identifier(const char *name_c) {
-        std::string name = name_c;
-        _check_name(name);
+    inline identifier::identifier(optional<std::string> descr):
+        _descr(descr), _vector(true), _help("..."), _longer("...") {}
 
-        if(name.size() == 1) _short_name = name;
-        else _long_name = name;
+    inline identifier::identifier(const std::vector<std::string> &names, optional<int> pos) {
+        // Find description, shorthand and long name
+        for(const std::string &name: names) {
+            int hyphens = count_hyphens(name);
+            _instant_assert(hyphens <= 2, "Identifier entry " + name + " must prefix either:"
+                                          " 0 hyphens for description,"
+                                          " 1 hyphen for short-hand name"
+                                          " 2 hyphens for long name");
+            if(hyphens == 0) {
+                _instant_assert(! _descr.has_value(),
+                        "Can't specify descriptions twice: " + _descr.value_or("") + " and " + name);
+                _descr = name;
+            } else if(hyphens == 1) {
+                _instant_assert(! _short_name.has_value(),
+                        "Can't specify shorthands twice: " + _short_name.value_or("") + " and " + name);
+                _instant_assert(name.size() == 2,
+                        "Single hyphen shorthand " + name + " must be one character");
+                _instant_assert(! isdigit(name[1]),
+                        "Argument " + name + " can't start with a number");
+                _short_name = name;
+            } else if(hyphens == 2) {
+                _instant_assert(! _long_name.has_value(),
+                        "Can't specify long names twice: " + _long_name.value_or("") + " and " + name);
+                _instant_assert(name.size() >= 4,
+                                "Two hyphen name " + name + " must have at least two characters");
+                _long_name = name;
+            }
+        }
 
-        _help = _long_name.has_value() ? ("--" + name) : ("-" + name);
-        _longer = _help;
-    }
+        // Set help and longer variant
+        if(_long_name.has_value() && _short_name.has_value()) {
+            _help = _short_name.value() + "|" + _long_name.value();
+            _longer = _long_name.value();
+        } else if (_long_name.has_value() && ! _short_name.has_value())
+            _help = _longer = _long_name.value();
+        else if (! _long_name.has_value() && _short_name.has_value())
+            _help = _longer = _short_name.value();
 
-    identifier::identifier(const char *name1_c, const char *name2_c) {
-        std::string name1 = name1_c, name2 = name2_c;
-        _check_name(name1);
-        _check_name(name2);
-
-        if(name2.size() < name1.size())
-            std::swap(name1, name2);
-        _instant_assert(name1.size() == 1, "one of the two names given must be a shorthand (single character)");
-        _instant_assert(name2.size() >= 2, "one of the two names given must be longer than one character");
-
-        _short_name = name1;
-        _long_name = name2;
-        _help = "-" + name1 + "|--" + name2;
-        _longer = "--" + name2;
+        // Set position
+        if(pos.has_value()) {
+            _instant_assert(! _short_name.has_value(),
+                    "Can't specify both name " + _short_name.value_or("") + " and index " + std::to_string(pos.value()));
+            _instant_assert(! _long_name.has_value(),
+                    "Can't specify both name " + _long_name.value_or("") + " and index " + std::to_string(pos.value()));
+            _pos = pos;
+            _longer = _help = "<" + std::to_string(pos.value()) + ">";
+        }
+        _instant_assert(_short_name.has_value() || _long_name.has_value() || _pos.has_value(),
+                "Argument must be specified with at least on of the following: shorthand, long name or index");
     }
 
     bool identifier::operator<(const identifier &other) const {
         std::string name = _long_name.value_or(_short_name.value_or(""));
         std::string other_name = other._long_name.value_or(other._short_name.value_or(""));
+
+        name = without_hyphens(name);
+        other_name = without_hyphens(other_name);
 
         std::transform(name.begin(), name.end(), name.begin(), [](char c){ return (char) tolower(c); });
         std::transform(other_name.begin(), other_name.end(), other_name.begin(), [](char c){ return (char) tolower(c); });
@@ -354,8 +386,7 @@ namespace fire {
     }
 
     bool identifier::contains(int pos) const {
-        if(_pos.has_value() && pos == _pos.value()) return true;
-        return false;
+        return _pos.has_value() && pos == _pos.value();
     }
 
 
@@ -380,7 +411,8 @@ namespace fire {
         _strict = strict;
 
         parse(argc, argv);
-        _help_flag = get_and_mark_as_queried(identifier({"h", "help"})).second != arg_type::none_t;
+        identifier help({"-h", "--help", "Print the help message"}, optional<int>());
+        _help_flag = get_and_mark_as_queried(help).second != arg_type::none_t;
         check(false);
     }
 
@@ -535,27 +567,26 @@ namespace fire {
     }
 
     std::vector<std::pair<std::string, optional<std::string>>>
-            _matcher::assign_named_values(const std::vector<std::pair<std::string, bool>> &named) {
+            _matcher::assign_named_values(const std::vector<std::pair<std::string, bool>> &split) {
         std::vector<std::pair<std::string, optional<std::string>>> args;
 
-        for(const std::pair<std::string, bool> &p: named) {
-            const std::string &hyphened_name = p.first;
+        for(const std::pair<std::string, bool> &p: split) {
+            const std::string &name = p.first;
             bool certainly_value = p.second;
 
-            int hyphens = count_hyphens(hyphened_name);
-            std::string name = hyphened_name.substr(hyphens);
+            int hyphens = count_hyphens(name);
             if(certainly_value) {
-                args.back().second = hyphened_name;
+                args.back().second = name;
             } else if(hyphens == 2) {
-                deferred_assert(identifier(), name.size() >= 2,
-                                "single character parameter " + hyphened_name + " must have exactly one hyphen");
+                deferred_assert(identifier(), name.size() >= 4,
+                                "single character parameter " + name + " must have exactly one hyphen");
                 args.emplace_back(name, optional<std::string>());
             } else if(hyphens == 1) {
-                if(isdigit(name[0]))
-                    args.back().second = hyphened_name;
+                if(isdigit(name[1]))
+                    args.back().second = name;
                 else
-                    for (char c: name)
-                        args.emplace_back(std::string(1, c), optional<std::string>());
+                    for(size_t i = 1; i < name.size(); ++i)
+                        args.emplace_back(std::string("-") + name[i], optional<std::string>());
             } else if(hyphens == 0)
                 args.back().second = name;
         }
@@ -742,12 +773,12 @@ namespace fire {
         if(_float_value.has_value()) def = std::to_string(_float_value.value());
         if(_string_value.has_value()) def = _string_value.value();
 
-        _::help_logger.log(_id, {_descr, type, def, optional});
+        _::help_logger.log(_id, {_id.get_descr(), type, def, optional});
     }
 
     arg arg::vector(std::string descr) {
         arg a;
-        a._descr = std::move(descr);
+        a._id = identifier(descr);
         return a;
     }
 

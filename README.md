@@ -1,12 +1,12 @@
 
 # Fire for C++
 
-Fire for C++, inspired by [python-fire](https://github.com/google/python-fire), is a library that creates a command line interface from a function signature. Here's a program for adding two numbers in command line:
+Fire for C++, inspired by [python-fire](https://github.com/google/python-fire), is a library that creates a command line interface from a function signature. Here's the whole program for adding two numbers in command line:
  ```
 #include <iostream>
 #include <fire.hpp>
 
-int fired_main(int x = fire::arg("x"), int y = fire::arg("y")) {
+int fired_main(int x = fire::arg("-x"), int y = fire::arg("-y")) {
     std::cout << x + y << std::endl;
     return 0;
 }
@@ -76,8 +76,8 @@ Steps to run examples:
 Let's go through each part of the following example.
 
 ```
-int fired_main(int x = fire::arg("x"), int y = fire::arg("y")) { // Define and convert arguments
-    std::cout << x + y << std::endl; // Use x and y, they're ints
+int fired_main(int x = fire::arg("-x"), int y = fire::arg("-y")) { // Define and convert arguments
+    std::cout << x + y << std::endl; // Use x and y, they're ints!
     return 0;
 }
 
@@ -88,7 +88,7 @@ FIRE(fired_main) // call fired_main()
 `FIRE(fired_main)` expands into the actual `main()` function that defines your program's entry point and fires off `fired_main()`. `fired_main` is called without arguments, thus compiler is forced to use the default `fire::arg` values.
 
 * __fire::arg(identifier)__
- A constructor that accepts the name/shorthand/position of the argument. The library prepends a single dash to single-character shorthands and two dashes to multi-character names (eg. `-x` and `--longer-name`). `fire::arg` objects should be used as default values for fired function parameters. See [documentation](#fire_arg) for more options.
+ A constructor that accepts the name/shorthand/description/position of the argument. Use a brace enclosed list for several of them (eg. `fire::arg({"-x", "--longer-name", "description of the argument"})` or `fire::arg({0, "zeroth element"})`. The library expects a single dash for single-character shorthands, two dashes for multi-character names, and zero dashes for descriptions. `fire::arg` objects should be used as default values for fired function parameters. See [documentation](#fire_arg) for more info.
 
 * __int fired_main(arguments)__
 This is what you perceive as the program entry point. All arguments must be `bool`, integral, floating-point, `fire::optional<T>`, `std::string` or `std::vector<T>` type and default initialized with `fire::arg` objects (Failing to initialize properly results in undefined behavior!). See [conversions](#conversions) to learn how each of them affects the CLI.
@@ -104,38 +104,31 @@ To use positional or vector arguments, `FIRE_NO_SPACE_ASSIGNMENT(...)` must be u
 * Mixing positional and named arguments with space-separated values makes a bad CLI anyway, eg: `program a -x b c` doesn't seem like `-x=b` with `a` and `c` as positional.
 * Implementing such a CLI within Fire API is likely impossible without using exceptions.
  
-### D.2 <a id="fire_arg"></a> fire::arg(identifier[, description[, default_value]])
+### D.2 <a id="fire_arg"></a> fire::arg(identifiers[, default_value]])
 
-#### <a id="identifier"></a> D.2.1 Identifier
+#### <a id="identifier"></a> D.2.1 Identifiers
 
-Identifier used to find arguments from command line. Can either be
-* `const char * name`: named argument
-    * Example: `int fired_main(int x = fire::arg("x"));`
+Identifiers are used to find arguments from command line and provide a description. It can consist of a shorthand, long name, description or position (must contain at least one of the following: shorthand, long name or position). Braces can be omitted if only one of them is provided.
+
+* Example: `int fired_main(int x = fire::arg("-x"));`
     * CLI usage: `program -x=1`
 
 
-* `{const char * shorthand, const char * full_name}`: named argument with a short-hand (single character) and long name
-    * Example: `int fired_main(int x = fire::arg({"x", "long-name"}));`
+* Example: `int fired_main(int x = fire::arg({"-x", "--long-name"}));`
     * CLI usage: `program -x=1`
     * CLI usage: `program --long-name=1`
 
 
-* `int position`: positional argument (requires [no space assignment mode](#fire))
-    * Example: `int fired_main(int x = fire::arg(0));`
+* Example: `int fired_main(int x = fire::arg(0));`
     * CLI usage: `program 1`
 
+#### <a id="description"></a> D.2.2 Descrpition (in identifier)
 
-* `{int position, const char * name}`: positional argument with name (name is only used for help) (requires [no space assignment mode](#fire))
-    * Example: `int fired_main(int x = fire::arg({0, "name"}));`
-    * CLI usage: `program 1`
+Argument description for `--help` message. Is determined by not having leading hyphens.
 
-#### <a id="description"></a> D.2.2 Descrpition (optional)
-
-`std::string` argument description for `--help` message.
-
-* Example: `int fired_main(int x = fire::arg("x", "an argument"));`
-* CLI usage: `program --help`
-* Output:
+* Example: `int fired_main(int x = fire::arg({"-x", "an argument"}));`
+    * CLI usage: `program --help`
+    * Output:
 ```
     Usage:
       ./examples/basic -x=<INTEGER>
@@ -149,9 +142,9 @@ Identifier used to find arguments from command line. Can either be
 
 Default value if no value is provided through command line. Can be either `std::string`, integral or floating-point type and `fire::arg` must be converted to that same type. This default is also displayed on the help page.
 
-* Example: `int fired_main(int x = fire::arg("x", "", 0));`
-* CLI usage: `program` -> `x==0`
-* CLI usage: `program -x=1` -> `x==1`
+* Example: `int fired_main(int x = fire::arg("-x", 0));`
+    * CLI usage: `program` -> `x==0`
+    * CLI usage: `program -x=1` -> `x==1`
 
 ### <a id="conversions"></a> D.3 fire::arg conversions
 
@@ -161,10 +154,12 @@ To conveniently obtain arguments with the right type and automatically check the
 
 Converts the argument value on command line to the respective type. Displays an error if the conversion is impossible or default value has wrong type.
 
-* Example: `int fired_main(std::string name = fire::arg("name"));`
-* CLI usage: `program --name=fire` -> `name=="fire"`
-* Example: `int fired_main(double x = fire::arg("x"));`
-* CLI usage: `program -x=blah` -> `Error: value blah is not a real number`
+* Example: `int fired_main(std::string name = fire::arg("--name"));`
+    * CLI usage: `program --name=fire` -> `name=="fire"`
+
+
+* Example: `int fired_main(double x = fire::arg("-x"));`
+    * CLI usage: `program -x=blah` -> `Error: value blah is not a real number`
 
 #### <a id="optional"></a> D.3.2 fire::optional
 
@@ -172,25 +167,25 @@ Used for optional arguments without a reasonable default value. This way the def
 
 `fire::optional` is a tear-down version of [`std::optional`](https://en.cppreference.com/w/cpp/utility/optional), with compatible implementations for [`has_value()`](https://en.cppreference.com/w/cpp/utility/optional/operator_bool), [`value_or()`](https://en.cppreference.com/w/cpp/utility/optional/value_or) and [`value()`](https://en.cppreference.com/w/cpp/utility/optional/value).
 
-* Example: `int fired_main(fire::optional<std::string> name = fire::arg("name"));`
-* CLI usage: `program` -> `name.has_value()==false`, `name.value_or("default")=="default"`
-* CLI usage: `program --name="fire"` -> `name.has_value()==true` and `name.value_or("default")==name.value()=="fire"`
+* Example: `int fired_main(fire::optional<std::string> name = fire::arg("--name"));`
+    * CLI usage: `program` -> `name.has_value()==false`, `name.value_or("default")=="default"`
+    * CLI usage: `program --name="fire"` -> `name.has_value()==true` and `name.value_or("default")==name.value()=="fire"`
 
 #### <a id="flag"></a> D.3.3 bool: flag argument
 
 Boolean flags are `true` when they exist on command line and `false` when they don't. Multiple single-character flags can be packed on command line by prefixing with a single hyphen: `-abc <=> -a -b -c`
 
-* Example: `int fired_main(bool flag = fire::arg("flag"));`
-* CLI usage: `program` -> `flag==false`
-* CLI usage: `program --flag` -> `flag==true`
+* Example: `int fired_main(bool flag = fire::arg("--flag"));`
+    * CLI usage: `program` -> `flag==false`
+    * CLI usage: `program --flag` -> `flag==true`
 
 ### <a id="vector"></a> D.4 fire::arg::vector([description])
 
 A method for getting all positional arguments (requires [no space assignment mode](#fire)). The constructed object can be converted to `std::vector<std::string>`, `std::vector<integral type>` or `std::vector<floating-point type>`. Description can be supplied for help message. Using `fire::arg::vector` forbids extracting positional arguments with `fire::arg(index)`.
 
 * Example: `int fired_main(vector<std::string> params = fire::arg::vector());`
-* CLI usage: `program abc xyz` -> `params=={"abc", "xyz"}`
-* CLI usage: `program` -> `params=={}`
+    * CLI usage: `program abc xyz` -> `params=={"abc", "xyz"}`
+    * CLI usage: `program` -> `params=={}`
 
 ## Development
 
@@ -207,18 +202,18 @@ v0.1 release is tested on:
 
 #### Current status
 
+* Names for positional arguments for help message
 * Automatic testing for error messages
 * Improve help messages
     * Refactor `log_elem::type` from `std::string` -> `enum class`
     * Help messages with better organization (separate positional arguments, named arguments, flags, etc. in `Usage` and descriptions)
     * Program description
 * Ensure API user gets an error message when using required positional arguments after optional positional arguments
-* `save(...)` keyword enclosing `arg`, which will save the program from exiting even if not all required arguments are present or correct (eg. for `--version`)
-* `program --flags  --  --interpret-everything-as-positional-arguments-after-double-dash`
 * Remove exceptions
 
 #### v0.2 release
 
-* If exceptions are still enabled, allow positional arguments in both FIRE(...) and FIRE_NO_SPACE_ASSIGNMENT(...)
 * Subcommands (with separate help messages for each subcommand)
 * Allow specifying positional arguments as named arguments, if name exists
+* `save(...)` keyword enclosing `arg`, which will save the program from exiting even if not all required arguments are present or correct (eg. for `--version`)
+* `program --flags  --  --interpret-everything-as-positional-arguments-after-double-dash`

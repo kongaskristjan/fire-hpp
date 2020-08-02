@@ -71,8 +71,8 @@ class assert_runner:
 def run_all_combinations(path_prefix):
     runner = assert_runner(path_prefix / "all_combinations")
 
-    runner.equal("0 1 2 -i=0 -r=1 -s=2", "")
-    runner.equal("0 1 2 3 4 5 -i=0 -r=1.0 -s=2 --def-i=-1 --def-r=-2.0 --def-s=text --opt-i=10 --opt-r=0.5 --opt-s=text", "")
+    runner.equal("0 -i=0", "")
+    runner.equal("0 1 -i=0 --def-r=0.0 --opt-s=string", "")
 
 
 def run_basic(path_prefix):

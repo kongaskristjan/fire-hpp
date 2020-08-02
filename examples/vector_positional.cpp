@@ -25,8 +25,8 @@ using namespace std;
 // Optionally sorts them or prints them line by line.
 
 int fired_main(vector<string> strings = fire::arg::vector("strings to be printed"),
-               bool lines = fire::arg({"o", "one-per-line"}),
-               bool do_sort = fire::arg({"s", "sort"})) {
+               bool lines = fire::arg({"-o", "--one-per-line"}),
+               bool do_sort = fire::arg({"-s", "--sort"})) {
     if(do_sort)
         std::sort(strings.begin(), strings.end());
 

@@ -19,7 +19,7 @@
 
 using namespace std;
 
-int fired_main(fire::optional<int> opt = fire::arg("optional"), int def = fire::arg("default", "", 0)) {
+int fired_main(fire::optional<int> opt = fire::arg("--optional"), int def = fire::arg("--default", 0)) {
     if(opt.has_value())
         cout << "optional: " << to_string(opt.value()) << endl;
     else
