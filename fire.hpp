@@ -613,9 +613,8 @@ namespace fire {
         if(elem.optional || elem.type == "") printable += "[";
         printable += verbose ? id.help() : id.longer();
         if(elem.type != "" && ! (! verbose && id.get_pos().has_value())) {
-            printable += "=<";
+            printable += "=";
             printable += elem.type;
-            printable += ">";
         }
         if(elem.optional || elem.type == "") printable += "]";
         return printable;
