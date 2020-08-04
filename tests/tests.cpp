@@ -224,6 +224,16 @@ TEST(identifier, less) {
         identifier(vector<string>{"first"}, 1) < identifier(vector<string>{}, 2));
     EXPECT_TRUE(identifier(vector<string>{"-a"}, empty) < identifier(vector<string>{"-B"}, empty) &&
         identifier(vector<string>{"-B"}, empty) < identifier(vector<string>{"-c"}, empty));
+
+    identifier opt_arg(vector<string>{"-a"}, empty);
+    opt_arg.set_optional(true);
+    identifier req_arg(vector<string>{"-c"}, empty);
+    EXPECT_TRUE(req_arg < opt_arg);
+
+    identifier pos_arg(vector<string>{}, 0);
+    pos_arg.set_optional(true);
+    identifier named_arg(vector<string>{"-a"}, empty);
+    EXPECT_TRUE(pos_arg < named_arg);
 }
 
 

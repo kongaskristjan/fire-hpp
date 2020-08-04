@@ -74,6 +74,7 @@ namespace fire {
         optional<int> _pos;
         optional<std::string> _short_name, _long_name, _descr;
         bool _vector = false;
+        bool _optional = false; // Only use for operator<
 
         std::string _help, _longer;
 
@@ -91,6 +92,7 @@ namespace fire {
         inline std::string help() const { return _help; }
         inline std::string longer() const { return _longer; }
         inline optional<int> get_pos() const { return _pos; }
+        inline void set_optional(bool optional) { _optional = optional; }
         inline bool vector() const { return _vector; }
 
         inline std::string get_descr() const { return _descr.value_or(""); }
@@ -361,8 +363,11 @@ namespace fire {
         std::transform(name.begin(), name.end(), name.begin(), [](char c){ return (char) tolower(c); });
         std::transform(other_name.begin(), other_name.end(), other_name.begin(), [](char c){ return (char) tolower(c); });
 
-        if(name != other_name)
+        if(name != other_name) {
+            if(!name.empty() && !other_name.empty() && _optional != other._optional)
+                return _optional < other._optional;
             return name < other_name;
+        }
         return _pos.value_or(1000000) < other._pos.value_or(1000000);
     }
 
@@ -634,10 +639,11 @@ namespace fire {
         std::string usage = "    Usage:\n      " + _::matcher.get_executable();
         std::string options = "    Options:\n";
 
-        std::vector<std::pair<identifier, log_elem>> printed(_params);
+        std::vector<id2elem> printed(_params);
+        for(id2elem &elem: printed)
+            elem.first.set_optional(elem.second.optional);
+
         std::sort(printed.begin(), printed.end(), [](const id2elem &a, const id2elem &b) {
-            if(a.second.optional != b.second.optional)
-                return a.second.optional < b.second.optional;
             return a.first < b.first;
         });
 
