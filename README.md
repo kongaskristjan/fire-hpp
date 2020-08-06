@@ -122,6 +122,11 @@ Identifiers are used to find arguments from command line and provide a descripti
 * Example: `int fired_main(int x = fire::arg(0));`
     * CLI usage: `program 1`
 
+
+* Example: `int fired_main(int x = fire::arg(0, "<first>"));`
+    * CLI usage: `program 1`
+    * name `<first>` appears in help and error messages
+
 #### <a id="description"></a> D.2.2 Descrpition (in identifier)
 
 Argument description for `--help` message. Is determined by not having leading hyphens.
@@ -202,7 +207,6 @@ v0.1 release is tested on:
 
 #### Current status
 
-* Names for positional arguments for help message
 * Automatic testing for error messages
 * Improve help messages
     * Refactor `log_elem::type` from `std::string` -> `enum class`

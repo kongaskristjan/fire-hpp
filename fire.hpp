@@ -72,7 +72,7 @@ namespace fire {
 
     class identifier {
         optional<int> _pos;
-        optional<std::string> _short_name, _long_name, _descr;
+        optional<std::string> _short_name, _long_name, _pos_name, _descr;
         bool _vector = false;
         bool _optional = false; // Only use for operator<
 
@@ -305,6 +305,11 @@ namespace fire {
     inline identifier::identifier(const std::vector<std::string> &names, optional<int> pos) {
         // Find description, shorthand and long name
         for(const std::string &name: names) {
+            if(name.size() >= 2 && name.front() == '<' && name.back() == '>') {
+                _pos_name = name;
+                continue;
+            }
+
             int hyphens = count_hyphens(name);
             _instant_assert(hyphens <= 2, "Identifier entry " + name + " must prefix either:"
                                           " 0 hyphens for description,"
@@ -347,10 +352,17 @@ namespace fire {
             _instant_assert(! _long_name.has_value(),
                     "Can't specify both name " + _long_name.value_or("") + " and index " + std::to_string(pos.value()));
             _pos = pos;
-            _longer = _help = "<" + std::to_string(pos.value()) + ">";
+            if(_pos_name.has_value())
+                _longer = _help = _pos_name.value();
+            else
+                _longer = _help = "<" + std::to_string(pos.value()) + ">";
         }
         _instant_assert(_short_name.has_value() || _long_name.has_value() || _pos.has_value(),
                 "Argument must be specified with at least on of the following: shorthand, long name or index");
+
+        if(_pos_name.has_value())
+            _instant_assert(_pos.has_value(),
+                    "Positional name " + _pos_name.value_or("") + " requires the argument to be positional");
     }
 
     bool identifier::operator<(const identifier &other) const {
