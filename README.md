@@ -1,7 +1,7 @@
 
 # Fire for C++
 
-Fire for C++, inspired by [python-fire](https://github.com/google/python-fire), is a library that creates a command line interface from a function signature. Here's the whole program for adding two numbers in command line:
+Fire for C++, inspired by [python-fire](https://github.com/google/python-fire), is a library that creates a command line interface from a function signature. Here's the whole program for adding two numbers with command line:
  ```
 #include <iostream>
 #include <fire.hpp>
@@ -21,6 +21,8 @@ $ ./add -x=1 -y=2
 3
 ```
 
+Note that parsing and conversion takes up just 0.5 lines of `fired_main()`.
+
 As you likely expect,
 * `--help` prints a meaningful message with required arguments and their types.
 * an error message is displayed for incorrect usage.
@@ -29,13 +31,13 @@ As you likely expect,
 
 With most libraries, creating a CLI roughly follows this pattern:
 1. define arguments and call `parse(argc, argv)`
-2. check whether errors are detected by `parse()`, print them and return
-3. check for `-h` and `--help`, print the help message and return
+2. check whether errors are detected by `parse()`, print them and return (optional)
+3. check for `-h` and `--help`, print the help message and return (optional)
 4. for each argument:
-    1. get argument from the map and convert to the right type
-    2. try/catch for errors in conversion and return
+    1. get argument from the map and if necessary convert to the right type
+    2. try/catch for errors in conversion and return (optional)
 
-That's a non-trivial amount of boilerplate, especially for simple scripts. It's possible to get away without error checking and help messages, however that comes with significant usability cost. Also, many libraries don't help at all with the conversion step and this is usually skipped in examples too.
+That's a non-trivial amount of boilerplate, especially for simple scripts. Because of that, programmers sometimes skip the optional parts, however this incurs a significant usability cost. Also, many libraries don't help at all with the conversion step.
 
 With fire-hpp, you only call `FIRE(...)` and define arguments. When `fired_main()` scope begins, all four steps have already been completed.
 
@@ -50,17 +52,15 @@ With fire-hpp, you only call `FIRE(...)` and define arguments. When `fired_main(
 In addition, this library
 * works with Linux, Windows and Mac OS
 * is a single header
-* comes under very permissive [Boost licence](https://choosealicense.com/licenses/bsl-1.0/) (examples with [0-clause BSD](https://choosealicense.com/licenses/0bsd/))
+* comes under very permissive [Boost licence](https://choosealicense.com/licenses/bsl-1.0/)
 
 ## Q. Quickstart
 
 ### Q.1 Requirements
 
-* C++11 compatible compiler
-* Compiling examples: CMake 3.1+
-* Compiling/running tests: CMake 3.11+ and Python 3.5+
-
-GTest is downloaded, compiled and linked automatically.
+* Using fire.hpp: C++11 compatible compiler.
+* Compiling examples: CMake 3.1+.
+* Compiling/running tests: CMake 3.11+ and Python 3.5+. GTest is downloaded, compiled and linked automatically.
 
 ### Q.2 Running examples
 
@@ -68,8 +68,8 @@ Steps to run examples:
 * Clone repo: `git clone https://github.com/kongaskristjan/fire-hpp`
 * Create build and change directory: `cd fire-hpp && mkdir build && cd build`
 * Configure/build: `cmake .. && cmake --build .` (or substitute latter command with appropriate build system invocation, eg. `make -j8` or `ninja`)
-* If errors are encountered, disable pedantic warnings and treating warnings as errors with `cmake -D DISABLE_PEDANTIC= ..` (though you are encouraged to open an issue) (you likely need to clear the build directory).
-* Run: `./examples/basic --help` or `./examples/basic -x=3 -y=5` 
+* If errors are encountered, clear the build directory and disable pedantic warnings as errors with `cmake -D DISABLE_PEDANTIC= ..` (you are encouraged to open an issue).
+* Run: `./examples/basic --help` or `./examples/basic -x=3 -y=5`
 
 ## T. Tutorial
 
