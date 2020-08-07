@@ -104,7 +104,7 @@ TEST(identifier, prepend_hyphens) {
 }
 
 TEST(identifier, constructor) {
-    optional<int> empty;
+    fire::optional<int> empty;
 
     identifier(vector<string>{"-l", "--long"}, empty);
     identifier(vector<string>{"--long", "-l"}, empty);
@@ -125,7 +125,7 @@ TEST(identifier, constructor) {
 }
 
 TEST(identifier, overlap) {
-    optional<int> empty;
+    fire::optional<int> empty;
 
     identifier long0(vector<string>{"-l"}, empty);
     identifier long1(vector<string>{"-l", "--long"}, empty);
@@ -155,7 +155,7 @@ TEST(identifier, overlap) {
 }
 
 TEST(identifier, contains) {
-    optional<int> empty;
+    fire::optional<int> empty;
 
     identifier long0(vector<string>{"-l"}, empty);
     identifier long1(vector<string>{"-l", "--long"}, empty);
@@ -179,7 +179,7 @@ TEST(identifier, contains) {
 }
 
 TEST(identifier, help) {
-    optional<int> empty;
+    fire::optional<int> empty;
 
     EXPECT_EQ(identifier(vector<string>{"-l"}, empty).help(), "-l");
     EXPECT_EQ(identifier(vector<string>{"-l", "--long"}, empty).help(), "-l|--long");
@@ -192,7 +192,7 @@ TEST(identifier, help) {
 }
 
 TEST(identifier, longer) {
-    optional<int> empty;
+    fire::optional<int> empty;
 
     EXPECT_EQ(identifier(vector<string>{"-l"}, empty).longer(), "-l");
     EXPECT_EQ(identifier(vector<string>{"-l", "--long"}, empty).longer(), "--long");
@@ -204,7 +204,7 @@ TEST(identifier, longer) {
 }
 
 TEST(identifier, less) {
-    optional<int> empty;
+    fire::optional<int> empty;
 
     EXPECT_TRUE(identifier(vector<string>{"-a"}, empty) < identifier(vector<string>{"-z"}, empty));
     EXPECT_FALSE(identifier(vector<string>{"-z"}, empty) < identifier(vector<string>{"-a"}, empty));
