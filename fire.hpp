@@ -29,8 +29,8 @@
 
 // See https://github.com/kongaskristjan/fire-hpp for library's documentation and updates
 
-#ifndef __FIRE_HPP__
-#define __FIRE_HPP__
+#ifndef FIRE_HPP_
+#define FIRE_HPP_
 
 #include <string>
 #include <iostream>
@@ -63,8 +63,8 @@ namespace fire {
 
     public:
         optional() = default;
-        optional(T __value): _value(std::move(__value)), _exists(true) {}
-        optional<T>& operator=(const T& __value) { _value = __value; _exists = true; return *this; }
+        optional(T value): _value(std::move(value)), _exists(true) {}
+        optional<T>& operator=(const T& value) { _value = value; _exists = true; return *this; }
         bool operator==(const optional<T>& other) { return _exists == other._exists && _value == other._value; }
         explicit operator bool() const { return _exists; }
         bool has_value() const { return _exists; }
@@ -107,7 +107,7 @@ namespace fire {
         bool _empty = true;
 
     public:
-        void set(const ORDER &__order, const VALUE &__value);
+        void set(const ORDER &order, const VALUE &value);
         const VALUE & get() const;
         bool empty() const { return _empty; }
     };
@@ -410,10 +410,10 @@ namespace fire {
 
 
     template<typename ORDER, typename VALUE>
-    void _first<ORDER, VALUE>::set(const ORDER &__order, const VALUE &__value) {
-        if(_empty || __order < _order) {
-            _order = __order;
-            _value = __value;
+    void _first<ORDER, VALUE>::set(const ORDER &order, const VALUE &value) {
+        if(_empty || order < _order) {
+            _order = order;
+            _value = value;
             _empty = false;
         }
     }
