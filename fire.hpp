@@ -27,6 +27,8 @@
     DEALINGS IN THE SOFTWARE.
 */
 
+// See https://github.com/kongaskristjan/fire-hpp for library's documentation and updates
+
 #ifndef __FIRE_HPP__
 #define __FIRE_HPP__
 
