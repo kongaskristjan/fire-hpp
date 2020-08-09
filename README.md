@@ -87,7 +87,7 @@ FIRE(fired_main) // call fired_main()
 * __FIRE(function name)__
 `FIRE(fired_main)` expands into the actual `main()` function that defines your program's entry point and fires off `fired_main()`. `fired_main` is called without arguments, thus compiler is forced to use the default `fire::arg` values.
 
-* __fire::arg(identifier)__
+* __fire::arg(identifiers[, default value])__
  A constructor that accepts the name/shorthand/description/position of the argument. Use a brace enclosed list for several of them (eg. `fire::arg({"-x", "--longer-name", "description of the argument"})` or `fire::arg({0, "zeroth element"})`. The library expects a single dash for single-character shorthands, two dashes for multi-character names, and zero dashes for descriptions. `fire::arg` objects should be used as default values for fired function parameters. See [documentation](#fire_arg) for more info.
 
 * __int fired_main(arguments)__
@@ -108,7 +108,14 @@ To use positional or vector arguments, `FIRE_NO_SPACE_ASSIGNMENT(...)` must be u
 
 #### <a id="identifier"></a> D.2.1 Identifiers
 
-Identifiers are used to find arguments from command line and provide a description. It can consist of a shorthand, long name, description or position (must contain at least one of the following: shorthand, long name or position). Braces can be omitted if only one of them is provided.
+Identifiers are used to find arguments from command line and provide a description. In general, it's a brace enclosed list of elements (braces can be omitted for a single element):
+* `"-s"` shorthand name for argument
+* `"--multicharacter-name"`
+* `0` index of positional argument
+* `"<name of the positional argument>"`
+* everything else: `"description of any argument"`
+
+--------
 
 * Example: `int fired_main(int x = fire::arg("-x"));`
     * CLI usage: `program -x=1`
@@ -119,35 +126,15 @@ Identifiers are used to find arguments from command line and provide a descripti
     * CLI usage: `program --long-name=1`
 
 
-* Example: `int fired_main(int x = fire::arg(0));`
+* Example: `int fired_main(int x = fire::arg({0, "<name of argument>", "description"}));`
     * CLI usage: `program 1`
+    * `<name of argument>` and `description` appear in help messages
 
-
-* Example: `int fired_main(int x = fire::arg(0, "<first>"));`
-    * CLI usage: `program 1`
-    * name `<first>` appears in help and error messages
-
-#### <a id="description"></a> D.2.2 Descrpition (in identifier)
-
-Argument description for `--help` message. Is determined by not having leading hyphens.
-
-* Example: `int fired_main(int x = fire::arg({"-x", "an argument"}));`
-    * CLI usage: `program --help`
-    * Output:
-```
-    Usage:
-      ./examples/basic -x=<INTEGER>
-
-
-    Options:
-      -x=<INTEGER>  an argument
-```
-
-#### <a id="default"></a> D.2.3 Default value (optional)
+#### <a id="default"></a> D.2.2 Default value (optional)
 
 Default value if no value is provided through command line. Can be either `std::string`, integral or floating-point type and `fire::arg` must be converted to that same type. This default is also displayed on the help page.
 
-* Example: `int fired_main(int x = fire::arg("-x", 0));`
+* Example: `int fired_main(int x = fire::arg({"-x", "--long-name"}, 0));`
     * CLI usage: `program` -> `x==0`
     * CLI usage: `program -x=1` -> `x==1`
 
@@ -164,6 +151,7 @@ Converts the argument value on command line to the respective type. Displays an 
 
 
 * Example: `int fired_main(double x = fire::arg("-x"));`
+    * CLI usage: `program -x=2.5` -> `x==2.5`
     * CLI usage: `program -x=blah` -> `Error: value blah is not a real number`
 
 #### <a id="optional"></a> D.3.2 fire::optional
