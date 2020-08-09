@@ -130,6 +130,7 @@ def run_vector_positional(path_prefix):
     runner.equal("b a -o", "b\na\n")
     runner.equal("b a -s", "a b\n")
     runner.equal("b a -os", "a\nb\n")
+    runner.equal("a -- -b", "a -b\n")
 
 
 def get_path_prefix(subdir):

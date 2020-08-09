@@ -220,4 +220,3 @@ v0.1 release is tested on:
 * Subcommands (with separate help messages for each subcommand)
 * Allow specifying positional arguments as named arguments, if name exists
 * `save(...)` keyword enclosing `arg`, which will save the program from exiting even if not all required arguments are present or correct (eg. for `--version`)
-* `program --flags  --  --interpret-everything-as-positional-arguments-after-double-dash`

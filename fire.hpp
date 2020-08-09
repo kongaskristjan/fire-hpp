@@ -544,9 +544,16 @@ namespace fire {
         std::vector<std::string> named, positional;
 
         bool to_named = false;
-        for(const std::string &s: raw) {
+        for(size_t i = 0; i < raw.size(); ++i) {
+            const std::string &s = raw[i];
             int hyphens = count_hyphens(s);
             int name_size = (int) s.size() - hyphens;
+
+            if(s == "--") { // Double dash indicates that upcoming arguments are positional only
+                positional.insert(positional.end(), raw.begin() + i + 1, raw.end());
+                break;
+            }
+
             deferred_assert(identifier(), hyphens <= 2, "too many hyphens: " + s);
             if(hyphens == 2 || (hyphens == 1 && name_size >= 1 && !isdigit(s[1]))) {
                 named.push_back(s);

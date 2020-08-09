@@ -415,6 +415,16 @@ TEST(arg, all_positional_parsing) {
     EXPECT_EQ(all2, vector<std::string>({"text"}));
 }
 
+TEST(arg, double_dash_separator) {
+    init_args_no_space({"./run_tests", "--"});
+    vector<string> all0 = arg::vector();
+    EXPECT_EQ(all0, vector<string>({}));
+
+    init_args_no_space({"./run_tests", "--flag1", "name0", "--", "name1", "-name2", "--name3", "---name4"});
+    vector<string> all1 = arg::vector();
+    EXPECT_EQ(all1, vector<string>({"name0", "name1", "-name2", "--name3", "---name4"}));
+}
+
 TEST(arg, precision) {
     init_args({"./run_tests", "--65535", "65535", "--65536", "65536",
                "--permitted", "1000000000000", "--overflow", "100000000000000000000000000000000000000"});
