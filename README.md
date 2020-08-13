@@ -195,16 +195,19 @@ v0.1 release is tested on:
 
 #### Current status
 
+* Remove all unnecessary exceptions
+* Support positional arguments in FIRE(...):
+    * Exception based introspection of fired_main arguments
+    * Allow positional arguments in FIRE() if introspection revealed that fire::arg("-x") is converted to non-bool
+    * Ensure FIRE_NO_SPACE_ASSIGNMENT() still compiles without exceptions
 * Automatic testing for error messages
 * Improve help messages
     * Refactor `log_elem::type` from `std::string` -> `enum class`
-    * Help messages with better organization (separate positional arguments, named arguments, flags, etc. in `Usage` and descriptions)
+    * Help messages: separate positional arguments, named arguments and flags in `Usage`
     * Program description
 * Ensure API user gets an error message when using required positional arguments after optional positional arguments
-* Remove exceptions
 
 #### v0.2 release
 
-* Subcommands (with separate help messages for each subcommand)
-* Allow specifying positional arguments as named arguments, if name exists
+* Subcommands (eg. `git add` and `git show`, which may have different flags/options)
 * `save(...)` keyword enclosing `arg`, which will save the program from exiting even if not all required arguments are present or correct (eg. for `--version`)
