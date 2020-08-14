@@ -150,8 +150,10 @@ namespace fire {
     class _help_logger { // Gathers function argument help info here
     public:
         struct log_elem {
+            enum class type { none, string, integer, real };
+
             std::string descr;
-            std::string type;
+            type t;
             std::string def;
             bool optional;
         };
@@ -200,7 +202,7 @@ namespace fire {
 
         template <typename T> optional<T> _convert_optional(bool dec_main_argc=true);
         template <typename T> T _convert(bool dec_main_argc=true);
-        inline void _log(const std::string &type, bool optional);
+        inline void _log(_help_logger::log_elem::type t, bool optional);
 
         template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
         inline void init_default(T value) { _int_value = value; }
@@ -242,16 +244,16 @@ namespace fire {
         inline static arg vector(std::string _descr = "");
 
         template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-        inline operator optional<T>() { _log("INTEGER", true); return _convert_optional<T>(); }
+        inline operator optional<T>() { _log(_help_logger::log_elem::type::integer, true); return _convert_optional<T>(); }
         template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
-        inline operator optional<T>() { _log("REAL", true); return _convert_optional<T>(); }
-        inline operator optional<std::string>() { _log("STRING", true); return _convert_optional<std::string>(); }
+        inline operator optional<T>() { _log(_help_logger::log_elem::type::real, true); return _convert_optional<T>(); }
+        inline operator optional<std::string>() { _log(_help_logger::log_elem::type::string, true); return _convert_optional<std::string>(); }
 
         template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-        inline operator T() { _log("INTEGER", false); return _convert<T>(); }
+        inline operator T() { _log(_help_logger::log_elem::type::integer, false); return _convert<T>(); }
         template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
-        inline operator T() { _log("REAL", false); return _convert<T>(); }
-        inline operator std::string() { _log("STRING", false); return _convert<std::string>(); }
+        inline operator T() { _log(_help_logger::log_elem::type::real, false); return _convert<T>(); }
+        inline operator std::string() { _log(_help_logger::log_elem::type::string, false); return _convert<std::string>(); }
         inline operator bool();
 
         template <typename T>
@@ -631,13 +633,18 @@ namespace fire {
 
     std::string _help_logger::_make_printable(const identifier &id, const log_elem &elem, bool verbose) {
         std::string printable;
-        if(elem.optional || elem.type == "") printable += "[";
+        if(elem.optional || elem.t == log_elem::type::none) printable += "[";
         printable += verbose ? id.help() : id.longer();
-        if(elem.type != "" && ! (! verbose && id.get_pos().has_value())) {
+        if(elem.t != log_elem::type::none && ! (! verbose && id.get_pos().has_value())) {
             printable += id.get_pos().has_value() ? " " : "=";
-            printable += elem.type;
+            if(elem.t == log_elem::type::string)
+                printable += "STRING";
+            if(elem.t == log_elem::type::integer)
+                printable += "INTEGER";
+            if(elem.t == log_elem::type::real)
+                printable += "REAL NUMBER";
         }
-        if(elem.optional || elem.type == "") printable += "]";
+        if(elem.optional || elem.t == log_elem::type::none) printable += "]";
         return printable;
     }
 
@@ -793,13 +800,13 @@ namespace fire {
         return val.value_or(T());
     }
 
-    void arg::_log(const std::string &type, bool optional) {
+    void arg::_log(_help_logger::log_elem::type t, bool optional) {
         std::string def;
         if(_int_value.has_value()) def = std::to_string(_int_value.value());
         if(_float_value.has_value()) def = std::to_string(_float_value.value());
         if(_string_value.has_value()) def = _string_value.value();
 
-        _::help_logger.log(_id, {_id.get_descr(), type, def, optional});
+        _::help_logger.log(_id, {_id.get_descr(), t, def, optional});
     }
 
     arg arg::vector(std::string descr) {
@@ -812,7 +819,7 @@ namespace fire {
         _instant_assert(!_int_value.has_value() && !_float_value.has_value() && !_string_value.has_value(),
                 _id.longer() + " flag parameter must not have default value");
 
-        _log("", true); // User sees this as flag, not boolean option
+        _log(_help_logger::log_elem::type::none, true); // User sees this as flag, not boolean option
         auto elem = _::matcher.get_and_mark_as_queried(_id);
         _::matcher.deferred_assert(_id, elem.second != _matcher::arg_type::string_t,
                                    "flag " + _id.help() + " must not have value");
@@ -825,7 +832,7 @@ namespace fire {
         std::vector<T> ret;
         for(size_t i = 0; i < _::matcher.pos_args(); ++i)
             ret.push_back(arg((int) i)._convert<T>(false));
-        _log("", true);
+        _log(_help_logger::log_elem::type::none, true);
         _::matcher.check(true);
         return ret;
     }

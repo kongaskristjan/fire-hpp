@@ -201,7 +201,6 @@ v0.1 release is tested on:
     * Ensure FIRE_NO_SPACE_ASSIGNMENT() still compiles without exceptions
 * Automatic testing for error messages
 * Improve help messages
-    * Refactor `log_elem::type` from `std::string` -> `enum class`
     * Help messages: separate positional arguments, named arguments and flags in `Usage`
     * Program description
 * Ensure API user gets an error message when using required positional arguments after optional positional arguments
