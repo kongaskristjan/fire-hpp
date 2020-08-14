@@ -195,7 +195,6 @@ v0.1 release is tested on:
 
 #### Current status
 
-* Remove all unnecessary exceptions
 * Support positional arguments in FIRE(...):
     * Exception based introspection of fired_main arguments
     * Allow positional arguments in FIRE() if introspection revealed that fire::arg("-x") is converted to non-bool

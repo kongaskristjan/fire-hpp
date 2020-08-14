@@ -689,19 +689,15 @@ namespace fire {
         _::matcher.deferred_assert(_id, elem.second != _matcher::arg_type::bool_t,
                                    "argument " + _id.help() + " must have value");
         if(elem.second == _matcher::arg_type::string_t) {
-            size_t last = 0;
-            bool is_int = true;
-            long long converted = 0;
-            try {
-                converted = std::stoll(elem.first, &last);
-            } catch(std::out_of_range &) {
-                _::matcher.deferred_assert(_id, false, "value " + elem.first + " out of range");
-            } catch(std::invalid_argument &) {
-                is_int = false;
-            }
+            char *end_ptr;
+            errno = 0;
+            long long converted = std::strtoll(elem.first.data(), &end_ptr, 10);
 
-            _::matcher.deferred_assert(_id, is_int && last == elem.first.size(), // last != elem.first.size() indicates floating point
-                                       "value " + elem.first + " is not an integer");
+            if(errno == ERANGE)
+                _::matcher.deferred_assert(_id, false, "value " + elem.first + " out of range");
+
+            _::matcher.deferred_assert(_id, end_ptr == elem.first.data() + elem.first.size(),
+                    "value " + elem.first + " is not an integer");
 
             return converted;
         }
@@ -715,13 +711,17 @@ namespace fire {
         _::matcher.deferred_assert(_id, elem.second != _matcher::arg_type::bool_t,
                                    "argument " + _id.help() + " must have value");
         if(elem.second == _matcher::arg_type::string_t) {
-            try {
-                return std::stold(elem.first);
-            } catch(std::out_of_range &) {
+            char *end_ptr;
+            errno = 0;
+            long double converted = std::strtold(elem.first.data(), &end_ptr);
+
+            if(errno == ERANGE)
                 _::matcher.deferred_assert(_id, false, "value " + elem.first + " out of range");
-            } catch(std::invalid_argument &) {
-                _::matcher.deferred_assert(_id, false, "value " + elem.first + " is not a real number");
-            }
+
+            _::matcher.deferred_assert(_id, end_ptr == elem.first.data() + elem.first.size(),
+                                       "value " + elem.first + " is not a real number");
+
+            return converted;
         }
 
         if(_float_value.has_value()) return _float_value;
