@@ -196,9 +196,9 @@ v0.1 release is tested on:
 #### Current status
 
 * Support positional arguments in FIRE(...):
-    * Exception based introspection of fired_main arguments
     * Allow positional arguments in FIRE() if introspection revealed that fire::arg("-x") is converted to non-bool
     * Ensure FIRE_NO_SPACE_ASSIGNMENT() still compiles without exceptions
+* Solve Windows non-ascii character input
 * Automatic testing for error messages
 * Improve help messages
     * Help messages: separate positional arguments, named arguments and flags in `Usage`
@@ -208,4 +208,5 @@ v0.1 release is tested on:
 #### v0.2 release
 
 * Subcommands (eg. `git add` and `git show`, which may have different flags/options)
+* Self-defined objects with string streams
 * `save(...)` keyword enclosing `arg`, which will save the program from exiting even if not all required arguments are present or correct (eg. for `--version`)

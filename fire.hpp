@@ -72,6 +72,9 @@ namespace fire {
         T value() const { _instant_assert(_exists, "accessing unassigned optional"); return _value; }
     };
 
+    struct _escape_exception {
+    };
+
     class identifier {
         optional<int> _pos;
         optional<std::string> _short_name, _long_name, _pos_name, _descr;
@@ -118,7 +121,8 @@ namespace fire {
         std::vector<std::pair<std::string, optional<std::string>>> _named;
         std::vector<identifier> _queried;
         _first<identifier, std::string> _deferred_error;
-        int _main_argc = 0;
+        int _main_args = 0;
+        bool _introspect = false;
         bool _space_assignment = false;
         bool _strict = false;
         bool _help_flag = false;
@@ -127,9 +131,9 @@ namespace fire {
         enum class arg_type { string_t, bool_t, none_t };
 
         inline _matcher() = default;
-        inline _matcher(int argc, const char **argv, int main_argc, bool space_assignment, bool strict);
+        inline _matcher(int argc, const char **argv, int main_args, bool space_assignment, bool strict);
 
-        inline void check(bool dec_main_argc);
+        inline void check(bool dec_main_args);
         inline void check_named();
         inline void check_positional();
 
@@ -144,12 +148,15 @@ namespace fire {
         inline const std::string& get_executable() { return _executable; }
         inline size_t pos_args() { return _positional.size(); }
         inline bool deferred_assert(const identifier &id, bool pass, const std::string &msg);
+
+        inline void set_introspect(bool introspect) { _introspect = introspect; }
+        inline bool get_introspect() const { return _introspect; }
     };
 
 
-    class _help_logger { // Gathers function argument help info here
+    class _arg_logger { // Gathers function argument help info here
     public:
-        struct log_elem {
+        struct elem {
             enum class type { none, string, integer, real };
 
             std::string descr;
@@ -159,27 +166,31 @@ namespace fire {
         };
 
     private:
-        std::vector<std::pair<identifier, log_elem>> _params;
+        std::vector<std::pair<identifier, elem>> _params;
+        int _introspect_count = 0;
 
-        inline std::string _make_printable(const identifier &id, const log_elem &elem, bool verbose);
+        inline std::string _make_printable(const identifier &id, const elem &elem, bool verbose);
         inline void _add_to_help(std::string &usage, std::string &options,
-                                 const identifier &id, const log_elem &elem, size_t margin);
+                                 const identifier &id, const elem &elem, size_t margin);
     public:
         inline void print_help();
-        inline void log(const identifier &name, const log_elem &elem);
+        inline void log(const identifier &name, const elem &elem);
+        inline void set_introspect_count(int count);
+        inline int decrease_introspect_count();
+        inline int get_introspect_count() const { return _introspect_count; }
     };
 
     template <typename T_VOID = void>
     struct _storage {
         static _matcher matcher;
-        static _help_logger help_logger;
+        static _arg_logger logger;
     };
 
     template <typename T_VOID>
     _matcher _storage<T_VOID>::matcher;
 
     template <typename T_VOID>
-    _help_logger _storage<T_VOID>::help_logger;
+    _arg_logger _storage<T_VOID>::logger;
 
     using _ = _storage<void>;
 
@@ -200,9 +211,9 @@ namespace fire {
         template <typename T, typename std::enable_if<std::is_same<T, bool>::value || std::is_same<T, std::string>::value, bool>::type* = nullptr>
         optional<T> _get_with_precision() { return _get<T>(); }
 
-        template <typename T> optional<T> _convert_optional(bool dec_main_argc=true);
-        template <typename T> T _convert(bool dec_main_argc=true);
-        inline void _log(_help_logger::log_elem::type t, bool optional);
+        template <typename T> optional<T> _convert_optional(bool dec_main_args=true);
+        template <typename T> T _convert(bool dec_main_args=true);
+        inline void _log(_arg_logger::elem::type t, bool optional);
 
         template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
         inline void init_default(T value) { _int_value = value; }
@@ -244,16 +255,16 @@ namespace fire {
         inline static arg vector(std::string _descr = "");
 
         template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-        inline operator optional<T>() { _log(_help_logger::log_elem::type::integer, true); return _convert_optional<T>(); }
+        inline operator optional<T>() { _log(_arg_logger::elem::type::integer, true); return _convert_optional<T>(); }
         template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
-        inline operator optional<T>() { _log(_help_logger::log_elem::type::real, true); return _convert_optional<T>(); }
-        inline operator optional<std::string>() { _log(_help_logger::log_elem::type::string, true); return _convert_optional<std::string>(); }
+        inline operator optional<T>() { _log(_arg_logger::elem::type::real, true); return _convert_optional<T>(); }
+        inline operator optional<std::string>() { _log(_arg_logger::elem::type::string, true); return _convert_optional<std::string>(); }
 
         template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-        inline operator T() { _log(_help_logger::log_elem::type::integer, false); return _convert<T>(); }
+        inline operator T() { _log(_arg_logger::elem::type::integer, false); return _convert<T>(); }
         template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
-        inline operator T() { _log(_help_logger::log_elem::type::real, false); return _convert<T>(); }
-        inline operator std::string() { _log(_help_logger::log_elem::type::string, false); return _convert<std::string>(); }
+        inline operator T() { _log(_arg_logger::elem::type::real, false); return _convert<T>(); }
+        inline operator std::string() { _log(_arg_logger::elem::type::string, false); return _convert<std::string>(); }
         inline operator bool();
 
         template <typename T>
@@ -426,8 +437,8 @@ namespace fire {
     }
 
 
-    _matcher::_matcher(int argc, const char **argv, int main_argc, bool space_assignment, bool strict) {
-        _main_argc = main_argc;
+    _matcher::_matcher(int argc, const char **argv, int main_args, bool space_assignment, bool strict) {
+        _main_args = main_args;
         _space_assignment = space_assignment;
         _strict = strict;
 
@@ -437,12 +448,12 @@ namespace fire {
         check(false);
     }
 
-    void _matcher::check(bool dec_main_argc) {
-        _main_argc -= dec_main_argc;
-        if(! _strict || _main_argc > 0) return;
+    void _matcher::check(bool dec_main_args) {
+        _main_args -= dec_main_args;
+        if(! _strict || _main_args > 0) return;
 
         if(_help_flag) {
-            _::help_logger.print_help();
+            _::logger.print_help();
             exit(0);
         }
 
@@ -631,25 +642,25 @@ namespace fire {
         return pass;
     }
 
-    std::string _help_logger::_make_printable(const identifier &id, const log_elem &elem, bool verbose) {
+    std::string _arg_logger::_make_printable(const identifier &id, const elem &elem, bool verbose) {
         std::string printable;
-        if(elem.optional || elem.t == log_elem::type::none) printable += "[";
+        if(elem.optional || elem.t == elem::type::none) printable += "[";
         printable += verbose ? id.help() : id.longer();
-        if(elem.t != log_elem::type::none && ! (! verbose && id.get_pos().has_value())) {
+        if(elem.t != elem::type::none && ! (! verbose && id.get_pos().has_value())) {
             printable += id.get_pos().has_value() ? " " : "=";
-            if(elem.t == log_elem::type::string)
+            if(elem.t == elem::type::string)
                 printable += "STRING";
-            if(elem.t == log_elem::type::integer)
+            if(elem.t == elem::type::integer)
                 printable += "INTEGER";
-            if(elem.t == log_elem::type::real)
+            if(elem.t == elem::type::real)
                 printable += "REAL NUMBER";
         }
-        if(elem.optional || elem.t == log_elem::type::none) printable += "]";
+        if(elem.optional || elem.t == elem::type::none) printable += "]";
         return printable;
     }
 
-    void _help_logger::_add_to_help(std::string &usage, std::string &options,
-                                    const identifier &id, const log_elem &elem, size_t margin) {
+    void _arg_logger::_add_to_help(std::string &usage, std::string &options,
+                                    const identifier &id, const elem &elem, size_t margin) {
         usage += " ";
         usage += _make_printable(id, elem, false);
 
@@ -660,8 +671,8 @@ namespace fire {
         options += "\n";
     }
 
-    void _help_logger::print_help() {
-        using id2elem = std::pair<identifier, log_elem>;
+    void _arg_logger::print_help() {
+        using id2elem = std::pair<identifier, elem>;
 
         std::string usage = "    Usage:\n      " + _::matcher.get_executable();
         std::string options = "    Options:\n";
@@ -684,10 +695,21 @@ namespace fire {
         std::cerr << std::endl << usage << std::endl << std::endl << std::endl << options << std::endl;
     }
 
-    void _help_logger::log(const identifier &name, const log_elem &_elem) {
-        log_elem elem = _elem;
+    void _arg_logger::log(const identifier &name, const elem &_elem) {
+        elem elem = _elem;
         elem.optional |= ! elem.def.empty();
         _params.emplace_back(name, elem);
+    }
+
+    void _arg_logger::set_introspect_count(int count) {
+        _introspect_count = count;
+        _::matcher.set_introspect(_introspect_count > 0);
+    }
+
+    int _arg_logger::decrease_introspect_count() {
+        --_introspect_count;
+        _::matcher.set_introspect(_introspect_count > 0);
+        return _introspect_count;
     }
 
     template <>
@@ -783,30 +805,43 @@ namespace fire {
     }
 
     template <typename T>
-    optional<T> arg::_convert_optional(bool dec_main_argc) {
+    optional<T> arg::_convert_optional(bool dec_main_args) {
+        if(_::matcher.get_introspect())
+            return optional<T>();
+
         _instant_assert(! (_int_value.has_value() || _float_value.has_value() || _string_value.has_value()),
                         "optional argument has default value");
         optional<T> val = _get_with_precision<T>();
-        _::matcher.check(dec_main_argc);
+        _::matcher.check(dec_main_args);
         return val;
     }
 
     template <typename T>
-    T arg::_convert(bool dec_main_argc) {
+    T arg::_convert(bool dec_main_args) {
+        if(_::matcher.get_introspect())
+            return T();
+
         optional<T> val = _get_with_precision<T>();
         _::matcher.deferred_assert(_id, val.has_value(),
                                    "required argument " + _id.longer() + " not provided");
-        _::matcher.check(dec_main_argc);
+        _::matcher.check(dec_main_args);
         return val.value_or(T());
     }
 
-    void arg::_log(_help_logger::log_elem::type t, bool optional) {
+    void arg::_log(_arg_logger::elem::type t, bool optional) {
         std::string def;
         if(_int_value.has_value()) def = std::to_string(_int_value.value());
         if(_float_value.has_value()) def = std::to_string(_float_value.value());
         if(_string_value.has_value()) def = _string_value.value();
 
-        _::help_logger.log(_id, {_id.get_descr(), t, def, optional});
+        _::logger.log(_id, {_id.get_descr(), t, def, optional});
+
+        int count = _::logger.get_introspect_count();
+        if(count > 0) { // introspection is active
+            count = _::logger.decrease_introspect_count();
+            if(count == 0) // introspection ends
+                throw _escape_exception();
+        }
     }
 
     arg arg::vector(std::string descr) {
@@ -819,7 +854,7 @@ namespace fire {
         _instant_assert(!_int_value.has_value() && !_float_value.has_value() && !_string_value.has_value(),
                 _id.longer() + " flag parameter must not have default value");
 
-        _log(_help_logger::log_elem::type::none, true); // User sees this as flag, not boolean option
+        _log(_arg_logger::elem::type::none, true); // User sees this as flag, not boolean option
         auto elem = _::matcher.get_and_mark_as_queried(_id);
         _::matcher.deferred_assert(_id, elem.second != _matcher::arg_type::string_t,
                                    "flag " + _id.help() + " must not have value");
@@ -832,7 +867,7 @@ namespace fire {
         std::vector<T> ret;
         for(size_t i = 0; i < _::matcher.pos_args(); ++i)
             ret.push_back(arg((int) i)._convert<T>(false));
-        _log(_help_logger::log_elem::type::none, true);
+        _log(_arg_logger::elem::type::none, true);
         _::matcher.check(true);
         return ret;
     }
@@ -840,25 +875,26 @@ namespace fire {
 
 
 
-template<typename F>
-void init_and_run(int argc, const char ** argv, F main_func, bool space_assignment) {
-    int main_argc = (int) fire::_get_argument_count(main_func);
-    bool strict = true;
-    fire::_::help_logger = fire::_help_logger();
-    fire::_::matcher = fire::_matcher(argc, argv, main_argc, space_assignment, strict);
-}
-
 #define FIRE(fired_main) \
 int main(int argc, const char ** argv) {\
-    bool space_assignment = true;\
-    init_and_run(argc, argv, fired_main, space_assignment);\
+    int main_args = (int) fire::_get_argument_count(fired_main);\
+    fire::_::logger.set_introspect_count(main_args);\
+    if(main_args > 0) {\
+        try {\
+            fired_main(); /* fired_main() isn't actually executed, the last default argument will always throw */ \
+        } catch (fire::_escape_exception e) {\
+        }\
+    }\
+    \
+    fire::_::matcher = fire::_matcher(argc, argv, main_args, true, true);\
+    fire::_::logger = fire::_arg_logger();\
     return fired_main();\
 }
 
 #define FIRE_NO_SPACE_ASSIGNMENT(fired_main) \
 int main(int argc, const char ** argv) {\
-    bool space_assignment = false;\
-    init_and_run(argc, argv, fired_main, space_assignment);\
+    int main_args = (int) fire::_get_argument_count(fired_main);\
+    fire::_::matcher = fire::_matcher(argc, argv, main_args, false, true);\
     return fired_main();\
 }
 

@@ -41,7 +41,6 @@ void init_args(const vector<string> &args, bool space_assignment, bool strict, i
     for(size_t i = 0; i < args.size(); ++i)
         argv[i] = args[i].c_str();
 
-    fire::_::help_logger = fire::_help_logger();
     fire::_::matcher = fire::_matcher((int) args.size(), argv, named_calls, space_assignment, strict);
 
     delete [] argv;
