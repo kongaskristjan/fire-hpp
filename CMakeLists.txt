@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.1)
 project(fire)
 
+option(FIRE_EXAMPLES "Compile examples" ON)
+option(FIRE_UNIT_TESTS "Enable unit tests" ON)
+
 if(NOT DEFINED CMAKE_CXX_STANDARD)
     set(CMAKE_CXX_STANDARD 11)
 endif()
@@ -20,5 +23,16 @@ if(NOT DEFINED DISABLE_PEDANTIC)
 endif()
 set(ignoreMe "${DISABLE_PEDANTIC}")
 
-add_subdirectory(examples)
-add_subdirectory(tests)
+# Disable examples and test if fire is a sub-project
+if (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    set(FIRE_EXAMPLES FALSE)
+    set(FIRE_UNIT_TESTS FALSE)
+endif()
+
+if (FIRE_EXAMPLES)
+    add_subdirectory(examples)
+endif()
+
+if (FIRE_UNIT_TESTS)
+    add_subdirectory(tests)
+endif()
