@@ -17,7 +17,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include "../fire.hpp"
+#include "fire/fire.hpp"
 
 using namespace std;
 

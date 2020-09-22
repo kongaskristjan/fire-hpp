@@ -27,7 +27,7 @@
     DEALINGS IN THE SOFTWARE.
 */
 
-#include "../fire.hpp"
+#include "fire/fire.hpp"
 
 int fired_main() {
     return 0;
