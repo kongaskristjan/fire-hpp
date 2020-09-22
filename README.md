@@ -4,7 +4,7 @@
 Fire for C++, inspired by [python-fire](https://github.com/google/python-fire), is a library that creates a command line interface from a function signature. Here's the whole program for adding two numbers with command line:
  ```
 #include <iostream>
-#include <fire.hpp>
+#include <fire/fire.hpp>
 
 int fired_main(int x = fire::arg("-x"), int y = fire::arg("-y")) {
     std::cout << x + y << std::endl;
