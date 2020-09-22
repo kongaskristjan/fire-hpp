@@ -23,6 +23,10 @@ if(NOT DEFINED DISABLE_PEDANTIC)
 endif()
 set(ignoreMe "${DISABLE_PEDANTIC}")
 
+# Setup Fire to be used in 3rd party project using exports. Create a fire target
+add_library(fire INTERFACE)
+target_include_directories(fire INTERFACE "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>")
+
 # Disable examples and test if fire is a sub-project
 if (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     set(FIRE_EXAMPLES FALSE)
