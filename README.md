@@ -180,6 +180,41 @@ A method for getting all positional arguments (requires [no space assignment mod
     * CLI usage: `program abc xyz` -> `params=={"abc", "xyz"}`
     * CLI usage: `program` -> `params=={}`
 
+## CMake integration
+
+Fire can easily be used by other C++ CMake projects.
+
+You may use Fire from a folder in your project (typically a git submodule).
+
+```
+cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
+project(foo)
+set(CMAKE_CXX_STANDARD 11)
+
+add_subdirectory(fire_folder)
+
+add_executable(bar bar.cpp)
+target_link_libraries(bar fire)
+```
+
+Alternatively, you can also use the more modern FetchContent.
+
+```
+cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+project(foo)
+set(CMAKE_CXX_STANDARD 11)
+
+include(FetchContent)
+FetchContent_Declare(
+  fire
+  GIT_REPOSITORY https://github.com/kongaskristjan/fire-hpp
+)
+FetchContent_MakeAvailable(fire)
+
+add_executable(bar bar.cpp)
+target_link_libraries(bar fire)
+```
+
 ## Development
 
 This library uses extensive testing. Unit tests are located in `tests/`, while `examples/` are used as integration tests. The latter also ensures examples are up-to-date. Before committing, please verify `python3 ./build/tests/run_standard_tests.py` succeed.
