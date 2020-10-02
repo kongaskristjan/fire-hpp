@@ -495,7 +495,7 @@ namespace fire {
                     goto VALID;
 
             ++invalid_count;
-            invalid += " " + std::to_string(i);
+            invalid += " " + _positional[i];
             VALID:;
         }
         deferred_assert(identifier(), invalid.empty(),
