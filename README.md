@@ -223,19 +223,25 @@ v0.1 release is tested on:
 * Windows 10, MSVC=={19.26} (2019 Build Tools): C++11, C++14, C++17
 * Mac OS, XCode=={11.5}: C++11, C++14, C++17
 
-### TODO list:
+### Roadmap:
 
-#### Current status
+#### Current state
 
 * Solve Windows non-ascii character input
-* Automatic testing for error messages
+* Standardize syntax: fire::arg::vector() -> fire::arg(fire::variadic())
 * Improve help messages
     * Help messages: separate positional arguments, named arguments and flags in `Usage`
     * Program description
-* Ensure API user gets an error message when using required positional arguments after optional positional arguments
 
 #### v0.2 release
 
 * Subcommands (eg. `git add` and `git show`, which may have different flags/options)
 * Self-defined objects with string streams
 * `save(...)` keyword enclosing `arg`, which will save the program from exiting even if not all required arguments are present or correct (eg. for `--version`)
+
+#### v0.3 release
+
+* Automatic testing for error messages
+* Ensure API user gets an error message when using required positional arguments after optional positional arguments
+
+#### v1.0 release
