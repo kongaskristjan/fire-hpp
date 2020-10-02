@@ -99,7 +99,7 @@ This is what you perceive as the program entry point. All arguments must be `boo
 
 `FIRE(...)` creates the main function that parses arguments and calls `...`.
 `FIRE_NO_SPACE_ASSIGNMENT(...)` disallows space assignments, eg. `-x 1` must be written as `-x=1`.
-Historically, using `FIRE_NO_SPACE_ASSIGNMENT(...)` was necessary for positional arguments to work, but this is no longer true.
+`FIRE_NO_SPACE_ASSIGNMENT(...)` avoids using exceptions, so if your program has them disabled, use this.
 
 ### D.2 <a id="fire_arg"></a> fire::arg(identifiers[, default_value]])
 
@@ -192,8 +192,6 @@ v0.1 release is tested on:
 
 #### Current status
 
-* Support positional arguments in FIRE(...):
-    * Ensure FIRE_NO_SPACE_ASSIGNMENT() still compiles without exceptions
 * Solve Windows non-ascii character input
 * Automatic testing for error messages
 * Improve help messages

@@ -134,6 +134,14 @@ def run_vector_positional(path_prefix):
     runner.equal("a -- -b", "a -b\n")
 
 
+def run_no_exceptions(path_prefix):
+    runner = assert_runner(path_prefix / "no_exceptions")
+
+    runner.equal("", "\n")
+    runner.equal("1 2", "1 2 \n")
+    runner.equal("1 2 -r=2", "1 2 \n1 2 \n")
+
+
 def get_path_prefix(subdir):
     cur_dir = Path(__file__).absolute().parent
     with (cur_dir / "build_dirs.json").open("r") as json_file:
@@ -152,6 +160,8 @@ def main():
     run_optional_and_default(path_prefix)
     run_positional(path_prefix)
     run_vector_positional(path_prefix)
+
+    run_no_exceptions(path_prefix)
 
     print(" SUCCESS! (ran {} tests with {} checks)".format(assert_runner.test_count, assert_runner.check_count))
 

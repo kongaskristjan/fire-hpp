@@ -867,8 +867,11 @@ namespace fire {
         int count = _::logger.get_introspect_count();
         if(count > 0) { // introspection is active
             count = _::logger.decrease_introspect_count();
-            if(count == 0) // introspection ends
+            if(count == 0) { // introspection ends
+#if defined(__EXCEPTIONS) || defined(_CPPUNWIND)
                 throw _escape_exception();
+#endif
+            }
         }
     }
 
