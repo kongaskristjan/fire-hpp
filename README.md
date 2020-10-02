@@ -97,13 +97,10 @@ This is what you perceive as the program entry point. All arguments must be `boo
 
 ### <a id="fire"></a> D.1 FIRE(...) and FIRE_NO_SPACE_ASSIGNMENT(...)
 
-`FIRE(...)` and `FIRE_NO_SPACE_ASSIGNMENT(...)` both create the main function to parse arguments and call `...`, however, they differ in how arguments are parsed. `FIRE(...)` parses `program -x 1` as `program -x=1`, but `FIRE_NO_SPACE_ASSIGNMENT(...)` parses `-x` as a flag and `1` as a positional argument.
+`FIRE(...)` creates the main function that parses arguments and calls `...`.
+`FIRE_NO_SPACE_ASSIGNMENT(...)` disallows space assignments, eg. `-x 1` must be written as `-x=1`.
+Historically, using `FIRE_NO_SPACE_ASSIGNMENT(...)` was necessary for positional arguments to work, but this is no longer true.
 
-To use positional or vector arguments, `FIRE_NO_SPACE_ASSIGNMENT(...)` must be used. There are two reasons:
-
-* Mixing positional and named arguments with space-separated values makes a bad CLI anyway, eg: `program a -x b c` doesn't seem like `-x=b` with `a` and `c` as positional.
-* Implementing such a CLI within Fire API is likely impossible without using exceptions.
- 
 ### D.2 <a id="fire_arg"></a> fire::arg(identifiers[, default_value]])
 
 #### <a id="identifier"></a> D.2.1 Identifiers
@@ -196,7 +193,6 @@ v0.1 release is tested on:
 #### Current status
 
 * Support positional arguments in FIRE(...):
-    * Allow positional arguments in FIRE() if introspection revealed that fire::arg("-x") is converted to non-bool
     * Ensure FIRE_NO_SPACE_ASSIGNMENT() still compiles without exceptions
 * Solve Windows non-ascii character input
 * Automatic testing for error messages

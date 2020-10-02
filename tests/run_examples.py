@@ -73,6 +73,7 @@ def run_all_combinations(path_prefix):
 
     runner.equal("0 -i=0", "")
     runner.equal("0 1 -i=0 --def-r=0.0 --opt-s=string", "")
+    runner.equal("0 1 -i 0 --def-r 0.0 --opt-s string", "")
 
 
 def run_basic(path_prefix):
