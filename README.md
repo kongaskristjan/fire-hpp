@@ -43,7 +43,7 @@ With fire-hpp, you only call `FIRE(...)` and define arguments. When `fired_main(
 
 ### What's covered?
 
-* [flags](#flag); [named and positional](#identifier) parameters; [variable number of parameters](#vector)
+* [flags](#flag); [named and positional](#identifier) parameters; [variable number of parameters](#variadic)
 * [optional parameters](#optional)/[default values](#default)
 * conversions to [integer, floating-point and `std::string`](#standard)
 * [parameter descriptions](#description)
@@ -110,7 +110,8 @@ Identifiers are used to find arguments from command line and provide a descripti
 * `"--multicharacter-name"`
 * `0` index of positional argument
 * `"<name of the positional argument>"`
-* everything else: `"description of any argument"`
+* any other string: `"description of any argument"`
+* variadic arguments: `fire::variadic()`
 
 --------
 
@@ -126,6 +127,10 @@ Identifiers are used to find arguments from command line and provide a descripti
 * Example: `int fired_main(int x = fire::arg({0, "<name of argument>", "description"}));`
     * CLI usage: `program 1`
     * `<name of argument>` and `description` appear in help messages
+
+
+* Example: `int fired_main(vector<int> x = fire::arg(fire::variadic()));`
+    * CLI usage: `program 1 2 3`
 
 #### <a id="default"></a> D.2.2 Default value (optional)
 
@@ -169,11 +174,13 @@ Boolean flags are `true` when they exist on command line and `false` when they d
     * CLI usage: `program` -> `flag==false`
     * CLI usage: `program --flag` -> `flag==true`
 
-### <a id="vector"></a> D.4 fire::arg::vector([description])
+#### <a id="variadic"></a> D.3.4 std::vector<T>: variadic argument
 
-A method for getting all positional arguments (requires [no space assignment mode](#fire)). The constructed object can be converted to `std::vector<std::string>`, `std::vector<integral type>` or `std::vector<floating-point type>`. Description can be supplied for help message. Using `fire::arg::vector` forbids extracting positional arguments with `fire::arg(index)`.
+A method for getting all positional arguments as a vector. The `fire::arg` object can be converted to `std::vector<std::string>`, `std::vector<integral type>` or `std::vector<floating-point type>`. Using variadic argument forbids extracting positional arguments with `fire::arg(index)`.
 
-* Example: `int fired_main(vector<std::string> params = fire::arg::vector());`
+In this case, identifier should be `fire::variadic()`. Description can be supplied in the usual way.
+
+* Example: `int fired_main(vector<std::string> params = fire::arg({fire::variadic(), "description"}));`
     * CLI usage: `program abc xyz` -> `params=={"abc", "xyz"}`
     * CLI usage: `program` -> `params=={}`
 
@@ -228,7 +235,6 @@ v0.1 release is tested on:
 #### Current state
 
 * Solve Windows non-ascii character input
-* Standardize syntax: fire::arg::vector() -> fire::arg(fire::variadic())
 * Improve help messages
     * Help messages: separate positional arguments, named arguments and flags in `Usage`
     * Program description

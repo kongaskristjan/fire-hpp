@@ -5,7 +5,7 @@ add_executable(basic basic.cpp ../fire.hpp)
 add_executable(flag flag.cpp ../fire.hpp)
 add_executable(optional_and_default optional_and_default.cpp ../fire.hpp)
 add_executable(positional positional.cpp ../fire.hpp)
-add_executable(vector_positional vector_positional.cpp ../fire.hpp)
+add_executable(variadic variadic.cpp ../fire.hpp)
 
 if(MSVC)
     # FIXIT: Test exception handling on Windows too

@@ -24,7 +24,7 @@ using namespace std;
 // Program inspired by `ls`. Takes a variable number of strings, and prints them.
 // Optionally sorts them or prints them line by line.
 
-int fired_main(vector<string> strings = fire::arg::vector("strings to be printed"),
+int fired_main(vector<string> strings = fire::arg({fire::variadic(), "strings to be printed"}),
                bool lines = fire::arg({"-o", "--one-per-line"}),
                bool do_sort = fire::arg({"-s", "--sort"})) {
     if(do_sort)

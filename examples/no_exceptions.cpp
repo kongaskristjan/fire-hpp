@@ -21,7 +21,7 @@ using namespace std;
 
 int fired_main(
         unsigned repeats = fire::arg({"-r", "--repeats", "Number of repeats"}, 1),
-        vector<string> strings = fire::arg::vector("Optional positive integer")
+        vector<string> strings = fire::arg({fire::variadic(), "Optional positive integer"})
         ) {
     for(unsigned i = 0; i < repeats; ++i) {
         for(string &s: strings) {

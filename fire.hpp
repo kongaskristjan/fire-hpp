@@ -78,7 +78,7 @@ namespace fire {
     class identifier {
         optional<int> _pos;
         optional<std::string> _short_name, _long_name, _pos_name, _descr;
-        bool _vector = false;
+        bool _variadic = false;
         bool _optional = false; // Only use for operator<
 
         std::string _help, _longer;
@@ -88,7 +88,7 @@ namespace fire {
         inline static std::string prepend_hyphens(const std::string &name);
 
         inline identifier(optional<std::string> descr=optional<std::string>());
-        inline identifier(const std::vector<std::string> &names, optional<int> pos);
+        inline identifier(const std::vector<std::string> &names, optional<int> pos, bool is_variadic = false);
 
         inline optional<std::string> short_name() const { return _short_name; }
         inline optional<std::string> long_name() const { return _long_name; }
@@ -101,7 +101,7 @@ namespace fire {
         inline std::string longer() const { return _longer; }
         inline optional<int> get_pos() const { return _pos; }
         inline void set_optional(bool optional) { _optional = optional; }
-        inline bool vector() const { return _vector; }
+        inline bool variadic() const { return _variadic; }
 
         inline std::string get_descr() const { return _descr.value_or(""); }
     };
@@ -199,6 +199,9 @@ namespace fire {
 
     using _ = _storage<void>;
 
+    struct variadic {
+    };
+
     class arg {
         identifier _id; // No identifier implies vector positional arguments
 
@@ -232,9 +235,11 @@ namespace fire {
         struct convertible {
             optional<int> _int_value;
             optional<const char *> _char_value;
+            bool is_variadic = false;
 
             convertible(int value): _int_value(value) {}
             convertible(const char *value): _char_value(value) {}
+            convertible(variadic): is_variadic(true) {}
         };
 
     public:
@@ -242,22 +247,23 @@ namespace fire {
         inline arg(std::initializer_list<convertible> init, T value=T()) {
             optional<int> int_value;
             std::vector<std::string> string_values;
+            bool is_variadic = false;
             for(const convertible &val: init) {
-                if(val._int_value.has_value())
+                if(val.is_variadic)
+                    is_variadic = true;
+                else if(val._int_value.has_value())
                     int_value = val._int_value.value();
                 else
                     string_values.push_back(val._char_value.value());
             }
 
-            _id = identifier(string_values, int_value);
+            _id = identifier(string_values, int_value, is_variadic);
             init_default(value);
         }
 
         template<typename T=std::nullptr_t>
         inline arg(convertible _id, T value=T()):
             arg({_id}, value) {}
-
-        inline static arg vector(std::string _descr = "");
 
         template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
         inline operator optional<T>() { _log(_arg_logger::elem::type::integer, true); return _convert_optional<T>(); }
@@ -320,9 +326,9 @@ namespace fire {
     }
 
     inline identifier::identifier(optional<std::string> descr):
-        _descr(descr), _vector(true), _help("..."), _longer("...") {}
+        _descr(descr), _variadic(true), _help("..."), _longer("...") {}
 
-    inline identifier::identifier(const std::vector<std::string> &names, optional<int> pos) {
+    inline identifier::identifier(const std::vector<std::string> &names, optional<int> pos, bool is_variadic) {
         // Find description, shorthand and long name
         for(const std::string &name: names) {
             if(name.size() >= 2 && name.front() == '<' && name.back() == '>') {
@@ -354,6 +360,14 @@ namespace fire {
                                 "Two hyphen name " + name + " must have at least two characters");
                 _long_name = name;
             }
+        }
+
+        // Variadic argument
+        if(is_variadic) {
+            _instant_assert(! _short_name.has_value() && !_long_name.has_value()
+                && !_pos.has_value() && !_pos_name.has_value(),
+                "Can't assign a name or position to variadic arguments");
+            return;
         }
 
         // Set help and longer variant
@@ -873,12 +887,6 @@ namespace fire {
 #endif
             }
         }
-    }
-
-    arg arg::vector(std::string descr) {
-        arg a;
-        a._id = identifier(descr);
-        return a;
     }
 
     arg::operator bool() {

@@ -312,7 +312,7 @@ TEST(help, no_space_assignment_help_invocation) {
     EXPECT_EXIT_SUCCESS((void) (int) arg(2));
 
     init_args_strict({"./run_tests", "-h"}, 1);
-    EXPECT_EXIT_SUCCESS(vector<string> v_undef = arg::vector());
+    EXPECT_EXIT_SUCCESS(vector<string> v_undef = arg(variadic()));
 }
 
 
@@ -397,31 +397,31 @@ TEST(arg, positional_parsing) {
     fire::optional<int> opt = arg(2);
     EXPECT_FALSE(opt.has_value());
 
-    vector<int> all1 = arg::vector();
+    vector<int> all1 = arg(variadic());
     EXPECT_EQ(all1, vector<int>({0, 1}));
 }
 
 TEST(arg, all_positional_parsing) {
     init_args({"./run_tests"});
-    vector<int> all0 = arg::vector();
+    vector<int> all0 = arg(variadic());
     EXPECT_EQ(all0, vector<int>({}));
 
     init_args({"./run_tests", "0", "1"});
-    vector<int> all1 = arg::vector("description");
+    vector<int> all1 = arg(variadic(), "description");
     EXPECT_EQ(all1, vector<int>({0, 1}));
 
     init_args({"./run_tests", "text"});
-    vector<string> all2 = arg::vector();
+    vector<string> all2 = arg(variadic());
     EXPECT_EQ(all2, vector<string>({"text"}));
 }
 
 TEST(arg, double_dash_separator) {
     init_args({"./run_tests", "--"});
-    vector<string> all0 = arg::vector();
+    vector<string> all0 = arg(variadic());
     EXPECT_EQ(all0, vector<string>({}));
 
     init_args({"./run_tests", "--flag1", "name0", "--", "name1", "-name2", "--name3", "---name4"});
-    vector<string> all1 = arg::vector();
+    vector<string> all1 = arg(variadic());
     EXPECT_EQ(all1, vector<string>({"name0", "name1", "-name2", "--name3", "---name4"}));
 }
 
@@ -505,17 +505,17 @@ TEST(arg, strict_query_positional) {
     EXPECT_EXIT_FAIL((void) (int) arg(0));
 
     init_args_strict({"./run_tests", "0", "1"}, 1);
-    vector<int> all0 = arg::vector();
+    vector<int> all0 = arg(variadic());
 }
 
 TEST(arg, strict_query_all_positional) {
     init_args_strict({"./run_tests", "0", "1"}, 2);
-    vector<int> all1 = arg::vector();
+    vector<int> all1 = arg(variadic());
     EXPECT_EXIT_FAIL((void) (int) arg(0));
 
     init_args_strict({"./run_tests", "0", "1"}, 2);
     (void) (int) arg(0);
-    EXPECT_EXIT_FAIL(vector<int> all2 = arg::vector());
+    EXPECT_EXIT_FAIL(vector<int> all2 = arg(variadic()));
 }
 
 TEST(arg, optional_arguments) {

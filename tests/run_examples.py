@@ -123,8 +123,8 @@ def run_positional(path_prefix):
     runner.equal("-1 -3", "-1 -3")
 
 
-def run_vector_positional(path_prefix):
-    runner = assert_runner(path_prefix / "vector_positional")
+def run_variadic(path_prefix):
+    runner = assert_runner(path_prefix / "variadic")
 
     runner.equal("", "\n")
     runner.equal("b a", "b a\n")
@@ -159,7 +159,7 @@ def main():
     run_flag(path_prefix)
     run_optional_and_default(path_prefix)
     run_positional(path_prefix)
-    run_vector_positional(path_prefix)
+    run_variadic(path_prefix)
 
     run_no_exceptions(path_prefix)
 
