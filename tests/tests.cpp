@@ -31,36 +31,41 @@
 #include "../fire.hpp"
 
 #define EXPECT_EXIT_SUCCESS(statement) EXPECT_EXIT(statement, ::testing::ExitedWithCode(0), "")
-#define EXPECT_EXIT_FAIL(statement) EXPECT_EXIT(statement, ::testing::ExitedWithCode(fire::_failure_code), "")
+#define EXPECT_EXIT_FAIL(statement) EXPECT_EXIT(statement, ::testing::ExitedWithCode(_failure_code), "")
 
 using namespace std;
 using namespace fire;
 
-void init_args(const vector<string> &args, bool space_assignment, bool strict, int named_calls = 1000000) {
+void init_args(const vector<string> &args, bool strict, int named_calls = 1000000) {
     const char ** argv = new const char *[args.size()];
     for(size_t i = 0; i < args.size(); ++i)
         argv[i] = args[i].c_str();
 
-    fire::_::help_logger = fire::_help_logger();
-    fire::_::matcher = fire::_matcher((int) args.size(), argv, named_calls, space_assignment, strict);
+    _::logger = _arg_logger();
+    _::matcher = _matcher((int) args.size(), argv, named_calls, strict);
 
     delete [] argv;
 }
 
 void init_args(const vector<string> &args) {
-    init_args(args, true, false);
+    init_args(args, false, 0);
 }
 
 void init_args_strict(const vector<string> &args, int named_calls) {
-    init_args(args, true, true, named_calls);
+    init_args(args, true, named_calls);
 }
 
-void init_args_no_space(const vector<string> &args) {
-    init_args(args, false, false);
-}
-
-void init_args_no_space_strict(const vector<string> &args, int named_calls) {
-    init_args(args, false, true, named_calls);
+// Making this macro a function is unfortunately impossible, because fired_main must preserve it's default arguments
+#define CALL_WITH_INTROSPECTION(fired_main, arguments) \
+{\
+    int argc = arguments.size();\
+    vector<const char *> ptrs(arguments.size());\
+    for(size_t i = 0; i < arguments.size(); ++i)\
+        ptrs[i] = arguments[i].c_str();\
+    const char ** argv = ptrs.data();\
+    \
+    PREPARE_FIRE_(fired_main, argc, argv);\
+    fired_main();\
 }
 
 
@@ -240,14 +245,10 @@ TEST(identifier, less) {
 
 TEST(matcher, invalid_input) {
     EXPECT_EXIT_FAIL(init_args({"./run_tests", "--i"}));
-    EXPECT_EXIT_FAIL(init_args({"./run_tests", "--i", "0"}));
-    EXPECT_EXIT_FAIL(init_args({"./run_tests", "-ab", "0"}));
-    EXPECT_EXIT_FAIL(init_args({"./run_tests", "0"}));
-
+    EXPECT_EXIT_FAIL(init_args({"./run_tests", "-ab=0"}));
     EXPECT_EXIT_FAIL(init_args({"./run_tests", "-aa"}));
-    EXPECT_EXIT_FAIL(init_args({"./run_tests", "--flag", "--flag"}));
     EXPECT_EXIT_FAIL(init_args({"./run_tests", "-x=0", "-x", "0"}));
-    EXPECT_EXIT_FAIL(init_args({"./run_tests", "--name=abc",  "--name=bcd"}));
+    EXPECT_EXIT_FAIL(init_args({"./run_tests", "--flag", "--flag"}));
 }
 
 TEST(matcher, boolean_flags) {
@@ -264,14 +265,14 @@ TEST(matcher, equations) {
     EXPECT_EQ((string) arg("--abc"), "xy");
     EXPECT_EQ((string) arg("-x"), "y=z"); // quotation marks are omitted from command line
 
-    EXPECT_EXIT_FAIL(init_args({"./run_tests", "-a=b", "123"}));
+    init_args({"./run_tests", "-a=b", "123"});
 }
 
 TEST(matcher, no_space_assignment) {
-    init_args_no_space({"./run_tests"});
-    init_args_no_space({"./run_tests", "0"});
-    init_args_no_space({"./run_tests", "0", "0"});
-    init_args_no_space({"./run_tests", "-x", "0"}); // there's no equals sign, so "0" is positional
+    init_args({"./run_tests"});
+    init_args({"./run_tests", "0"});
+    init_args({"./run_tests", "0", "0"});
+    init_args({"./run_tests", "-x", "0"}); // there's no equals sign, so "0" is positional
     EXPECT_EXIT_FAIL((void) (int) arg("-x"));
 }
 
@@ -295,22 +296,22 @@ TEST(help, help_invocation) {
 }
 
 TEST(help, no_space_assignment_help_invocation) {
-    EXPECT_EXIT_SUCCESS(init_args_no_space_strict({"./run_tests", "-h"}, 0));
-    EXPECT_EXIT_SUCCESS(init_args_no_space_strict({"./run_tests", "--help"}, 0));
-    EXPECT_EXIT_SUCCESS(init_args_no_space_strict({"./run_tests", "--help", "1"}, 0));
+    EXPECT_EXIT_SUCCESS(init_args_strict({"./run_tests", "-h"}, 0));
+    EXPECT_EXIT_SUCCESS(init_args_strict({"./run_tests", "--help"}, 0));
+    EXPECT_EXIT_SUCCESS(init_args_strict({"./run_tests", "--help", "1"}, 0));
 
-    init_args_no_space_strict({"./run_tests", "-h"}, 1);
+    init_args_strict({"./run_tests", "-h"}, 1);
     EXPECT_EXIT_SUCCESS((void) (int) arg(0));
 
-    init_args_no_space_strict({"./run_tests", "-h", "1"}, 1);
+    init_args_strict({"./run_tests", "-h", "1"}, 1);
     EXPECT_EXIT_SUCCESS((void) (int) arg(0));
 
-    init_args_no_space_strict({"./run_tests", "-h"}, 3);
+    init_args_strict({"./run_tests", "-h"}, 3);
     (void) (int) arg(0);
     (void) (int) arg(1);
     EXPECT_EXIT_SUCCESS((void) (int) arg(2));
 
-    init_args_no_space_strict({"./run_tests", "-h"}, 1);
+    init_args_strict({"./run_tests", "-h"}, 1);
     EXPECT_EXIT_SUCCESS(vector<string> v_undef = arg::vector());
 }
 
@@ -346,11 +347,10 @@ TEST(arg, defaults) {
 }
 
 TEST(arg, correct_parsing) {
-    init_args({"./run_tests", "--bool1", "-i", "1", "-f", "2.0", "-s", "test", "--bool2"});
+    init_args({"./run_tests", "--bool1", "-i=1", "-f=2.0", "-s=test", "1"});
 
     EXPECT_TRUE((bool) arg("--bool1"));
-    EXPECT_TRUE((bool) arg("--bool2"));
-    EXPECT_FALSE((bool) arg("--undefined"));
+    EXPECT_FALSE((bool) arg("--bool2"));
 
     EXPECT_EQ((int) arg("-i", 2), 1);
 
@@ -358,14 +358,14 @@ TEST(arg, correct_parsing) {
     EXPECT_NEAR((double) arg("-i"), 1.0, 1e-5);
     EXPECT_NEAR((double) arg("-f"), 2.0, 1e-5);
     EXPECT_EQ((string) arg("-s"), "test");
+    EXPECT_EQ((int) arg(0), 1);
 
     EXPECT_EQ((string) arg({"-s", "--string"}), "test");
     EXPECT_EQ((string) arg({"--string", "-s", "description"}), "test");
-    EXPECT_TRUE((bool) arg({"--bool1", "-b"}));
 }
 
 TEST(arg, incorrect_parsing) {
-    init_args({"./run_tests", "-i", "1", "-f", "2.0", "-s", "test"});
+    init_args({"./run_tests", "-i=1", "-f=2.0", "-s=test"});
     EXPECT_EXIT_FAIL((void) (bool) arg("-i"));
 
     EXPECT_EXIT_FAIL((void) (int) arg("-f"));
@@ -375,20 +375,20 @@ TEST(arg, incorrect_parsing) {
     EXPECT_EXIT_FAIL((void) (int) arg("-x"));
 
     init_args({"./run_tests"});
-    EXPECT_EXIT_FAIL((void) (int) arg(0, -1)); // init args, but not init_args_no_space
+    EXPECT_EXIT_FAIL((void) (int) arg(0));
 
     EXPECT_EXIT_FAIL(init_args({"./run_tests", "---x"}));
 }
 
 TEST(arg, positional_parsing) {
-    init_args_no_space({"./run_tests", "0", "1"});
+    init_args({"./run_tests", "0", "1"});
     EXPECT_EQ((int) arg(0), 0);
     EXPECT_EQ((int) arg(1), 1);
     EXPECT_EQ((int) arg({0, "zeroth"}), 0);
     EXPECT_EQ((int) arg({"first", 1}), 1);
     EXPECT_EXIT_FAIL((void) (int) arg(2));
 
-    init_args_no_space({"./run_tests", "0", "-x=3", "1"});
+    init_args({"./run_tests", "0", "-x=3", "1"});
     EXPECT_EQ((int) arg("-x"), 3);
     EXPECT_EXIT_FAIL((void) (int) arg({"-x", 3}));
     EXPECT_EQ((int) arg(0), 0);
@@ -402,32 +402,37 @@ TEST(arg, positional_parsing) {
 }
 
 TEST(arg, all_positional_parsing) {
-    init_args_no_space({"./run_tests"});
+    init_args({"./run_tests"});
     vector<int> all0 = arg::vector();
     EXPECT_EQ(all0, vector<int>({}));
 
-    init_args_no_space({"./run_tests", "0", "1"});
+    init_args({"./run_tests", "0", "1"});
     vector<int> all1 = arg::vector("description");
     EXPECT_EQ(all1, vector<int>({0, 1}));
 
-    init_args_no_space({"./run_tests", "text"});
-    vector<std::string> all2 = arg::vector();
-    EXPECT_EQ(all2, vector<std::string>({"text"}));
+    init_args({"./run_tests", "text"});
+    vector<string> all2 = arg::vector();
+    EXPECT_EQ(all2, vector<string>({"text"}));
 }
 
 TEST(arg, double_dash_separator) {
-    init_args_no_space({"./run_tests", "--"});
+    init_args({"./run_tests", "--"});
     vector<string> all0 = arg::vector();
     EXPECT_EQ(all0, vector<string>({}));
 
-    init_args_no_space({"./run_tests", "--flag1", "name0", "--", "name1", "-name2", "--name3", "---name4"});
+    init_args({"./run_tests", "--flag1", "name0", "--", "name1", "-name2", "--name3", "---name4"});
     vector<string> all1 = arg::vector();
     EXPECT_EQ(all1, vector<string>({"name0", "name1", "-name2", "--name3", "---name4"}));
 }
 
 TEST(arg, precision) {
-    init_args({"./run_tests", "--65535", "65535", "--65536", "65536",
-               "--permitted", "1000000000000", "--overflow", "100000000000000000000000000000000000000"});
+    init_args({
+        "./run_tests",
+        "--65535=65535",
+        "--65536=65536",
+        "--permitted=1000000000000",
+        "--overflow=100000000000000000000000000000000000000"
+    });
 
     EXPECT_EXIT_FAIL((void) (unsigned) arg("-a", "-1"));
 
@@ -448,63 +453,73 @@ TEST(arg, precision) {
     EXPECT_EXIT_FAIL((void) (float) arg("-a", 1e100));
 }
 
-TEST(arg, dashed_values) {
-    init_args({"./run_tests", "-x", "-1", "-y=-1", "-z=-name", "-w=--name", "-q=---name"});
+bool dashed_values_inside = false;
 
-    EXPECT_EQ((int) arg("-x"), -1);
-    EXPECT_EQ((int) arg("-y"), -1);
-    EXPECT_EQ((string) arg("-z"), "-name");
-    EXPECT_EQ((string) arg("-w"), "--name");
-    EXPECT_EQ((string) arg("-q"), "---name");
+int dashed_values_main(int x = arg("-x"), int y = arg("-y"), string z = arg("-z"),
+        string w = arg("-w"), string q = arg("-q")) {
+    EXPECT_EQ(x, -1);
+    EXPECT_EQ(y, -1);
+    EXPECT_EQ(z, "-name");
+    EXPECT_EQ(w, "--name");
+    EXPECT_EQ(q, "---name");
+
+    dashed_values_inside = true;
+    return 0;
+}
+
+TEST(arg, dashed_values) {
+    vector<string> args = {"./run_tests", "-x", "-1", "-y=-1", "-z=-name", "-w=--name", "-q=---name"};
+    CALL_WITH_INTROSPECTION(dashed_values_main, args);
+    EXPECT_TRUE(dashed_values_inside);
 }
 
 TEST(arg, strict_query) {
     init_args_strict({"./run_tests"}, 0);
 
-    init_args_strict({"./run_tests", "-x", "0"}, 1);
+    init_args_strict({"./run_tests", "-x=0"}, 1);
     (void) (int) arg("-x");
 
-    EXPECT_EXIT_FAIL(init_args_strict({"./run_tests", "-i", "1"}, 0));
+    EXPECT_EXIT_FAIL(init_args_strict({"./run_tests", "-i=1"}, 0));
 
-    init_args_strict({"./run_tests", "-i", "1"}, 2);
+    init_args_strict({"./run_tests", "-i=1"}, 2);
     (void) (int) arg("-i");
     EXPECT_EXIT_FAIL((void) (int) arg("-x"));
 
-    init_args_strict({"./run_tests", "-i", "1"}, 1);
+    init_args_strict({"./run_tests", "-i=1"}, 1);
     EXPECT_EXIT_FAIL((void) (int) arg("-x"));
 
-    init_args_strict({"./run_tests", "-i", "1"}, 1);
+    init_args_strict({"./run_tests", "-i=1"}, 1);
     EXPECT_EXIT_FAIL((void) (int) arg("-x", 0));
 }
 
 TEST(arg, strict_query_positional) {
-    init_args_no_space_strict({"./run_tests", "0", "1"}, 1);
+    init_args_strict({"./run_tests", "0", "1"}, 1);
     EXPECT_EXIT_FAIL((void) (int) arg(0)); // Invalid 2-nd argument
 
-    init_args_no_space_strict({"./run_tests", "1"}, 2);
+    init_args_strict({"./run_tests", "1"}, 2);
     fire::optional<int> x0 = arg(0), x1 = arg(1);
     EXPECT_EQ(x0.value(), 1);
     EXPECT_FALSE(x1.has_value());
 
-    init_args_no_space_strict({"./run_tests", "0", "1"}, 1);
+    init_args_strict({"./run_tests", "0", "1"}, 1);
     EXPECT_EXIT_FAIL((void) (int) arg(0));
 
-    init_args_no_space_strict({"./run_tests", "0", "1"}, 1);
+    init_args_strict({"./run_tests", "0", "1"}, 1);
     vector<int> all0 = arg::vector();
 }
 
 TEST(arg, strict_query_all_positional) {
-    init_args_no_space_strict({"./run_tests", "0", "1"}, 2);
+    init_args_strict({"./run_tests", "0", "1"}, 2);
     vector<int> all1 = arg::vector();
     EXPECT_EXIT_FAIL((void) (int) arg(0));
 
-    init_args_no_space_strict({"./run_tests", "0", "1"}, 2);
+    init_args_strict({"./run_tests", "0", "1"}, 2);
     (void) (int) arg(0);
     EXPECT_EXIT_FAIL(vector<int> all2 = arg::vector());
 }
 
 TEST(arg, optional_arguments) {
-    init_args({"./run_tests", "-i", "1", "-f", "1.0", "-s", "test"});
+    init_args({"./run_tests", "-i=1", "-f=1.0", "-s=test"});
 
     fire::optional<int> i_undef = arg("--undefined");
     fire::optional<int> i = arg("-i");
@@ -516,14 +531,14 @@ TEST(arg, optional_arguments) {
     EXPECT_FALSE(f_undef.has_value());
     EXPECT_NEAR((double) f.value(), 1.0, 1e-5);
 
-    fire::optional<std::string> s_undef = arg("--undefined");
-    fire::optional<std::string> s = arg("-s");
+    fire::optional<string> s_undef = arg("--undefined");
+    fire::optional<string> s = arg("-s");
     EXPECT_FALSE(s_undef.has_value());
     EXPECT_EQ(s.value(), "test");
 }
 
 TEST(arg, optional_and_default) {
-    init_args({"./run_tests", "-i", "0"});
+    init_args({"./run_tests", "-i=0"});
 
     EXPECT_EXIT_FAIL({ fire::optional<int> x = arg("--undefined", 0); (void) x; });
     EXPECT_EXIT_FAIL({ fire::optional<int> x = arg("-i", 0); (void) x; });
@@ -537,14 +552,58 @@ TEST(arg, duplicate_parameter) {
 }
 
 TEST(arg, negative) {
-    init_args({"./run_tests", "-a", "-1"});
+    init_args({"./run_tests", "-a=-1"});
     EXPECT_EQ((int) arg("-a"), -1);
 
-    init_args_no_space({"./run_tests", "-1", "-a=-2"});
+    init_args({"./run_tests", "-1", "-a=-2"});
     EXPECT_EQ((int) arg(0), -1);
     EXPECT_EQ((int) arg("-a"), -2);
 
-    init_args_no_space({"./run_tests", "-10", "-a=-20"});
+    init_args({"./run_tests", "-10", "-a=-20"});
     EXPECT_EQ((int) arg(0), -10);
     EXPECT_EQ((int) arg("-a"), -20);
+}
+
+TEST(logger, assignement_arguments) {
+    init_args_strict({"./run_tests"}, 100);
+    (void) (int) arg({"-i", "--int"});
+    (void) (string) arg("-s");
+    (void) (float) arg("--float");
+    (void) (bool) arg("--bool");
+
+    vector<string> args = _::logger.get_assignment_arguments();
+    EXPECT_NE(find(args.begin(), args.end(), "-i"), args.end());
+    EXPECT_NE(find(args.begin(), args.end(), "--int"), args.end());
+    EXPECT_NE(find(args.begin(), args.end(), "-s"), args.end());
+    EXPECT_NE(find(args.begin(), args.end(), "--float"), args.end());
+    EXPECT_EQ(find(args.begin(), args.end(), "--bool"), args.end());
+}
+
+bool ambiguous_args_inside1 = false;
+
+int ambiguous_args_main1(int x = arg("-x")) {
+    EXPECT_EQ(x, 1);
+
+    ambiguous_args_inside1 = true;
+    return 0;
+}
+
+bool ambiguous_args_inside2 = false;
+
+int ambiguous_args_main2(bool x = arg("-x"), int pos = arg(0)) {
+    EXPECT_TRUE(x);
+    EXPECT_EQ(pos, 1);
+
+    ambiguous_args_inside2 = true;
+    return 0;
+}
+
+TEST(introspection, ambiguous_args) {
+    vector<string> args = {"./run_tests", "-x", "1"};
+
+    CALL_WITH_INTROSPECTION(ambiguous_args_main1, args);
+    EXPECT_TRUE(ambiguous_args_inside1);
+
+    CALL_WITH_INTROSPECTION(ambiguous_args_main2, args);
+    EXPECT_TRUE(ambiguous_args_inside2);
 }

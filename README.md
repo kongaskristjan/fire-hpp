@@ -97,13 +97,10 @@ This is what you perceive as the program entry point. All arguments must be `boo
 
 ### <a id="fire"></a> D.1 FIRE(...) and FIRE_NO_SPACE_ASSIGNMENT(...)
 
-`FIRE(...)` and `FIRE_NO_SPACE_ASSIGNMENT(...)` both create the main function to parse arguments and call `...`, however, they differ in how arguments are parsed. `FIRE(...)` parses `program -x 1` as `program -x=1`, but `FIRE_NO_SPACE_ASSIGNMENT(...)` parses `-x` as a flag and `1` as a positional argument.
+`FIRE(...)` creates the main function that parses arguments and calls `...`.
+`FIRE_NO_SPACE_ASSIGNMENT(...)` disallows space assignments, eg. `-x 1` must be written as `-x=1`.
+`FIRE_NO_SPACE_ASSIGNMENT(...)` avoids using exceptions, so if your program has them disabled, use this.
 
-To use positional or vector arguments, `FIRE_NO_SPACE_ASSIGNMENT(...)` must be used. There are two reasons:
-
-* Mixing positional and named arguments with space-separated values makes a bad CLI anyway, eg: `program a -x b c` doesn't seem like `-x=b` with `a` and `c` as positional.
-* Implementing such a CLI within Fire API is likely impossible without using exceptions.
- 
 ### D.2 <a id="fire_arg"></a> fire::arg(identifiers[, default_value]])
 
 #### <a id="identifier"></a> D.2.1 Identifiers
@@ -230,13 +227,9 @@ v0.1 release is tested on:
 
 #### Current status
 
-* Support positional arguments in FIRE(...):
-    * Exception based introspection of fired_main arguments
-    * Allow positional arguments in FIRE() if introspection revealed that fire::arg("-x") is converted to non-bool
-    * Ensure FIRE_NO_SPACE_ASSIGNMENT() still compiles without exceptions
+* Solve Windows non-ascii character input
 * Automatic testing for error messages
 * Improve help messages
-    * Refactor `log_elem::type` from `std::string` -> `enum class`
     * Help messages: separate positional arguments, named arguments and flags in `Usage`
     * Program description
 * Ensure API user gets an error message when using required positional arguments after optional positional arguments
@@ -244,4 +237,5 @@ v0.1 release is tested on:
 #### v0.2 release
 
 * Subcommands (eg. `git add` and `git show`, which may have different flags/options)
+* Self-defined objects with string streams
 * `save(...)` keyword enclosing `arg`, which will save the program from exiting even if not all required arguments are present or correct (eg. for `--version`)
