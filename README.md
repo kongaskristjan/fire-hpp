@@ -198,7 +198,7 @@ set(CMAKE_CXX_STANDARD 11)
 add_subdirectory(fire_folder)
 
 add_executable(bar bar.cpp)
-target_link_libraries(bar fire)
+target_link_libraries(bar fire-hpp::fire-hpp)
 ```
 
 Alternatively, you can also use the more modern FetchContent.
