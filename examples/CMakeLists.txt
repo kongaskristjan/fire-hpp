@@ -15,7 +15,15 @@ target_link_libraries(optional_and_default fire)
 add_executable(positional positional.cpp)
 target_link_libraries(positional fire)
 
-add_executable(vector_positional vector_positional.cpp)
-target_link_libraries(vector_positional fire)
+add_executable(variadic variadic.cpp)
+target_link_libraries(variadic fire)
+
+if(MSVC)
+    # FIXIT: Test exception handling on Windows too
+else()
+    add_executable(no_exceptions no_exceptions.cpp)
+    target_link_libraries(no_exceptions fire)
+    target_compile_options(no_exceptions PRIVATE -fno-exceptions)
+endif()
 
 set(EXAMPLES_BUILD_DIR $<TARGET_FILE_DIR:basic> PARENT_SCOPE)

@@ -15,15 +15,29 @@
 */
 
 #include <iostream>
+#include <vector>
+#include <string>
 #include "fire/fire.hpp"
 
 using namespace std;
 
-int fired_main(
-        int x0 = fire::arg({0, "<first>", "First argument"}),
-        fire::optional<int> x1 = fire::arg({1, "<second>", "Second argument"})
-        ) {
-    std::cout << x0 << " " << x1.value_or(0) << endl;
+// Program inspired by `ls`. Takes a variable number of strings, and prints them.
+// Optionally sorts them or prints them line by line.
+
+int fired_main(vector<string> strings = fire::arg({fire::variadic(), "strings to be printed"}),
+               bool lines = fire::arg({"-o", "--one-per-line"}),
+               bool do_sort = fire::arg({"-s", "--sort"})) {
+    if(do_sort)
+        std::sort(strings.begin(), strings.end());
+
+    for(size_t i = 0; i < strings.size(); ++i) {
+        cout << strings[i];
+        if(lines || i == strings.size() - 1)
+            cout << endl;
+        else
+            cout << " ";
+    }
+
     return 0;
 }
 

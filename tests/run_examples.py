@@ -73,6 +73,7 @@ def run_all_combinations(path_prefix):
 
     runner.equal("0 -i=0", "")
     runner.equal("0 1 -i=0 --def-r=0.0 --opt-s=string", "")
+    runner.equal("0 1 -i 0 --def-r 0.0 --opt-s string", "")
 
 
 def run_basic(path_prefix):
@@ -122,8 +123,8 @@ def run_positional(path_prefix):
     runner.equal("-1 -3", "-1 -3")
 
 
-def run_vector_positional(path_prefix):
-    runner = assert_runner(path_prefix / "vector_positional")
+def run_variadic(path_prefix):
+    runner = assert_runner(path_prefix / "variadic")
 
     runner.equal("", "\n")
     runner.equal("b a", "b a\n")
@@ -131,6 +132,14 @@ def run_vector_positional(path_prefix):
     runner.equal("b a -s", "a b\n")
     runner.equal("b a -os", "a\nb\n")
     runner.equal("a -- -b", "a -b\n")
+
+
+def run_no_exceptions(path_prefix):
+    runner = assert_runner(path_prefix / "no_exceptions")
+
+    runner.equal("", "\n")
+    runner.equal("1 2", "1 2 \n")
+    runner.equal("1 2 -r=2", "1 2 \n1 2 \n")
 
 
 def get_path_prefix(subdir):
@@ -150,7 +159,9 @@ def main():
     run_flag(path_prefix)
     run_optional_and_default(path_prefix)
     run_positional(path_prefix)
-    run_vector_positional(path_prefix)
+    run_variadic(path_prefix)
+
+    run_no_exceptions(path_prefix)
 
     print(" SUCCESS! (ran {} tests with {} checks)".format(assert_runner.test_count, assert_runner.check_count))
 
