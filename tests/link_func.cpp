@@ -27,4 +27,4 @@
     DEALINGS IN THE SOFTWARE.
 */
 
-#include "fire/fire.hpp"
+#include "fire-hpp/fire.hpp"
