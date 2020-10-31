@@ -219,6 +219,22 @@ add_executable(bar bar.cpp)
 target_link_libraries(bar fire)
 ```
 
+Fire can also be installed and found through `find_package()`:
+
+```
+cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
+project(foo)
+set(CMAKE_CXX_STANDARD 11)
+
+find_package(fire-hpp REQUIRED)
+add_executable(bar bar.cpp)
+target_link_libraries(bar fire-hpp::fire-hpp)
+```
+
+## Conan integration
+
+Fire can be packaged for consumption through Conan by running `conan create . fire-hpp/version@user/channel` from the root directory of this repository. It can then be consumed as in the `find_package()` example above if using `cmake_find_package` generator.
+
 ## Development
 
 This library uses extensive testing. Unit tests are located in `tests/`, while `examples/` are used as integration tests. The latter also ensures examples are up-to-date. Before committing, please verify `python3 ./build/tests/run_standard_tests.py` succeed.
