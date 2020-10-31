@@ -28,7 +28,7 @@
 */
 
 #include <gtest/gtest.h>
-#include "../fire.hpp"
+#include "fire-hpp/fire.hpp"
 
 #define EXPECT_EXIT_SUCCESS(statement) EXPECT_EXIT(statement, ::testing::ExitedWithCode(0), "")
 #define EXPECT_EXIT_FAIL(statement) EXPECT_EXIT(statement, ::testing::ExitedWithCode(_failure_code), "")

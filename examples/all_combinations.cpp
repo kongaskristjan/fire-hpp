@@ -15,7 +15,7 @@
 */
 
 #include <iostream>
-#include "../fire.hpp"
+#include "fire-hpp/fire.hpp"
 
 using namespace std;
 
