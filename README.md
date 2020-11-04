@@ -250,20 +250,35 @@ v0.1 release is tested on:
 
 #### Current state
 
-* Solve Windows non-ascii character input
+* Solve Windows no-exceptions testing
 * Improve help messages
     * Help messages: separate positional arguments, named arguments and flags in `Usage`
     * Program description
 
 #### v0.2 release
 
+* Sufficient information for contributing
+    * Create a document describing the internals of this project
+    * Document the code
+    * Add contribution guidelines
+    * Add issue and PR templates
+    * Thoroughly describe each task in the roadmap
 * Subcommands (eg. `git add` and `git show`, which may have different flags/options)
-* Self-defined objects with string streams
-* `save(...)` keyword enclosing `arg`, which will save the program from exiting even if not all required arguments are present or correct (eg. for `--version`)
+* Possibility to raise errors and print help in fired_main()
+* Host documentation on readthedocs.io
 
 #### v0.3 release
 
-* Automatic testing for error messages
+* Solve Windows non-ascii character input
+* Self-defined objects with string streams
+* Argument requirements
+    * `fire::arg(identifier).require(condition, msg)`
+    * Specialized requirements, eg. `bounds(min, max)`, `one_of([option1], [option2], ...)`
+* `fire::arg(identifier).save([condition])`, which will save the program from exiting even if not all required arguments are present or correct (eg. for `--version`)
+
+#### v0.4 release
+
 * Ensure API user gets an error message when using required positional arguments after optional positional arguments
+* Automatic testing for error messages
 
 #### v1.0 release
