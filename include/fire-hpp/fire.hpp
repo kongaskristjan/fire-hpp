@@ -961,7 +961,7 @@ int main(int argc, const char ** argv) {\
     return fired_main();\
 }
 
-#define FIRE_NO_SPACE_ASSIGNMENT(fired_main) \
+#define FIRE_NO_EXCEPTIONS(fired_main) \
 int main(int argc, const char ** argv) {\
     int main_args = (int) fire::_get_argument_count(fired_main);\
     fire::_::matcher = fire::_matcher(argc, argv, main_args, true);\

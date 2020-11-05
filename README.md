@@ -95,11 +95,11 @@ This is what you perceive as the program entry point. All arguments must be `boo
 
 ## D. Documentation
 
-### <a id="fire"></a> D.1 FIRE(...) and FIRE_NO_SPACE_ASSIGNMENT(...)
+### <a id="fire"></a> D.1 FIRE(fired_main) and FIRE_NO_EXCEPTIONS(fired_main)
 
-`FIRE(...)` creates the main function that parses arguments and calls `...`.
-`FIRE_NO_SPACE_ASSIGNMENT(...)` disallows space assignments, eg. `-x 1` must be written as `-x=1`.
-`FIRE_NO_SPACE_ASSIGNMENT(...)` avoids using exceptions, so if your program has them disabled, use this.
+`FIRE(fired_main)` creates the main function that parses arguments and calls `fired_main`.
+`FIRE_NO_EXCEPTIONS()` is similar, but can be used even if compiler has exceptions disabled. However, this imposes limitations on what the library can parse. Specifically, it disallows space assignment, eg. `-x 1` must be written as `-x=1`.
+
 
 ### D.2 <a id="fire_arg"></a> fire::arg(identifiers[, default_value]])
 

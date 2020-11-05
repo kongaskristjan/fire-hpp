@@ -32,4 +32,4 @@ int fired_main(
     return 0;
 }
 
-FIRE_NO_SPACE_ASSIGNMENT(fired_main)
+FIRE_NO_EXCEPTIONS(fired_main)
