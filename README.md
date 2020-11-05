@@ -95,10 +95,15 @@ This is what you perceive as the program entry point. All arguments must be `boo
 
 ## D. Documentation
 
-### <a id="fire"></a> D.1 FIRE(fired_main) and FIRE_NO_EXCEPTIONS(fired_main)
+### <a id="fire"></a> D.1 FIRE(fired_main[, program_description]) and FIRE_NO_EXCEPTIONS(fired_main[, program_description])
 
 `FIRE(fired_main)` creates the main function that parses arguments and calls `fired_main`.
 `FIRE_NO_EXCEPTIONS()` is similar, but can be used even if compiler has exceptions disabled. However, this imposes limitations on what the library can parse. Specifically, it disallows space assignment, eg. `-x 1` must be written as `-x=1`.
+
+Program description can be supplied as the second argument:
+```
+FIRE(fired_main, "Hello there")
+```
 
 
 ### D.2 <a id="fire_arg"></a> fire::arg(identifiers[, default_value]])
@@ -251,8 +256,6 @@ v0.1 release is tested on:
 #### Current state
 
 * Solve Windows no-exceptions testing
-* Improve help messages
-    * Program description
 
 #### v0.2 release
 

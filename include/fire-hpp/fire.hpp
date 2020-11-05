@@ -55,6 +55,7 @@ namespace fire {
     inline void _instant_assert(bool pass, const std::string &msg, bool programmer_side = true);
     inline int count_hyphens(const std::string &s);
     inline std::string without_hyphens(const std::string &s);
+    inline std::string replace_all(const std::string &data, const std::string &from, const std::string &to);
 
     template <typename T>
     class optional {
@@ -175,6 +176,7 @@ namespace fire {
         };
 
     private:
+        std::string _program_descr;
         std::vector<std::pair<identifier, elem>> _params;
         int _introspect_count = 0;
 
@@ -186,6 +188,7 @@ namespace fire {
         inline std::vector<std::string> get_assignment_arguments() const;
         inline void log(const identifier &name, const elem &elem);
         inline void set_introspect_count(int count);
+        inline void set_program_descr(const std::string &program_descr) { _program_descr = program_descr; }
         inline int decrease_introspect_count();
         inline int get_introspect_count() const { return _introspect_count; }
     };
@@ -312,6 +315,17 @@ namespace fire {
         int hyphens = count_hyphens(s);
         std::string wo_hyphens = s.substr(hyphens);
         return wo_hyphens;
+    }
+
+    std::string replace_all(const std::string &data, const std::string &from, const std::string &to) {
+        std::string ret = data.substr(0, data.find(from));
+        if(data.find(from) == std::string::npos) return ret;
+
+        for(size_t pos = data.find(from); pos != std::string::npos; pos = data.find(from, pos + from.size())) {
+            std::size_t shifted_pos = pos + from.size();
+            ret += to + data.substr(shifted_pos, data.find(from, shifted_pos) - shifted_pos);
+        }
+        return ret;
     }
 
 
@@ -698,7 +712,7 @@ namespace fire {
         usage += _make_printable(id, elem, false);
 
         std::string printable = _make_printable(id, elem, true);
-        options += "      " + printable + std::string(2 + margin - printable.size(), ' ') + elem.descr;
+        options += "  " + printable + std::string(2 + margin - printable.size(), ' ') + elem.descr;
         if(! elem.def.empty())
             options += " [default: " + elem.def + "]";
         options += "\n";
@@ -707,7 +721,7 @@ namespace fire {
     void _arg_logger::print_help() {
         using id2elem = std::pair<identifier, elem>;
 
-        std::string usage = "    Usage:\n      " + _::matcher.get_executable();
+        std::string usage = "Usage:\n  " + _::matcher.get_executable();
         std::string options;
 
         std::vector<id2elem> printed(_params);
@@ -735,12 +749,18 @@ namespace fire {
                 if (cur_type == identifier::type::positional) separator = "Positional arguments";
                 if (cur_type == identifier::type::named) separator = "Named arguments";
                 if (cur_type == identifier::type::flag) separator = "Flags";
-                options += "\n    " + separator + ":\n";
+                options += "\n" + separator + ":\n";
             }
             _add_to_help(usage, options, it.first, it.second, margin);
         }
 
-        std::cerr << std::endl << usage << std::endl << std::endl << options << std::endl;
+        std::string program_descr;
+        if(! _program_descr.empty())
+            program_descr = "\n\nDescription:" + replace_all("\n" + _program_descr, "\n", "\n  ");
+
+        std::cerr << "\n" << usage;
+        std::cerr << program_descr << "\n\n";
+        std::cerr << options << std::endl;
     }
 
     std::vector<std::string> _arg_logger::get_assignment_arguments() const {
@@ -936,36 +956,43 @@ namespace fire {
     }
 }
 
+#define FIRE_EXTRACT_1_(first, ...) first
+#define FIRE_EXTRACT_1_PAD_(...) FIRE_EXTRACT_1_(__VA_ARGS__, "")
+#define FIRE_EXTRACT_2_(first, second, ...) second
+#define FIRE_EXTRACT_2_PAD_(...) FIRE_EXTRACT_2_(__VA_ARGS__, "", "")
 
-
-#define PREPARE_FIRE_(fired_main, argc, argv) \
-    int main_args = (int) fire::_get_argument_count(fired_main);\
+#define PREPARE_FIRE_(argc, argv, ...) \
+    int main_args = (int) fire::_get_argument_count(FIRE_EXTRACT_1_PAD_(__VA_ARGS__));\
     \
     fire::_::logger = fire::_arg_logger();\
     fire::_::matcher = fire::_matcher();\
     fire::_::logger.set_introspect_count(main_args);\
     if(main_args > 0) {\
         try {\
-            fired_main(); /* fired_main() isn't actually executed, the last default argument will always throw */ \
+            FIRE_EXTRACT_1_PAD_(__VA_ARGS__)(); /* function isn't actually executed, the last default argument will always throw */ \
         } catch (fire::_escape_exception e) {\
         }\
     }\
     \
     fire::_::matcher = fire::_matcher(argc, argv, main_args, true);\
-    fire::_::logger = fire::_arg_logger()
+    fire::_::logger = fire::_arg_logger();
 
+// FIRE/FIRE_NO_EXCEPTIONS(fired_main[, program_descr])
+// optional parameters implemented using a trick similar to https://stackoverflow.com/a/3048361/6865804
 
-#define FIRE(fired_main) \
+#define FIRE(...) \
 int main(int argc, const char ** argv) {\
-    PREPARE_FIRE_(fired_main, argc, argv);\
-    return fired_main();\
+    PREPARE_FIRE_(argc, argv, __VA_ARGS__);\
+    fire::_::logger.set_program_descr(FIRE_EXTRACT_2_PAD_(__VA_ARGS__));\
+    return FIRE_EXTRACT_1_PAD_(__VA_ARGS__)();\
 }
 
-#define FIRE_NO_EXCEPTIONS(fired_main) \
+#define FIRE_NO_EXCEPTIONS(...) \
 int main(int argc, const char ** argv) {\
-    int main_args = (int) fire::_get_argument_count(fired_main);\
+    int main_args = (int) fire::_get_argument_count(FIRE_EXTRACT_1_PAD_(__VA_ARGS__));\
     fire::_::matcher = fire::_matcher(argc, argv, main_args, true);\
-    return fired_main();\
+    fire::_::logger.set_program_descr(FIRE_EXTRACT_2_PAD_(__VA_ARGS__));\
+    return FIRE_EXTRACT_1_PAD_(__VA_ARGS__)();\
 }
 
 #endif

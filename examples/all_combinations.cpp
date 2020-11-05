@@ -30,4 +30,4 @@ int fired_main(
     return 0;
 }
 
-FIRE(fired_main)
+FIRE(fired_main, "Program that requires a lot of parameters but does absolutely nothing.")

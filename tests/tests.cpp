@@ -64,11 +64,15 @@ void init_args_strict(const vector<string> &args, int named_calls) {
         ptrs[i] = arguments[i].c_str();\
     const char ** argv = ptrs.data();\
     \
-    PREPARE_FIRE_(fired_main, argc, argv);\
+    PREPARE_FIRE_(argc, argv, fired_main);\
     fired_main();\
 }
 
 
+TEST(functions, replace_all) {
+    EXPECT_EQ(replace_all("go karts are cool", " ", "--"), "go--karts--are--cool");
+    EXPECT_EQ(replace_all("go", " ", "--"), "go");
+}
 
 TEST(optional, value) {
     fire::optional<int> no_value;

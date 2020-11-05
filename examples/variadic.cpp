@@ -41,4 +41,4 @@ int fired_main(vector<string> strings = fire::arg({fire::variadic(), "strings to
     return 0;
 }
 
-FIRE(fired_main)
+FIRE(fired_main, "An interface similar to the commonly used `ls` program.")
