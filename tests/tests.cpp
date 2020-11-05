@@ -193,7 +193,7 @@ TEST(identifier, help) {
     EXPECT_EQ(identifier(vector<string>{"description"}, 0).help(), "<0>");
     EXPECT_EQ(identifier(vector<string>{"<name>", "description"}, 0).help(), "<name>");
     EXPECT_EQ(identifier(vector<string>{"<name>"}, 0).help(), "<name>");
-    EXPECT_EQ(identifier().help(), "...");
+    EXPECT_EQ(identifier({}, empty, true).help(), "...");
 }
 
 TEST(identifier, longer) {
@@ -205,7 +205,7 @@ TEST(identifier, longer) {
 
     EXPECT_EQ(identifier(vector<string>{"zeroth"}, 0).longer(), "<0>");
     EXPECT_EQ(identifier(vector<string>{"<name>"}, 0).longer(), "<name>");
-    EXPECT_EQ(identifier().longer(), "...");
+    EXPECT_EQ(identifier({}, empty, true).longer(), "...");
 }
 
 TEST(identifier, less) {

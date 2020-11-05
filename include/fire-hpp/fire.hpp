@@ -86,7 +86,7 @@ namespace fire {
     public:
         inline static std::string prepend_hyphens(const std::string &name);
 
-        inline identifier(optional<std::string> descr=optional<std::string>());
+        identifier() = default;
         inline identifier(const std::vector<std::string> &names, optional<int> pos, bool is_variadic = false);
 
         inline optional<std::string> short_name() const { return _short_name; }
@@ -317,10 +317,9 @@ namespace fire {
         return name;
     }
 
-    inline identifier::identifier(optional<std::string> descr):
-        _descr(descr), _variadic(true), _help("..."), _longer("...") {}
-
     inline identifier::identifier(const std::vector<std::string> &names, optional<int> pos, bool is_variadic) {
+        _variadic = is_variadic;
+
         // Find description, shorthand and long name
         for(const std::string &name: names) {
             if(name.size() >= 2 && name.front() == '<' && name.back() == '>') {
@@ -355,10 +354,11 @@ namespace fire {
         }
 
         // Variadic argument
-        if(is_variadic) {
+        if(_variadic) {
             _instant_assert(! _short_name.has_value() && !_long_name.has_value()
                 && !_pos.has_value() && !_pos_name.has_value(),
                 "Can't assign a name or position to variadic arguments");
+            _help = _longer = "...";
             return;
         }
 
