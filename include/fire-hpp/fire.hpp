@@ -971,10 +971,11 @@ namespace fire {
     }
 }
 
+#define EXPAND( x ) x // Required to satisfy buggy MSVC compiler (https://stackoverflow.com/q/5134523/6865804)
 #define FIRE_EXTRACT_1_(first, ...) first
-#define FIRE_EXTRACT_1_PAD_(...) FIRE_EXTRACT_1_(__VA_ARGS__, "")
+#define FIRE_EXTRACT_1_PAD_(...) EXPAND( FIRE_EXTRACT_1_(__VA_ARGS__, "") )
 #define FIRE_EXTRACT_2_(first, second, ...) second
-#define FIRE_EXTRACT_2_PAD_(...) FIRE_EXTRACT_2_(__VA_ARGS__, "", "")
+#define FIRE_EXTRACT_2_PAD_(...) EXPAND( FIRE_EXTRACT_2_(__VA_ARGS__, "", "") )
 
 #define PREPARE_FIRE_(argc, argv, ...) \
     int main_args = (int) fire::_get_argument_count(FIRE_EXTRACT_1_PAD_(__VA_ARGS__));\
@@ -985,7 +986,7 @@ namespace fire {
     if(main_args > 0) {\
         try {\
             FIRE_EXTRACT_1_PAD_(__VA_ARGS__)(); /* function isn't actually executed, the last default argument will always throw */ \
-        } catch (fire::_escape_exception e) {\
+        } catch (fire::_escape_exception) {\
         }\
     }\
     \

@@ -58,7 +58,7 @@ void init_args_strict(const vector<string> &args, int named_calls) {
 // Making this macro a function is unfortunately impossible, because fired_main must preserve it's default arguments
 #define CALL_WITH_INTROSPECTION(fired_main, arguments) \
 {\
-    int argc = arguments.size();\
+    int argc = (int) arguments.size();\
     vector<const char *> ptrs(arguments.size());\
     for(size_t i = 0; i < arguments.size(); ++i)\
         ptrs[i] = arguments[i].c_str();\
