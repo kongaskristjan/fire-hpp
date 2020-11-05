@@ -45,6 +45,9 @@
 #include <type_traits>
 #include <limits>
 
+#if defined(__EXCEPTIONS) || defined(_CPPUNWIND)
+#define FIRE_EXCEPTIONS_ENABLED_
+#endif
 
 namespace fire {
     constexpr int _failure_code = 1;
@@ -760,7 +763,19 @@ namespace fire {
 
         std::cerr << "\n" << usage;
         std::cerr << program_descr << "\n\n";
-        std::cerr << options << std::endl;
+        std::cerr << options << "\n";
+#ifndef FIRE_EXCEPTIONS_ENABLED_
+        for(const auto& it: printed) {
+            identifier::type cur_type = it.first.get_type();
+            if(cur_type == identifier::type::named) {
+                std::string name = it.first.longer();
+                std::cerr << "\nNotes:\n";
+                std::cerr << "  All named arguments must be supplied as an equation.\n"
+                          << "  Eg. `./program " << name << "=VALUE`, not `./program " << name << " VALUE`\n\n" << std::flush;
+                break;
+            }
+        }
+#endif
     }
 
     std::vector<std::string> _arg_logger::get_assignment_arguments() const {
@@ -926,7 +941,7 @@ namespace fire {
         if(count > 0) { // introspection is active
             count = _::logger.decrease_introspect_count();
             if(count == 0) { // introspection ends
-#if defined(__EXCEPTIONS) || defined(_CPPUNWIND)
+#ifdef FIRE_EXCEPTIONS_ENABLED_
                 throw _escape_exception();
 #endif
             }
