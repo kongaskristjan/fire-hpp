@@ -79,19 +79,25 @@ namespace fire {
         optional<int> _pos;
         optional<std::string> _short_name, _long_name, _pos_name, _descr;
         bool _variadic = false;
-        bool _optional = false; // Only use for operator<
+        bool _optional = false; // Only used for operator<
+        bool flag = false; // Only used for operator<
 
         std::string _help, _longer;
 
     public:
+        enum class type { not_specified=-1, positional=0, named=1, flag=2 };
+
         inline static std::string prepend_hyphens(const std::string &name);
 
         identifier() = default;
         inline identifier(const std::vector<std::string> &names, optional<int> pos, bool is_variadic = false);
 
+        inline void set_as_flag() { flag = true; }
+
         inline optional<std::string> short_name() const { return _short_name; }
         inline optional<std::string> long_name() const { return _long_name; }
 
+        inline type get_type() const;
         inline bool operator<(const identifier &other) const;
         inline bool overlaps(const identifier &other) const;
         inline bool contains(const std::string &name) const;
@@ -391,7 +397,18 @@ namespace fire {
                     "Positional name " + _pos_name.value_or("") + " requires the argument to be positional");
     }
 
+    inline identifier::type identifier::get_type() const {
+        if(_variadic || _pos.has_value())
+            return type::positional;
+        if(flag)
+            return type::flag;
+        return type::named;
+    }
+
     bool identifier::operator<(const identifier &other) const {
+        if(get_type() != other.get_type())
+            return (int) get_type() < (int) other.get_type();
+
         std::string name = _long_name.value_or(_short_name.value_or(""));
         std::string other_name = other._long_name.value_or(other._short_name.value_or(""));
 
@@ -660,7 +677,7 @@ namespace fire {
 
     std::string _arg_logger::_make_printable(const identifier &id, const elem &elem, bool verbose) {
         std::string printable;
-        if(elem.optional || elem.t == elem::type::none) printable += "[";
+        if(elem.optional) printable += "[";
         printable += verbose ? id.help() : id.longer();
         if(elem.t != elem::type::none && ! (! verbose && id.get_pos().has_value())) {
             printable += id.get_pos().has_value() ? " " : "=";
@@ -671,7 +688,7 @@ namespace fire {
             if(elem.t == elem::type::real)
                 printable += "REAL NUMBER";
         }
-        if(elem.optional || elem.t == elem::type::none) printable += "]";
+        if(elem.optional) printable += "]";
         return printable;
     }
 
@@ -691,11 +708,14 @@ namespace fire {
         using id2elem = std::pair<identifier, elem>;
 
         std::string usage = "    Usage:\n      " + _::matcher.get_executable();
-        std::string options = "    Options:\n";
+        std::string options;
 
         std::vector<id2elem> printed(_params);
-        for(id2elem &elem: printed)
-            elem.first.set_optional(elem.second.optional);
+        for(id2elem &e: printed) {
+            e.first.set_optional(e.second.optional);
+            if(e.second.t == elem::type::none)
+                e.first.set_as_flag();
+        }
 
         std::sort(printed.begin(), printed.end(), [](const id2elem &a, const id2elem &b) {
             return a.first < b.first;
@@ -705,10 +725,22 @@ namespace fire {
         for(const auto& it: printed)
             margin = std::max(margin, _make_printable(it.first, it.second, true).size());
 
-        for(const auto& it: printed)
-            _add_to_help(usage, options, it.first, it.second, margin);
+        identifier::type prev_type = identifier::type::not_specified;
+        for(const auto& it: printed) {
+            identifier::type cur_type = it.first.get_type();
+            if (cur_type != prev_type) {
+                prev_type = cur_type;
 
-        std::cerr << std::endl << usage << std::endl << std::endl << std::endl << options << std::endl;
+                std::string separator;
+                if (cur_type == identifier::type::positional) separator = "Positional arguments";
+                if (cur_type == identifier::type::named) separator = "Named arguments";
+                if (cur_type == identifier::type::flag) separator = "Flags";
+                options += "\n    " + separator + ":\n";
+            }
+            _add_to_help(usage, options, it.first, it.second, margin);
+        }
+
+        std::cerr << std::endl << usage << std::endl << std::endl << options << std::endl;
     }
 
     std::vector<std::string> _arg_logger::get_assignment_arguments() const {

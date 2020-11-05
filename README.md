@@ -252,7 +252,6 @@ v0.1 release is tested on:
 
 * Solve Windows no-exceptions testing
 * Improve help messages
-    * Help messages: separate positional arguments, named arguments and flags in `Usage`
     * Program description
 
 #### v0.2 release

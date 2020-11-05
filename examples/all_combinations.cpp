@@ -21,10 +21,11 @@ using namespace std;
 
 int fired_main(
         int = fire::arg({"-i", "Integer"}),
-        double = fire::arg({"--def-r", "Real value with default"}, 1),
-        fire::optional<string> = fire::arg({"--opt-s", "Optional string"}),
+        double = fire::arg({"-r", "--def-r", "Real value with default"}, 1),
+        fire::optional<string> = fire::arg({"-s", "--opt-s", "Optional string"}),
         unsigned = fire::arg({0, "Positive integer"}),
-        fire::optional<int> = fire::arg({1, "Optional positive integer"})
+        fire::optional<int> = fire::arg({1, "Optional positive integer"}),
+        bool = fire::arg({"-f", "--flag"})
         ) {
     return 0;
 }

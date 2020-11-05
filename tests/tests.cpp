@@ -238,8 +238,26 @@ TEST(identifier, less) {
 
     identifier pos_arg(vector<string>{}, 0);
     pos_arg.set_optional(true);
-    identifier named_arg(vector<string>{"-a"}, empty);
+    identifier named_arg(vector<string>{"-b"}, empty);
     EXPECT_TRUE(pos_arg < named_arg);
+    identifier flag(vector<string>{"-a"}, empty);
+    flag.set_as_flag();
+    EXPECT_TRUE(named_arg < flag);
+}
+
+TEST(identifier, type) {
+    fire::optional<int> empty;
+
+    identifier variadic_arg(vector<string>{}, empty, true);
+    identifier pos_arg(vector<string>{}, 0);
+    identifier named_arg(vector<string>{"-a"}, empty);
+    identifier flag(vector<string>{"-a"}, empty);
+    flag.set_as_flag();
+
+    EXPECT_EQ(variadic_arg.get_type(), identifier::type::positional);
+    EXPECT_EQ(pos_arg.get_type(), identifier::type::positional);
+    EXPECT_EQ(named_arg.get_type(), identifier::type::named);
+    EXPECT_EQ(flag.get_type(), identifier::type::flag);
 }
 
 
