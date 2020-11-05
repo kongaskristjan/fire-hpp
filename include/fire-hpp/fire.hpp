@@ -83,7 +83,6 @@ namespace fire {
 
         std::string _help, _longer;
 
-        inline static void _check_name(const std::string &name);
     public:
         inline static std::string prepend_hyphens(const std::string &name);
 
@@ -316,13 +315,6 @@ namespace fire {
         if(name.size() >= 2)
             return "--" + name;
         return name;
-    }
-
-    void identifier::_check_name(const std::string &name) {
-        _instant_assert(count_hyphens(name) == 0, "argument " + name +
-        " has hyphens prefixed in declaration");
-        _instant_assert(name.size() >= 1, "name must contain at least one character");
-        _instant_assert(name.size() >= 2 || !isdigit(name[0]), "single character name must not be a digit (" + name + ")");
     }
 
     inline identifier::identifier(optional<std::string> descr):
