@@ -602,7 +602,6 @@ TEST(logger, assignement_arguments) {
 }
 
 bool ambiguous_args_inside1 = false;
-
 int ambiguous_args_main1(int x = arg("-x")) {
     EXPECT_EQ(x, 1);
 
@@ -611,7 +610,6 @@ int ambiguous_args_main1(int x = arg("-x")) {
 }
 
 bool ambiguous_args_inside2 = false;
-
 int ambiguous_args_main2(bool x = arg("-x"), int pos = arg(0)) {
     EXPECT_TRUE(x);
     EXPECT_EQ(pos, 1);
@@ -620,12 +618,28 @@ int ambiguous_args_main2(bool x = arg("-x"), int pos = arg(0)) {
     return 0;
 }
 
-TEST(introspection, ambiguous_args) {
-    vector<string> args = {"./run_tests", "-x", "1"};
+bool ambiguous_args_inside3 = false;
+int ambiguous_args_main3(bool x = arg("-x"), bool y = arg("-y")) {
+    EXPECT_TRUE(x);
+    EXPECT_TRUE(y);
 
-    CALL_WITH_INTROSPECTION(ambiguous_args_main1, args);
+    ambiguous_args_inside3 = true;
+    return 0;
+}
+
+TEST(introspection, ambiguous_args) {
+    vector<string> args_a = {"./run_tests", "-x", "1"};
+    CALL_WITH_INTROSPECTION(ambiguous_args_main1, args_a);
+    EXPECT_TRUE(ambiguous_args_inside1);
+    CALL_WITH_INTROSPECTION(ambiguous_args_main2, args_a);
+    EXPECT_TRUE(ambiguous_args_inside2);
+
+    vector<string> args_b = {"./run_tests", "-x1"};
+    ambiguous_args_inside1 = false;
+    CALL_WITH_INTROSPECTION(ambiguous_args_main1, args_b);
     EXPECT_TRUE(ambiguous_args_inside1);
 
-    CALL_WITH_INTROSPECTION(ambiguous_args_main2, args);
-    EXPECT_TRUE(ambiguous_args_inside2);
+    vector<string> args_c = {"./run_tests", "-xy"};
+    CALL_WITH_INTROSPECTION(ambiguous_args_main3, args_c);
+    EXPECT_TRUE(ambiguous_args_inside3);
 }

@@ -596,18 +596,32 @@ namespace fire {
         std::vector<std::string> eqs;
         size_t i = 0;
         while(i < raw.size()) {
+            // Don't parse options after "--"
             if(raw[i] == "--" || (i + 1 < raw.size() && raw[i + 1] == "--")) {
                 eqs.insert(eqs.end(), raw.begin() + i, raw.end());
                 break;
             }
 
-            if(i == raw.size() - 1 || std::find(assigned.begin(), assigned.end(), raw[i]) == assigned.end()) {
-                eqs.push_back(raw[i]);
-                ++i;
-            } else {
+            // Parse `make -j8` as `make -j=8`
+            if(count_hyphens(raw[i]) == 1 && raw[i].size() > 2 && raw[i][2] != '=') {
+                std::string prefix = raw[i].substr(0, 2);
+                if(std::find(assigned.begin(), assigned.end(), prefix) != assigned.end()) {
+                    eqs.push_back(prefix + "=" + raw[i].substr(2));
+                    ++i;
+                    continue;
+                }
+            }
+
+            // Parse `make -j 8` as `make -j=8`
+            if(i < raw.size() - 1 && std::find(assigned.begin(), assigned.end(), raw[i]) != assigned.end()) {
                 eqs.push_back(raw[i] + "=" + raw[i + 1]);
                 i += 2;
+                continue;
             }
+
+            // Parse flags without modification
+            eqs.push_back(raw[i]);
+            ++i;
         }
 
         return eqs;
