@@ -19,7 +19,9 @@ add_executable(variadic variadic.cpp)
 target_link_libraries(variadic fire-hpp)
 
 if(MSVC)
-    # FIXIT: Test exception handling on Windows too
+    add_executable(no_exceptions no_exceptions.cpp)
+    target_link_libraries(no_exceptions fire-hpp)
+    target_compile_options(no_exceptions PRIVATE /EHs- /EHc-)
 else()
     add_executable(no_exceptions no_exceptions.cpp)
     target_link_libraries(no_exceptions fire-hpp)

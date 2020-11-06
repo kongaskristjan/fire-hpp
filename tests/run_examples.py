@@ -43,23 +43,32 @@ class assert_runner:
         self.help_success("--help")
 
     def equal(self, cmd, out):
-        result = subprocess.run([self.pth] + cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        assert result.returncode == 0
-        assert self.remove_newline(self.b2str(result.stdout.strip())) == self.remove_newline(out.strip())
-        assert result.stderr == b""
+        stdout, stderr, code = self.run(cmd)
+        assert code == 0
+        assert stdout == self.remove_newline(out.strip())
+        assert stderr == ""
         assert_runner.check_count += 1
 
     def handled_failure(self, cmd):
-        result = subprocess.run([self.pth] + cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        assert result.returncode == fire_failure_code
-        assert result.stdout == b""
-        assert result.stderr != b""
+        stdout, stderr, code = self.run(cmd)
+        assert code == fire_failure_code
+        assert stdout == ""
+        assert stderr != ""
         assert_runner.check_count += 1
 
     def help_success(self, cmd):
-        result = subprocess.run([self.pth] + cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        assert result.returncode == 0
+        stdout, stderr, code = self.run(cmd)
+        assert code == 0
+        assert stdout == ""
+        assert stderr != ""
         assert_runner.check_count += 1
+
+    def run(self, cmd):
+        result = subprocess.run([self.pth] + cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout = self.remove_newline(self.b2str(result.stdout.strip()))
+        stderr = self.remove_newline(self.b2str(result.stderr.strip()))
+        code = result.returncode
+        return stdout, stderr, code
 
     def remove_newline(self, strn):
         return strn.replace("\r", "").replace("\n", "")
@@ -140,6 +149,8 @@ def run_no_exceptions(path_prefix):
     runner.equal("", "\n")
     runner.equal("1 2", "1 2 \n")
     runner.equal("1 2 -r=2", "1 2 \n1 2 \n")
+    stdout, stderr, code = runner.run("-h")
+    assert stderr.find("Notes") != -1
 
 
 def get_path_prefix(subdir):

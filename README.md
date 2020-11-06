@@ -255,8 +255,6 @@ v0.1 release is tested on:
 
 #### Current state
 
-* Solve Windows no-exceptions testing
-
 #### v0.2 release
 
 * Sufficient information for contributing
