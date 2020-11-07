@@ -1,7 +1,7 @@
 
 # Fire for C++
 
-Fire for C++, inspired by [python-fire](https://github.com/google/python-fire), is a library that creates a command line interface from a function signature. Here's the whole program for adding two numbers with command line:
+Fire for C++, inspired by [python-fire](https://github.com/google/python-fire), is a single header library that creates a command line interface from a function signature. Here's the whole program for adding two numbers with command line:
  ```
 #include <iostream>
 #include <fire-hpp/fire.hpp>
@@ -21,38 +21,35 @@ $ ./add -x=1 -y=2
 3
 ```
 
-Note that parsing and conversion takes up just 0.5 lines of `fired_main()`.
-
 As you likely expect,
 * `--help` prints a meaningful message with required arguments and their types.
 * an error message is displayed for incorrect usage.
+* the program runs on Linux, Windows and Mac OS.
+
+See [examples](https://github.com/kongaskristjan/fire-hpp/tree/master/examples) for other kinds of arguments.
 
 ### Why yet another CLI library?!
 
 With most libraries, creating a CLI roughly follows this pattern:
-1. define arguments and call `parse(argc, argv)`
-2. check whether errors are detected by `parse()`, print them and return (optional)
-3. check for `-h` and `--help`, print the help message and return (optional)
-4. for each argument:
+1. define arguments
+2. call `parse(argc, argv);`
+3. check whether errors are detected by `parse()`, print them and return (optional)
+4. check for `-h` and `--help`, print the help message and return (optional)
+5. for each argument:
     1. get argument from the map and if necessary convert to the right type
     2. try/catch for errors in conversion and return (optional)
 
-That's a non-trivial amount of boilerplate, especially for simple scripts. Because of that, programmers sometimes skip the optional parts, however this incurs a significant usability cost. Also, many libraries don't help at all with the conversion step.
+That's a non-trivial amount of boilerplate, especially for simple scripts. Because of that, programmers (and a lot of library examples) tend to skip the optional parts, however this incurs a significant usability cost. Also, many libraries don't help at all with the conversion step.
 
-With fire-hpp, you only call `FIRE(...)` and define arguments. When `fired_main()` scope begins, all four steps have already been completed.
+With fire-hpp, you only call `FIRE(fired_main)` and define arguments as function parameters. When `fired_main()` scope begins, all steps have already been completed.
 
 ### What's covered?
 
-* [flags](#flag); [named and positional](#identifier) parameters; [variable number of parameters](#variadic)
+* [flags](#flag); [named and positional](#identifier) parameters; [variadic parameters](#variadic)
 * [optional parameters](#optional)/[default values](#default)
 * conversions to [integer, floating-point and `std::string`](#standard)
-* [parameter descriptions](#description)
-* typical constructs, such as expanding `-abc <=> -a -b -c` and `-x=1 <=> -x 1`
-
-In addition, this library
-* works with Linux, Windows and Mac OS
-* is a single header
-* comes under very permissive [Boost licence](https://choosealicense.com/licenses/bsl-1.0/)
+* [program](#fire)/[parameter](#description) descriptions
+* standard constructs, such as `-abc <=> -a -b -c` and `-x=1 <=> -x 1`
 
 ## Q. Quickstart
 
@@ -67,7 +64,7 @@ In addition, this library
 Steps to run examples:
 * Clone repo: `git clone https://github.com/kongaskristjan/fire-hpp`
 * Create build and change directory: `cd fire-hpp && mkdir build && cd build`
-* Configure/build: `cmake .. && cmake --build .` (or substitute latter command with appropriate build system invocation, eg. `make -j8` or `ninja`)
+* Configure/build: `cmake .. && cmake --build .` (or substitute the latter command with appropriate build system invocation, eg. `make -j8` or `ninja`)
 * If errors are encountered, clear the build directory and disable pedantic warnings as errors with `cmake -D DISABLE_PEDANTIC= ..` (you are encouraged to open an issue).
 * Run: `./examples/basic --help` or `./examples/basic -x=3 -y=5`
 
@@ -113,7 +110,7 @@ FIRE(fired_main, "Hello there")
 Identifiers are used to find arguments from command line and provide a description. In general, it's a brace enclosed list of elements (braces can be omitted for a single element):
 * `"-s"` shorthand name for argument
 * `"--multicharacter-name"`
-* `0` index of positional argument
+* `0` index of a positional argument
 * `"<name of the positional argument>"`
 * any other string: `"description of any argument"`
 * variadic arguments: `fire::variadic()`
@@ -144,6 +141,8 @@ Default value if no value is provided through command line. Can be either `std::
 * Example: `int fired_main(int x = fire::arg({"-x", "--long-name"}, 0));`
     * CLI usage: `program` -> `x==0`
     * CLI usage: `program -x=1` -> `x==1`
+
+For an optional argument without a default, see [fire::optional](#optional).
 
 ### <a id="conversions"></a> D.3 fire::arg conversions
 
@@ -242,7 +241,7 @@ Fire can be packaged for consumption through Conan by running `conan create . fi
 
 ## Development
 
-This library uses extensive testing. Unit tests are located in `tests/`, while `examples/` are used as integration tests. The latter also ensures examples are up-to-date. Before committing, please verify `python3 ./build/tests/run_standard_tests.py` succeed.
+This library uses extensive testing. Unit tests are located in `tests/`, while `examples/` are used as integration tests. The latter also ensures examples are up-to-date. Before committing, please verify `python3 ./build/tests/run_standard_tests.py` succeed. Releases are also tested on many platforms with `python3 ./tests/run_release_tests.py`.
 
 v0.1 release is tested on:
 * Arch Linux gcc==10.1.0, clang==10.0.0: C++11, C++14, C++17, C++20
@@ -279,6 +278,7 @@ v0.1 release is tested on:
 #### v0.4 release
 
 * Ensure API user gets an error message when using required positional arguments after optional positional arguments
+* Allow converting named `fire::arg` to `std::vector` or `std::map` (allows multiple occurrences of an argument, like cmake's `-D`)
 * Automatic testing for error messages
 
 #### v1.0 release
