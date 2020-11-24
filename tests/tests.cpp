@@ -58,11 +58,11 @@ void init_args_strict(const vector<string> &args, int named_calls) {
 // Making this macro a function is unfortunately impossible, because fired_main must preserve it's default arguments
 #define CALL_WITH_INTROSPECTION(fired_main, arguments) \
 {\
-    int argc = (int) arguments.size();\
+    fire::argc = (int) arguments.size();\
     vector<const char *> ptrs(arguments.size());\
     for(size_t i = 0; i < arguments.size(); ++i)\
         ptrs[i] = arguments[i].c_str();\
-    const char ** argv = ptrs.data();\
+    fire::argv = ptrs.data();\
     \
     PREPARE_FIRE_(argc, argv, fired_main);\
     fired_main();\
@@ -642,4 +642,34 @@ TEST(introspection, ambiguous_args) {
     vector<string> args_c = {"./run_tests", "-xy"};
     CALL_WITH_INTROSPECTION(ambiguous_args_main3, args_c);
     EXPECT_TRUE(ambiguous_args_inside3);
+}
+
+bool argc_argv_values_inside = false;
+
+int argc_argv_values_main(int x = arg("-x"), int y = arg("-y"), string z = arg("-z"),
+                       string w = arg("-w"), string q = arg("-q")) {
+  EXPECT_EQ(x, -1);
+  EXPECT_EQ(y, -1);
+  EXPECT_EQ(z, "-name");
+  EXPECT_EQ(w, "--name");
+  EXPECT_EQ(q, "---name");
+
+  EXPECT_EQ(fire::argc, 7);
+  EXPECT_STREQ(fire::argv[0], "./run_tests");
+  EXPECT_STREQ(fire::argv[1], "-x");
+  EXPECT_STREQ(fire::argv[2], "-1");
+  EXPECT_STREQ(fire::argv[3], "-y=-1");
+  EXPECT_STREQ(fire::argv[4], "-z=-name");
+  EXPECT_STREQ(fire::argv[5], "-w=--name");
+  EXPECT_STREQ(fire::argv[6], "-q=---name");
+
+  argc_argv_values_inside = true;
+  return 0;
+}
+
+TEST(argc_argv, values)
+{
+  vector<string> args = {"./run_tests", "-x", "-1", "-y=-1", "-z=-name", "-w=--name", "-q=---name"};
+  CALL_WITH_INTROSPECTION(argc_argv_values_main, args);
+  EXPECT_TRUE(argc_argv_values_inside);
 }

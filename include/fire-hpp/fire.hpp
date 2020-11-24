@@ -50,6 +50,10 @@
 #endif
 
 namespace fire {
+
+    static int argc;
+    static const char** argv;
+
     constexpr int _failure_code = 1;
 
     template<typename R, typename ... Types>
@@ -994,6 +998,9 @@ namespace fire {
 #define PREPARE_FIRE_(argc, argv, ...) \
     int main_args = (int) fire::_get_argument_count(FIRE_EXTRACT_1_PAD_(__VA_ARGS__));\
     \
+    fire::argc = argc;\
+    fire::argv = argv;\
+    \
     fire::_::logger = fire::_arg_logger();\
     fire::_::matcher = fire::_matcher();\
     fire::_::logger.set_introspect_count(main_args);\
@@ -1004,7 +1011,7 @@ namespace fire {
         }\
     }\
     \
-    fire::_::matcher = fire::_matcher(argc, argv, main_args, true);\
+    fire::_::matcher = fire::_matcher(fire::argc, fire::argv, main_args, true);\
     fire::_::logger = fire::_arg_logger();
 
 // FIRE/FIRE_NO_EXCEPTIONS(fired_main[, program_descr])
