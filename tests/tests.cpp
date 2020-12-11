@@ -105,6 +105,17 @@ TEST(optional, no_value) {
 }
 
 
+TEST(raw_args, constructor) {
+    raw_args as("./executable", {"--arg", "3"});
+    EXPECT_EQ(as.executable(), "./executable");
+    EXPECT_EQ(as.args(), vector<string>({"--arg", "3"}));
+    EXPECT_EQ(as.argc(), 3);
+    EXPECT_STREQ(as.argv()[0], "./executable");
+    EXPECT_STREQ(as.argv()[1], "--arg");
+    EXPECT_STREQ(as.argv()[2], "3");
+}
+
+
 TEST(identifier, prepend_hyphens) {
     EXPECT_EQ(identifier::prepend_hyphens(""), "");
     EXPECT_EQ(identifier::prepend_hyphens("a"), "-a");
