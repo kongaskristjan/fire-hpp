@@ -158,16 +158,18 @@ namespace fire {
         bool _introspect = false;
         bool _strict = false;
         bool _help_flag = false;
+        bool _allow_unused = false;
 
     public:
         enum class arg_type { string_t, bool_t, none_t };
 
         inline _matcher() = default;
-        inline _matcher(int argc, const char **argv, int main_args, bool strict);
+        inline _matcher(int argc, const char **argv, int main_args, bool strict, bool allow_unused);
 
         inline void check(bool dec_main_args);
         inline void check_named();
         inline void check_positional();
+        inline void set_allow_unused(bool allow_unused) { _allow_unused = allow_unused; }
 
         inline std::pair<std::string, arg_type> get_and_mark_as_queried(const identifier &id);
         inline void parse(int argc, const char **argv);
@@ -523,9 +525,10 @@ namespace fire {
     }
 
 
-    _matcher::_matcher(int argc, const char **argv, int main_args, bool strict) {
+    _matcher::_matcher(int argc, const char **argv, int main_args, bool strict, bool allow_unused) {
         _main_args = main_args;
         _strict = strict;
+        _allow_unused = allow_unused;
 
         parse(argc, argv);
         identifier help({"-h", "--help", "Print the help message"}, optional<int>());
@@ -544,8 +547,10 @@ namespace fire {
             exit(0);
         }
 
-        check_named();
-        check_positional();
+        if(! _allow_unused) {
+            check_named();
+            check_positional();
+        }
 
         if(! _deferred_error.empty()) {
             std::cerr << "Error: " << _deferred_error.get() << std::endl;
@@ -684,7 +689,9 @@ namespace fire {
                 break;
             }
 
-            deferred_assert(identifier(), hyphens <= 2, "too many hyphens: " + s);
+            if(! _allow_unused)
+                deferred_assert(identifier(), hyphens <= 2, "too many hyphens: " + s);
+
             if((hyphens == 1 && !isdigit(s[1])) || hyphens == 2)
                 named.push_back(s);
             else
@@ -699,8 +706,9 @@ namespace fire {
         for(const std::string &s: named) {
             int hyphens = count_hyphens(s);
             if(hyphens == 1 && s.find('=') != std::string::npos && s.find('=') >= 3) {
-                deferred_assert(identifier(), false,
-                        "expanding single-hyphen arguments can't have value (" + s + ")");
+                if(! _allow_unused)
+                    deferred_assert(identifier(), false,
+                            "expanding single-hyphen arguments can't have value (" + s + ")");
                 continue;
             }
 
@@ -730,12 +738,14 @@ namespace fire {
 
                 args.emplace_back(name, value);
             }
-            size_t name_size = eq.size() - hyphens;
-            deferred_assert(identifier(), hyphens <= 2,
-                            name + " must have at most two hyphens");
-            if(hyphens == 2)
-                deferred_assert(identifier(), name_size >= 2,
-                        "multi-character name " + name + " must have at least two hyphens");
+            if(! _allow_unused) {
+                size_t name_size = eq.size() - hyphens;
+                deferred_assert(identifier(), hyphens <= 2,
+                                name + " must have at most two hyphens");
+                if (hyphens == 2)
+                    deferred_assert(identifier(), name_size >= 2,
+                                    "multi-character name " + name + " must have at least two hyphens");
+            }
         }
         return args;
     }
@@ -1035,11 +1045,12 @@ namespace fire {
 #define FIRE_EXTRACT_2_(first, second, ...) second
 #define FIRE_EXTRACT_2_PAD_(...) EXPAND( FIRE_EXTRACT_2_(__VA_ARGS__, "", "") )
 
-#define PREPARE_FIRE_(argc, argv, ...) \
+#define PREPARE_FIRE_(argc, argv, allow_unused, ...) \
     int main_args = (int) fire::_get_argument_count(FIRE_EXTRACT_1_PAD_(__VA_ARGS__));\
     \
     fire::_::logger = fire::_arg_logger();\
     fire::_::matcher = fire::_matcher();\
+    fire::_::matcher.set_allow_unused(allow_unused);\
     fire::_::logger.set_introspect_count(main_args);\
     if(main_args > 0) {\
         try {\
@@ -1048,15 +1059,22 @@ namespace fire {
         }\
     }\
     \
-    fire::_::matcher = fire::_matcher(argc, argv, main_args, true);\
-    fire::_::logger = fire::_arg_logger();
+    fire::_::matcher = fire::_matcher(argc, argv, main_args, true, allow_unused);\
+    fire::_::logger = fire::_arg_logger();\
 
 // FIRE/FIRE_NO_EXCEPTIONS(fired_main[, program_descr])
 // optional parameters implemented using a trick similar to https://stackoverflow.com/a/3048361/6865804
 
 #define FIRE(...) \
 int main(int argc, const char ** argv) {\
-    PREPARE_FIRE_(argc, argv, __VA_ARGS__);\
+    PREPARE_FIRE_(argc, argv, false, __VA_ARGS__);\
+    fire::_::logger.set_program_descr(FIRE_EXTRACT_2_PAD_(__VA_ARGS__));\
+    return FIRE_EXTRACT_1_PAD_(__VA_ARGS__)();\
+}
+
+#define FIRE_ALLOW_UNUSED(...) \
+int main(int argc, const char ** argv) {\
+    PREPARE_FIRE_(argc, argv, true, __VA_ARGS__);\
     fire::_::logger.set_program_descr(FIRE_EXTRACT_2_PAD_(__VA_ARGS__));\
     return FIRE_EXTRACT_1_PAD_(__VA_ARGS__)();\
 }
@@ -1064,7 +1082,7 @@ int main(int argc, const char ** argv) {\
 #define FIRE_NO_EXCEPTIONS(...) \
 int main(int argc, const char ** argv) {\
     int main_args = (int) fire::_get_argument_count(FIRE_EXTRACT_1_PAD_(__VA_ARGS__));\
-    fire::_::matcher = fire::_matcher(argc, argv, main_args, true);\
+    fire::_::matcher = fire::_matcher(argc, argv, main_args, true, false);\
     fire::_::logger.set_program_descr(FIRE_EXTRACT_2_PAD_(__VA_ARGS__));\
     return FIRE_EXTRACT_1_PAD_(__VA_ARGS__)();\
 }

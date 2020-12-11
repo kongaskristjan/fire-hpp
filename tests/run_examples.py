@@ -138,6 +138,7 @@ def run_raw_args(path_prefix):
     runner = assert_runner(pth)
 
     runner.equal("1 2", "argc: 3\nargv: " + str(pth) + " 1 2")
+    runner.equal("--x -ab=3 - --- --", "argc: 6\nargv: " + str(pth) + " --x -ab=3 - --- --")
 
 
 def run_variadic(path_prefix):

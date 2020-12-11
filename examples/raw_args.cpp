@@ -19,7 +19,7 @@
 
 using namespace std;
 
-int fired_main(std::vector<std::string> = fire::arg(fire::variadic())) {
+int fired_main() {
     int argc = fire::original_args.argc();
     const char ** argv = fire::original_args.argv();
 
@@ -31,4 +31,4 @@ int fired_main(std::vector<std::string> = fire::arg(fire::variadic())) {
     return 0;
 }
 
-FIRE(fired_main, "prints raw argv/argc")
+FIRE_ALLOW_UNUSED(fired_main, "prints raw argv/argc")

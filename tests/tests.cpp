@@ -42,7 +42,7 @@ void init_args(const vector<string> &args, bool strict, int named_calls = 100000
         argv[i] = args[i].c_str();
 
     _::logger = _arg_logger();
-    _::matcher = _matcher((int) args.size(), argv, named_calls, strict);
+    _::matcher = _matcher((int) args.size(), argv, named_calls, strict, false);
 
     delete [] argv;
 }
@@ -64,7 +64,7 @@ void init_args_strict(const vector<string> &args, int named_calls) {
         ptrs[i] = arguments[i].c_str();\
     const char ** argv = ptrs.data();\
     \
-    PREPARE_FIRE_(argc, argv, fired_main);\
+    PREPARE_FIRE_(argc, argv, false, fired_main);\
     fired_main();\
 }
 
