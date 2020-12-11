@@ -98,6 +98,8 @@ namespace fire {
         inline const char ** argv() const { return const_cast<const char **>(_argv_storage.data()); }
     };
 
+    static raw_args original_args;
+
     class identifier {
         optional<int> _pos;
         optional<std::string> _short_name, _long_name, _pos_name, _descr;
@@ -532,7 +534,9 @@ namespace fire {
     }
 
     void _matcher::check(bool dec_main_args) {
-        _main_args -= dec_main_args;
+        if(dec_main_args)
+            --_main_args;
+
         if(! _strict || _main_args > 0) return;
 
         if(_help_flag) {
@@ -611,6 +615,7 @@ namespace fire {
     void _matcher::parse(int argc, const char **argv) {
         _executable = argv[0];
         std::vector<std::string> raw = to_vector_string(argc - 1, argv + 1);
+        original_args = raw_args(_executable, raw);
         std::vector<std::string> eqs = equate_assignments(raw, _::logger.get_assignment_arguments());
         std::vector<std::string> named;
         tie(named, _positional) = separate_named_positional(eqs);

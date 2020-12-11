@@ -15,6 +15,9 @@ target_link_libraries(optional_and_default fire-hpp)
 add_executable(positional positional.cpp)
 target_link_libraries(positional fire-hpp)
 
+add_executable(raw_args raw_args.cpp)
+target_link_libraries(raw_args fire-hpp)
+
 add_executable(variadic variadic.cpp)
 target_link_libraries(variadic fire-hpp)
 

@@ -133,6 +133,13 @@ def run_positional(path_prefix):
     runner.equal("-1 -3", "-1 -3")
 
 
+def run_raw_args(path_prefix):
+    pth = path_prefix / "raw_args"
+    runner = assert_runner(pth)
+
+    runner.equal("1 2", "argc: 3\nargv: " + str(pth) + " 1 2")
+
+
 def run_variadic(path_prefix):
     runner = assert_runner(path_prefix / "variadic")
 
@@ -171,6 +178,7 @@ def main():
     run_flag(path_prefix)
     run_optional_and_default(path_prefix)
     run_positional(path_prefix)
+    run_raw_args(path_prefix)
     run_variadic(path_prefix)
 
     run_no_exceptions(path_prefix)
