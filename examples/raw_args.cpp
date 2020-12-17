@@ -19,9 +19,12 @@
 
 using namespace std;
 
-int fired_main() {
+int fired_main(fire::optional<int> value = fire::arg("--value")) {
     int argc = fire::original_args.argc();
     const char ** argv = fire::original_args.argv();
+
+    if(value.has_value())
+        std::cout << "value: " << value.value() << std::endl;
 
     std::cout << "argc: " << argc << std::endl;
     std::cout << "argv:";
@@ -31,4 +34,4 @@ int fired_main() {
     return 0;
 }
 
-FIRE_ALLOW_UNUSED(fired_main, "prints raw argv/argc")
+FIRE_ALLOW_UNUSED(fired_main, "Prints raw argv/argc and if specified, the optional integer.")

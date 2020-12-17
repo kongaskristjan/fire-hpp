@@ -139,6 +139,8 @@ def run_raw_args(path_prefix):
 
     runner.equal("1 2", "argc: 3\nargv: " + str(pth) + " 1 2")
     runner.equal("--x -ab=3 - --- --", "argc: 6\nargv: " + str(pth) + " --x -ab=3 - --- --")
+    runner.equal("abc --value=1", "value: 1\nargc: 3\nargv: " + str(pth) + " abc --value=1")
+    runner.equal("abc --value 1", "value: 1\nargc: 4\nargv: " + str(pth) + " abc --value 1")
 
 
 def run_variadic(path_prefix):
