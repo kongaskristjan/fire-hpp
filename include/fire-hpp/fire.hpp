@@ -44,6 +44,7 @@
 #include <algorithm>
 #include <type_traits>
 #include <limits>
+#include <cstring>
 
 #if defined(__EXCEPTIONS) || defined(_CPPUNWIND)
 #define FIRE_EXCEPTIONS_ENABLED_
@@ -80,22 +81,21 @@ namespace fire {
     };
 
     class c_args {
-        std::string _executable;
-        std::vector<std::string> _args;
-        std::vector<const char *> _argv_storage;
-
-        inline void init_argv_storage();
+        int _argc = 0;
+        char ** _argv = nullptr;
 
     public:
         inline c_args() = default;
-        inline c_args(const std::string &_executable, const std::vector<std::string> &_args);
+        inline c_args(const std::string &executable, const std::vector<std::string> &args);
         inline c_args& operator=(const c_args &other);
         inline c_args(const c_args &_other) { *this = _other; }
+        inline ~c_args();
 
-        inline const std::string& executable() const { return _executable; }
-        inline const std::vector<std::string>& args() const { return _args; }
-        inline int argc() const { return (int) _argv_storage.size() - 1; } // -1 for null terminated storage
-        inline const char ** argv() const { return const_cast<const char **>(_argv_storage.data()); }
+        inline int &argc() { return _argc; }
+        inline char ** argv() { return _argv; }
+
+    private:
+        inline void delete_storage();
     };
 
     static c_args raw_args;
@@ -355,25 +355,46 @@ namespace fire {
     }
 
 
-    void c_args::init_argv_storage() {
-        _argv_storage.resize(_args.size() + 2, nullptr);
+    c_args::c_args(const std::string &executable, const std::vector<std::string> &args) {
+        std::vector<std::string> all_args;
+        all_args.push_back(executable);
+        all_args.insert(all_args.end(), args.begin(), args.end());
 
-        _argv_storage[0] = _executable.c_str();
-        for(size_t i = 0; i < _args.size(); ++i)
-            _argv_storage[i + 1] = _args[i].c_str();
-    }
+        _argc = all_args.size();
+        _argv = new char*[all_args.size() + 1]();
 
-    c_args::c_args(const std::string &_executable, const std::vector<std::string> &_args):
-            _executable(_executable), _args(_args) {
-        init_argv_storage();
+        for(size_t i = 0; i < all_args.size(); ++i) {
+            _argv[i] = new char[all_args[i].size() + 1]();
+            all_args[i].copy(_argv[i], all_args[i].size());
+        }
     }
 
     c_args& c_args::operator=(const c_args &other) {
-        _executable = other._executable;
-        _args = other._args;
-        init_argv_storage();
+        if(this == &other) return *this;
+
+        delete_storage();
+        _argc = other._argc;
+        _argv = new char*[_argc + 1]();
+
+        for(int i = 0; i < _argc; ++i) {
+            _argv[i] = new char[strlen(other._argv[i]) + 1]();
+            strcpy(_argv[i], other._argv[i]);
+        }
+
         return *this;
     }
+
+    c_args::~c_args() {
+        delete_storage();
+    }
+
+    void c_args::delete_storage() {
+        for(int i = 0; i < _argc; ++i)
+            delete [] _argv[i];
+        delete [] _argv;
+        _argc = 0;
+    }
+
 
     std::string identifier::prepend_hyphens(const std::string &name) {
         if(name.size() == 1)

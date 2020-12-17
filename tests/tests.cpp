@@ -107,12 +107,25 @@ TEST(optional, no_value) {
 
 TEST(c_args, constructor) {
     c_args as("./executable", {"--arg", "3"});
-    EXPECT_EQ(as.executable(), "./executable");
-    EXPECT_EQ(as.args(), vector<string>({"--arg", "3"}));
     EXPECT_EQ(as.argc(), 3);
     EXPECT_STREQ(as.argv()[0], "./executable");
     EXPECT_STREQ(as.argv()[1], "--arg");
     EXPECT_STREQ(as.argv()[2], "3");
+}
+
+
+TEST(c_args, operators) {
+    c_args args0;
+    c_args args1("./executable", {});
+    c_args args2(args1);
+    EXPECT_EQ(args0.argc(), 0);
+    EXPECT_STREQ(args1.argv()[0], "./executable");
+    EXPECT_STREQ(args2.argv()[0], "./executable");
+
+    args0 = c_args("./another_executable", {});
+    args1 = c_args("./another_executable", {});
+    EXPECT_STREQ(args0.argv()[0], "./another_executable");
+    EXPECT_STREQ(args1.argv()[0], "./another_executable");
 }
 
 

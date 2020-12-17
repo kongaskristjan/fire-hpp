@@ -191,14 +191,27 @@ In this case, identifier should be `fire::variadic()`. Description can be suppli
 
 ### <a id="raw_args"></a>  D.4 Accessing raw arguments
 
-Some libraries require access to raw argc/argv - this is accomplished with `fire::raw_args`:
+Some third party libraries require access to raw argc/argv. This is gained through `fire::raw_args` (of type `fire::c_args`), which has `argc()` and `argv()` methods for accessing the arguments.
 
+Examples:
+
+* Usage without modification:
 ```
 int argc = fire::raw_args.argc();
-const char ** argv = fire::raw_args.argv();
+char ** argv = fire::raw_args.argv();
+non_modifying_call(argc, argv);
 ```
 
-In such case [`FIRE_ALLOW_UNUSED(...)`](#fire) is probably what you want.
+* Usage with modification:
+```
+fire::c_args raw_args_copy = fire::raw_args; 
+int& argc = raw_args_copy.argc();
+char ** argv = raw_args_copy.argv();
+modifying_call(argc, argv);
+// Once out of scope, raw_args_copy releases argv strings
+```
+
+You also need [`FIRE_ALLOW_UNUSED(...)`](#fire) if the third party library processes it's own arguments.
 
 ## CMake integration
 
