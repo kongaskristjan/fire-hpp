@@ -92,10 +92,11 @@ This is what you perceive as the program entry point. All arguments must be `boo
 
 ## D. Documentation
 
-### <a id="fire"></a> D.1 FIRE(fired_main[, program_description]) and FIRE_NO_EXCEPTIONS(fired_main[, program_description])
+### <a id="fire"></a> D.1 FIRE(fired_main[, program_description]) and variants
 
-`FIRE(fired_main)` creates the main function that parses arguments and calls `fired_main`.
-`FIRE_NO_EXCEPTIONS()` is similar, but can be used even if compiler has exceptions disabled. However, this imposes limitations on what the library can parse. Specifically, it disallows space assignment, eg. `-x 1` must be written as `-x=1`.
+* `FIRE(fired_main[, program_description])` creates the main function that parses arguments and calls `fired_main`.
+* `FIRE_NO_EXCEPTIONS(...)` is similar, but can be used even if compiler has exceptions disabled. However, this imposes limitations on what the library can parse. Specifically, it disallows space assignment, eg. `-x 1` must be written as `-x=1`.
+* `FIRE_ALLOW_UNUSED(...)` is similar to `FIRE(...)`, but allows unused arguments. This is useful when [raw arguments](#raw_args) are accessed (eg. for another library).
 
 Program description can be supplied as the second argument:
 ```
@@ -187,6 +188,17 @@ In this case, identifier should be `fire::variadic()`. Description can be suppli
 * Example: `int fired_main(vector<std::string> params = fire::arg({fire::variadic(), "description"}));`
     * CLI usage: `program abc xyz` -> `params=={"abc", "xyz"}`
     * CLI usage: `program` -> `params=={}`
+
+### <a id="raw_args"></a>  D.4 Accessing raw arguments
+
+Some libraries require access to raw argc/argv - this is accomplished with `fire::original_args`:
+
+```
+int argc = fire::original_args.argc();
+const char ** argv = fire::original_args.argv();
+```
+
+In such case [`FIRE_ALLOW_UNUSED(...)`](#fire) is probably what you want.
 
 ## CMake integration
 
