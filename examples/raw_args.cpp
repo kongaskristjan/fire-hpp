@@ -20,8 +20,8 @@
 using namespace std;
 
 int fired_main(fire::optional<int> value = fire::arg("--value")) {
-    int argc = fire::original_args.argc();
-    const char ** argv = fire::original_args.argv();
+    int argc = fire::raw_args.argc();
+    const char ** argv = fire::raw_args.argv();
 
     if(value.has_value())
         std::cout << "value: " << value.value() << std::endl;

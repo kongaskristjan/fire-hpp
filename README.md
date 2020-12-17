@@ -191,11 +191,11 @@ In this case, identifier should be `fire::variadic()`. Description can be suppli
 
 ### <a id="raw_args"></a>  D.4 Accessing raw arguments
 
-Some libraries require access to raw argc/argv - this is accomplished with `fire::original_args`:
+Some libraries require access to raw argc/argv - this is accomplished with `fire::raw_args`:
 
 ```
-int argc = fire::original_args.argc();
-const char ** argv = fire::original_args.argv();
+int argc = fire::raw_args.argc();
+const char ** argv = fire::raw_args.argv();
 ```
 
 In such case [`FIRE_ALLOW_UNUSED(...)`](#fire) is probably what you want.

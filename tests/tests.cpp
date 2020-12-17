@@ -105,8 +105,8 @@ TEST(optional, no_value) {
 }
 
 
-TEST(raw_args, constructor) {
-    raw_args as("./executable", {"--arg", "3"});
+TEST(c_args, constructor) {
+    c_args as("./executable", {"--arg", "3"});
     EXPECT_EQ(as.executable(), "./executable");
     EXPECT_EQ(as.args(), vector<string>({"--arg", "3"}));
     EXPECT_EQ(as.argc(), 3);

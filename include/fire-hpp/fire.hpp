@@ -79,7 +79,7 @@ namespace fire {
     struct _escape_exception {
     };
 
-    class raw_args {
+    class c_args {
         std::string _executable;
         std::vector<std::string> _args;
         std::vector<const char *> _argv_storage;
@@ -87,10 +87,10 @@ namespace fire {
         inline void init_argv_storage();
 
     public:
-        inline raw_args() = default;
-        inline raw_args(const std::string &_executable, const std::vector<std::string> &_args);
-        inline raw_args& operator=(const raw_args &other);
-        inline raw_args(const raw_args &_other) { *this = _other; }
+        inline c_args() = default;
+        inline c_args(const std::string &_executable, const std::vector<std::string> &_args);
+        inline c_args& operator=(const c_args &other);
+        inline c_args(const c_args &_other) { *this = _other; }
 
         inline const std::string& executable() const { return _executable; }
         inline const std::vector<std::string>& args() const { return _args; }
@@ -98,7 +98,7 @@ namespace fire {
         inline const char ** argv() const { return const_cast<const char **>(_argv_storage.data()); }
     };
 
-    static raw_args original_args;
+    static c_args raw_args;
 
     class identifier {
         optional<int> _pos;
@@ -355,7 +355,7 @@ namespace fire {
     }
 
 
-    void raw_args::init_argv_storage() {
+    void c_args::init_argv_storage() {
         _argv_storage.resize(_args.size() + 2, nullptr);
 
         _argv_storage[0] = _executable.c_str();
@@ -363,12 +363,12 @@ namespace fire {
             _argv_storage[i + 1] = _args[i].c_str();
     }
 
-    raw_args::raw_args(const std::string &_executable, const std::vector<std::string> &_args):
+    c_args::c_args(const std::string &_executable, const std::vector<std::string> &_args):
             _executable(_executable), _args(_args) {
         init_argv_storage();
     }
 
-    raw_args& raw_args::operator=(const raw_args &other) {
+    c_args& c_args::operator=(const c_args &other) {
         _executable = other._executable;
         _args = other._args;
         init_argv_storage();
@@ -620,7 +620,7 @@ namespace fire {
     void _matcher::parse(int argc, const char **argv) {
         _executable = argv[0];
         std::vector<std::string> raw = to_vector_string(argc - 1, argv + 1);
-        original_args = raw_args(_executable, raw);
+        raw_args = c_args(_executable, raw);
         std::vector<std::string> eqs = equate_assignments(raw, _::logger.get_assignment_arguments());
         std::vector<std::string> named;
         tie(named, _positional) = separate_named_positional(eqs);
