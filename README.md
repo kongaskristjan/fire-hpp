@@ -277,33 +277,20 @@ v0.2 release is tested on:
 
 ### Roadmap:
 
-#### Current state
-
-#### v0.2 release
+#### v0.3 release
 
 * Sufficient information for contributing
     * Create a document describing the internals of this project
-    * Document the code
-    * Add contribution guidelines
-    * Add issue and PR templates
-    * Thoroughly describe each task in the roadmap
-* Subcommands (eg. `git add` and `git show`, which may have different flags/options)
-* Possibility to raise errors and print help in fired_main()
-* Host documentation on readthedocs.io
-
-#### v0.3 release
-
-* Solve Windows non-ascii character input
-* Self-defined objects with string streams
-* Argument requirements
-    * `fire::arg(identifier).require(condition, msg)`
-    * Specialized requirements, eg. `bounds(min, max)`, `one_of([option1], [option2], ...)`
-* `fire::arg(identifier).save([condition])`, which will save the program from exiting even if not all required arguments are present or correct (eg. for `--version`)
+    * Document main parts of the code
+* Argument requirements: `fire::arg(identifier).bounds(min, max)`, `fire::arg(identifier).one_of({[option1], [option2], ...})`
+* Possibility to raise errors and print help in fired_main(): `fire::assert_error`, `fire::raise_error` and `fire::print_help`
 
 #### v0.4 release
 
-* Ensure API user gets an error message when using required positional arguments after optional positional arguments
-* Allow converting named `fire::arg` to `std::vector` or `std::map` (allows multiple occurrences of an argument, like cmake's `-D`)
-* Automatic testing for error messages
+* Solve Windows non-ascii character input
+* Subcommands (eg. `git add` and `git show`, which may have different flags/options)
 
 #### v1.0 release
+
+* Ensure API user gets an error message when using required positional arguments after optional positional arguments
+* Allow converting named `fire::arg` to `std::vector` or `std::map` (allows multiple occurrences of an argument, like cmake's `-D`)
