@@ -9,8 +9,8 @@ if(${CMAKE_VERSION} VERSION_GREATER "3.11.0")
 
     FetchContent_Declare(
             googletest
-            URL https://github.com/google/googletest/archive/release-1.10.0.tar.gz
-            URL_HASH SHA3_224=2edfb72d24a3e178e397015bd846eb52842a9f0015ed8cba18e7dde3
+            URL https://github.com/google/googletest/archive/release-1.11.0.tar.gz
+            URL_HASH SHA3_224=78cfdd81a73fa617bcf0e5f13d9d825c6ea069106757fb51cc8120eb
     )
 
     FetchContent_GetProperties(googletest)
