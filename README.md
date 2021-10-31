@@ -189,7 +189,13 @@ In this case, identifier should be `fire::variadic()`. Description can be suppli
     * CLI usage: `program abc xyz` -> `params=={"abc", "xyz"}`
     * CLI usage: `program` -> `params=={}`
 
-### <a id="raw_args"></a>  D.4 Accessing raw arguments
+### <a id="post_functions"></a> D.4 Post fired_main() functions
+
+#### <a id=""></a> D.4.1 Print help message
+
+* `fire::print_help()` - Print help message identical to one printed with `--help` flag
+
+#### <a id="raw_args"></a> D.4.2 Accessing raw arguments
 
 Some third party libraries require access to raw argc/argv. This is gained through `fire::raw_args` (of type `fire::c_args`), which has `argc()` and `argv()` methods for accessing the arguments.
 
@@ -283,7 +289,7 @@ v0.2 release is tested on:
     * Create a document describing the internals of this project
     * Document main parts of the code
 * Argument requirements: `fire::arg(identifier).bounds(min, max)`, `fire::arg(identifier).one_of({[option1], [option2], ...})`
-* Possibility to raise errors and print help in fired_main(): `fire::assert_error`, `fire::raise_error` and `fire::print_help`
+* Possibility to raise errors in fired_main(): `fire::assert_error`, `fire::raise_error`
 
 #### v0.4 release
 

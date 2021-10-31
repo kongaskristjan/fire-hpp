@@ -902,6 +902,10 @@ namespace fire {
         return _introspect_count;
     }
 
+    inline void print_help() {
+        _::logger.print_help();
+    }
+
     template <>
     inline optional<long long> arg::_get<long long>() {
         auto elem = _::matcher.get_and_mark_as_queried(_id);

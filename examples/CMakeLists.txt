@@ -6,6 +6,9 @@ target_link_libraries(all_combinations fire-hpp)
 add_executable(basic basic.cpp)
 target_link_libraries(basic fire-hpp)
 
+add_executable(conditions conditions.cpp)
+target_link_libraries(conditions fire-hpp)
+
 add_executable(flag flag.cpp)
 target_link_libraries(flag fire-hpp)
 
