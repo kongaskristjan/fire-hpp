@@ -191,9 +191,11 @@ In this case, identifier should be `fire::variadic()`. Description can be suppli
 
 ### <a id="post_functions"></a> D.4 Post fired_main() functions
 
-#### <a id=""></a> D.4.1 Print help message
+#### <a id=""></a> D.4.1 Print help or error message with fire formatting
 
-* `fire::print_help()` - Print help message identical to one printed with `--help` flag
+* `fire::print_help()` - print the help message
+* `fire::input_error(const string &msg)` - print error message and exit program
+* `fire::input_assert(bool pass, const std::string &msg)` - if `pass` is not satisfied, print error message and exit program
 
 #### <a id="raw_args"></a> D.4.2 Accessing raw arguments
 
@@ -289,7 +291,6 @@ v0.2 release is tested on:
     * Create a document describing the internals of this project
     * Document main parts of the code
 * Argument requirements: `fire::arg(identifier).bounds(min, max)`, `fire::arg(identifier).one_of({[option1], [option2], ...})`
-* Possibility to raise errors in fired_main(): `fire::assert_error`, `fire::raise_error`
 
 #### v0.4 release
 

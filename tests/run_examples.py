@@ -102,14 +102,16 @@ def run_basic(path_prefix):
     runner.help_success("-h --undefined")
 
 
-def run_conditions(path_prefix):
-    runner = assert_runner(path_prefix / "conditions")
+def run_post_call(path_prefix):
+    runner = assert_runner(path_prefix / "post_call")
 
     default_out, default_err, _ = runner.run("--help")
     induced_out, induced_err, _ = runner.run("--print-help")
     assert default_out == induced_out
     assert default_err == induced_err
     assert_runner.check_count += 1
+
+    runner.handled_failure("--error")
 
 
 def run_flag(path_prefix):
@@ -188,7 +190,7 @@ def main():
 
     run_all_combinations(path_prefix)
     run_basic(path_prefix)
-    run_conditions(path_prefix)
+    run_post_call(path_prefix)
     run_flag(path_prefix)
     run_optional_and_default(path_prefix)
     run_positional(path_prefix)

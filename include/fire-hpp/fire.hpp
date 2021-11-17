@@ -56,10 +56,14 @@ namespace fire {
     template<typename R, typename ... Types>
     constexpr size_t _get_argument_count(R(*)(Types ...)) { return sizeof...(Types); }
 
-    inline void _instant_assert(bool pass, const std::string &msg, bool programmer_side = true);
     inline int count_hyphens(const std::string &s);
     inline std::string without_hyphens(const std::string &s);
     inline std::string replace_all(const std::string &data, const std::string &from, const std::string &to);
+
+    inline void _instant_assert(bool pass, const std::string &msg, bool programmer_side);
+    inline void _api_assert(bool pass, const std::string &msg);
+    inline void input_assert(bool pass, const std::string &msg);
+    inline void input_error(const std::string &msg);
 
     template <typename T>
     class optional {
@@ -74,7 +78,7 @@ namespace fire {
         explicit operator bool() const { return _exists; }
         bool has_value() const { return _exists; }
         T value_or(const T& def) const { return _exists ? _value : def; }
-        T value() const { _instant_assert(_exists, "accessing unassigned optional"); return _value; }
+        T value() const { _api_assert(_exists, "accessing unassigned optional"); return _value; }
     };
 
     struct _escape_exception {
@@ -330,6 +334,10 @@ namespace fire {
         exit(_failure_code);
     }
 
+    inline void _api_assert(bool pass, const std::string &msg) { _instant_assert(pass, msg, true); }
+    inline void input_assert(bool pass, const std::string &msg) { _instant_assert(pass, msg, false); }
+    inline void input_error(const std::string &msg) { _instant_assert(false, msg, false); }
+
     int count_hyphens(const std::string &s) {
         int hyphens;
         for(hyphens = 0; hyphens < (int) s.size() && s[hyphens] == '-'; ++hyphens)
@@ -415,36 +423,36 @@ namespace fire {
             }
 
             int hyphens = count_hyphens(name);
-            _instant_assert(hyphens <= 2, "Identifier entry " + name + " must prefix either:"
-                                          " 0 hyphens for description,"
-                                          " 1 hyphen for short-hand name"
-                                          " 2 hyphens for long name");
+            _api_assert(hyphens <= 2, "Identifier entry " + name + " must prefix either:"
+                                                                   " 0 hyphens for description,"
+                                                                   " 1 hyphen for short-hand name"
+                                                                   " 2 hyphens for long name");
             if(hyphens == 0) {
-                _instant_assert(! _descr.has_value(),
-                        "Can't specify descriptions twice: " + _descr.value_or("") + " and " + name);
+                _api_assert(!_descr.has_value(),
+                            "Can't specify descriptions twice: " + _descr.value_or("") + " and " + name);
                 _descr = name;
             } else if(hyphens == 1) {
-                _instant_assert(! _short_name.has_value(),
-                        "Can't specify shorthands twice: " + _short_name.value_or("") + " and " + name);
-                _instant_assert(name.size() == 2,
-                        "Single hyphen shorthand " + name + " must be one character");
-                _instant_assert(! isdigit(name[1]),
-                        "Argument " + name + " can't start with a number");
+                _api_assert(!_short_name.has_value(),
+                            "Can't specify shorthands twice: " + _short_name.value_or("") + " and " + name);
+                _api_assert(name.size() == 2,
+                            "Single hyphen shorthand " + name + " must be one character");
+                _api_assert(!isdigit(name[1]),
+                            "Argument " + name + " can't start with a number");
                 _short_name = name;
             } else if(hyphens == 2) {
-                _instant_assert(! _long_name.has_value(),
-                        "Can't specify long names twice: " + _long_name.value_or("") + " and " + name);
-                _instant_assert(name.size() >= 4,
-                                "Two hyphen name " + name + " must have at least two characters");
+                _api_assert(!_long_name.has_value(),
+                            "Can't specify long names twice: " + _long_name.value_or("") + " and " + name);
+                _api_assert(name.size() >= 4,
+                            "Two hyphen name " + name + " must have at least two characters");
                 _long_name = name;
             }
         }
 
         // Variadic argument
         if(_variadic) {
-            _instant_assert(! _short_name.has_value() && !_long_name.has_value()
-                && !_pos.has_value() && !_pos_name.has_value(),
-                "Can't assign a name or position to variadic arguments");
+            _api_assert(!_short_name.has_value() && !_long_name.has_value()
+                        && !_pos.has_value() && !_pos_name.has_value(),
+                        "Can't assign a name or position to variadic arguments");
             _help = _longer = "...";
             return;
         }
@@ -460,22 +468,24 @@ namespace fire {
 
         // Set position
         if(pos.has_value()) {
-            _instant_assert(! _short_name.has_value(),
-                    "Can't specify both name " + _short_name.value_or("") + " and index " + std::to_string(pos.value()));
-            _instant_assert(! _long_name.has_value(),
-                    "Can't specify both name " + _long_name.value_or("") + " and index " + std::to_string(pos.value()));
+            _api_assert(!_short_name.has_value(),
+                        "Can't specify both name " + _short_name.value_or("") + " and index " +
+                        std::to_string(pos.value()));
+            _api_assert(!_long_name.has_value(),
+                        "Can't specify both name " + _long_name.value_or("") + " and index " +
+                        std::to_string(pos.value()));
             _pos = pos;
             if(_pos_name.has_value())
                 _longer = _help = _pos_name.value();
             else
                 _longer = _help = "<" + std::to_string(pos.value()) + ">";
         }
-        _instant_assert(_short_name.has_value() || _long_name.has_value() || _pos.has_value(),
-                "Argument must be specified with at least on of the following: shorthand, long name or index");
+        _api_assert(_short_name.has_value() || _long_name.has_value() || _pos.has_value(),
+                    "Argument must be specified with at least on of the following: shorthand, long name or index");
 
         if(_pos_name.has_value())
-            _instant_assert(_pos.has_value(),
-                    "Positional name " + _pos_name.value_or("") + " requires the argument to be positional");
+            _api_assert(_pos.has_value(),
+                        "Positional name " + _pos_name.value_or("") + " requires the argument to be positional");
     }
 
     inline identifier::type identifier::get_type() const {
@@ -613,7 +623,7 @@ namespace fire {
 
     std::pair<std::string, _matcher::arg_type> _matcher::get_and_mark_as_queried(const identifier &id) {
         for(const auto& it: _queried)
-            _instant_assert(! it.overlaps(id), "double query for argument " + id.longer());
+            _api_assert(!it.overlaps(id), "double query for argument " + id.longer());
 
         if (_strict)
             _queried.push_back(id);
@@ -773,7 +783,7 @@ namespace fire {
 
     bool _matcher::deferred_assert(const identifier &id, bool pass, const std::string &msg) {
         if(! _strict) {
-            _instant_assert(pass, msg, false);
+            input_assert(pass, msg);
             return pass;
         }
         if(! pass)
@@ -1003,8 +1013,8 @@ namespace fire {
         if(_::matcher.get_introspect())
             return optional<T>();
 
-        _instant_assert(! (_int_value.has_value() || _float_value.has_value() || _string_value.has_value()),
-                        "optional argument has default value");
+        _api_assert(!(_int_value.has_value() || _float_value.has_value() || _string_value.has_value()),
+                    "optional argument has default value");
         optional<T> val = _get_with_precision<T>();
         _::matcher.check(dec_main_args);
         return val;
@@ -1042,8 +1052,8 @@ namespace fire {
     }
 
     arg::operator bool() {
-        _instant_assert(!_int_value.has_value() && !_float_value.has_value() && !_string_value.has_value(),
-                _id.longer() + " flag parameter must not have default value");
+        _api_assert(!_int_value.has_value() && !_float_value.has_value() && !_string_value.has_value(),
+                    _id.longer() + " flag parameter must not have default value");
 
         _log(_arg_logger::elem::type::none, true); // User sees this as flag, not boolean option
         auto elem = _::matcher.get_and_mark_as_queried(_id);

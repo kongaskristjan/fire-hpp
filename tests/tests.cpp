@@ -362,6 +362,15 @@ TEST(help, no_space_assignment_help_invocation) {
 }
 
 
+TEST(errors, post_call) {
+    init_args({"./run_tests"});
+
+    EXPECT_EXIT_FAIL(input_error("error"));
+    input_assert(true, "error");
+    EXPECT_EXIT_FAIL(input_assert(false, "error"));
+}
+
+
 TEST(arg, argument_naming) {
     init_args({"./run_tests"});
 
