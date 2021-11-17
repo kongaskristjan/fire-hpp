@@ -26,7 +26,13 @@ As you likely expect,
 * an error message is displayed for incorrect usage.
 * the program runs on Linux, Windows and Mac OS.
 
-See [examples](https://github.com/kongaskristjan/fire-hpp/tree/master/examples) for other kinds of arguments.
+### What's covered?
+
+* [flags](#flag); [named and positional](#identifier) parameters; [variadic parameters](#variadic)
+* [optional parameters](#optional)/[default values](#default)
+* conversions to [integer, floating-point and `std::string`](#standard) with automatic error checking
+* [program](#fire)/[parameter](#description) descriptions
+* standard constructs, such as `-abc <=> -a -b -c` and `-x=1 <=> -x 1`
 
 ### Why yet another CLI library?!
 
@@ -42,14 +48,6 @@ With most libraries, creating a CLI roughly follows this pattern:
 That's a non-trivial amount of boilerplate, especially for simple scripts. Because of that, programmers (and a lot of library examples) tend to skip the optional parts, however this incurs a significant usability cost. Also, many libraries don't help at all with the conversion step.
 
 With fire-hpp, you only call `FIRE(fired_main)` and define arguments as function parameters. When `fired_main()` scope begins, all steps have already been completed.
-
-### What's covered?
-
-* [flags](#flag); [named and positional](#identifier) parameters; [variadic parameters](#variadic)
-* [optional parameters](#optional)/[default values](#default)
-* conversions to [integer, floating-point and `std::string`](#standard)
-* [program](#fire)/[parameter](#description) descriptions
-* standard constructs, such as `-abc <=> -a -b -c` and `-x=1 <=> -x 1`
 
 ## Q. Quickstart
 
