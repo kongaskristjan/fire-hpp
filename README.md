@@ -31,7 +31,7 @@ As you likely expect,
 * [flags](#flag); [named and positional](#identifier) parameters; [variadic parameters](#variadic)
 * [optional parameters](#optional)/[default values](#default)
 * conversions to [integer, floating-point and `std::string`](#standard) with automatic error checking
-* [program](#fire)/[parameter](#description) descriptions
+* [program](#fire)/[parameter](#identifier) descriptions
 * standard constructs, such as `-abc <=> -a -b -c` and `-x=1 <=> -x 1`
 
 ### Why yet another CLI library?!
@@ -86,7 +86,7 @@ FIRE(fired_main) // call fired_main()
  A constructor that accepts the name/shorthand/description/position of the argument. Use a brace enclosed list for several of them (eg. `fire::arg({"-x", "--longer-name", "description of the argument"})` or `fire::arg({0, "zeroth element"})`. The library expects a single dash for single-character shorthands, two dashes for multi-character names, and zero dashes for descriptions. `fire::arg` objects should be used as default values for fired function parameters. See [documentation](#fire_arg) for more info.
 
 * __int fired_main(arguments)__
-This is what you perceive as the program entry point. All arguments must be `bool`, integral, floating-point, `fire::optional<T>`, `std::string` or `std::vector<T>` type and default initialized with `fire::arg` objects (Failing to initialize properly results in undefined behavior!). See [conversions](#conversions) to learn how each of them affects the CLI.
+This is what you perceive as the program entry point. All arguments must be `bool`, integral, floating-point, `fire::optional<T>`, `std::string` or `std::vector<T>` type and default initialized with `fire::arg` objects (failing to initialize properly results in undefined behavior!). See [conversions](#conversions) to learn how each of them affects the CLI.
 
 ## D. Documentation
 
@@ -168,6 +168,8 @@ Used for optional arguments without a reasonable default value. This way the def
 * Example: `int fired_main(fire::optional<std::string> name = fire::arg("--name"));`
     * CLI usage: `program` -> `name.has_value()==false`, `name.value_or("default")=="default"`
     * CLI usage: `program --name="fire"` -> `name.has_value()==true` and `name.value_or("default")==name.value()=="fire"`
+
+For an optional argument with a sensible default value, see [default value](#default).
 
 #### <a id="flag"></a> D.3.3 bool: flag argument
 
