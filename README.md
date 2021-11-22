@@ -199,13 +199,15 @@ In this case, identifier should be `fire::variadic()`. Description can be suppli
 
 #### <a id=""></a> D.4.1.2 Helper function for getting named argument names in assert messages:
 
-`std::string fire::called_name(const string &name)` - return user called name of the specified argument (given by one name) if it exists, otherwise return empty string.
+`std::string fire::helpful_name(const string &name)` - return user called name of the specified argument (given by one name) if it exists, otherwise return empty string.
 
 * Example: `int fired_main(optional<int> value = fire::arg({"-v", "--value"}));`
-  * CLI usage: `program` -> `fire::called_name("--value") == ""`
-  * CLI usage: `program -v=2` -> `fire::called_name("--value") == "-v"`
-  * CLI usage: `program --value=2` -> `fire::called_name("--value") == "--value"`
-* Typical usage: `fire::input_assert(value > 0, "Argument " + fire::called_name("--value") + " must be greater than 0")`
+  * CLI usage: `program` -> `fire::helpful_name("--value") == ""`
+  * CLI usage: `program -v=2` -> `fire::helpful_name("--value") == "-v"`
+  * CLI usage: `program --value=2` -> `fire::helpful_name("--value") == "--value"`
+* Typical usage: `fire::input_assert(value > 0, "Argument " + fire::helpful_name("--value") + " must be greater than 0")`
+
+`std::string fire::helpful_name(int pos)` - return correctly formatted positional argument number
 
 #### <a id="raw_args"></a> D.4.2 Accessing raw arguments
 

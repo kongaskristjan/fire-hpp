@@ -371,16 +371,6 @@ TEST(help, no_space_assignment_help_invocation) {
     EXPECT_EXIT_SUCCESS(vector<string> v_undef = arg(variadic()));
 }
 
-TEST(help, helpful_name) {
-    init_args({"./run_tests", "3", "--longer"});
-    (void) (bool) arg({"-l", "--longer"});
-    (void) (int) arg(0);
-
-    EXPECT_EQ(_helpful_name("-l"), "--longer");
-    EXPECT_EQ(_helpful_name(0), "<0>");
-}
-
-
 TEST(arg, argument_naming) {
     init_args({"./run_tests"});
 
@@ -707,20 +697,24 @@ TEST(post_call, error) {
     EXPECT_EXIT_FAIL(input_assert(false, "error"));
 }
 
-TEST(post_call, called_name) {
+TEST(post_call, helpful_name) {
     init_args({"./run_tests"});
     (void) (bool) arg({"-v", "--verbose"});
-    EXPECT_EQ(called_name("-v"), "");
+    EXPECT_EQ(helpful_name("-v"), "");
 
     init_args({"./run_tests", "-v"});
     (void) (bool) arg({"-v", "--verbose"});
-    EXPECT_EQ(called_name("-v"), "-v");
-    EXPECT_EQ(called_name("--verbose"), "-v");
+    EXPECT_EQ(helpful_name("-v"), "-v");
+    EXPECT_EQ(helpful_name("--verbose"), "-v");
 
     init_args({"./run_tests", "--verbose"});
     (void) (bool) arg({"-v", "--verbose"});
-    EXPECT_EQ(called_name("-v"), "--verbose");
-    EXPECT_EQ(called_name("--verbose"), "--verbose");
+    EXPECT_EQ(helpful_name("-v"), "--verbose");
+    EXPECT_EQ(helpful_name("--verbose"), "--verbose");
 
-    EXPECT_EXIT_FAIL((void) called_name("--undefined"));
+    EXPECT_EXIT_FAIL((void) helpful_name("--undefined"));
+
+    init_args({"./run_tests", "3", "--longer"});
+    (void) (int) arg(0);
+    EXPECT_EQ(helpful_name(0), "<0>");
 }

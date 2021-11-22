@@ -20,7 +20,7 @@
 using namespace std;
 
 int fired_main(bool help = fire::arg("--print-help"), bool error = fire::arg({"-e", "--error", "never raise this flag"})) {
-    fire::input_assert(!error, "You raised the error flag with " + fire::called_name("-e") + "!");
+    fire::input_assert(!error, "You raised the error flag with " + fire::helpful_name("-e") + "!");
     if(help)
         fire::print_help();
     return 0;

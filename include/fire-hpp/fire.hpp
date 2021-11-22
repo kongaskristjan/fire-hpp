@@ -325,7 +325,7 @@ namespace fire {
 
     inline std::string _helpful_name(int pos);
     inline std::string _helpful_name(const std::string &name);
-    inline std::string called_name(const std::string &name);
+    inline std::string helpful_name(const std::string &name);
 
     void _instant_assert(bool pass, const std::string &msg, bool programmer_side) {
         if (pass)
@@ -1103,15 +1103,11 @@ namespace fire {
     }
 
 
-    inline std::string _helpful_name(int pos) {
+    inline std::string helpful_name(int pos) {
         return identifier(std::vector<std::string>(), pos).help();
     }
 
-    inline std::string _helpful_name(const std::string &name) {
-        return called_name(name);
-    }
-
-    inline std::string called_name(const std::string &name) {
+    inline std::string helpful_name(const std::string &name) {
         identifier id({name}, optional<int>());
         optional<identifier> matched_id = _::logger.match_identifier(id);
         _api_assert(matched_id.has_value(), "Identifier " + name + " has not been declared");
