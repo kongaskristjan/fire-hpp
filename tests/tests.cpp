@@ -714,7 +714,21 @@ TEST(post_call, helpful_name) {
 
     EXPECT_EXIT_FAIL((void) helpful_name("--undefined"));
 
-    init_args({"./run_tests", "3", "--longer"});
+    init_args({"./run_tests", "3"});
     (void) (int) arg(0);
     EXPECT_EQ(helpful_name(0), "<0>");
+}
+
+TEST(post_call, helpful_name_identifier) {
+    init_args({"./run_tests", "-v"});
+    (void) (bool) arg({"-v", "--verbose"});
+    EXPECT_EQ(helpful_name(identifier({"-v", "--verbose"}, optional<int>())), "-v");
+
+    init_args({"./run_tests", "--verbose"});
+    (void) (bool) arg({"-v", "--verbose"});
+    EXPECT_EQ(helpful_name(identifier({"-v", "--verbose"}, optional<int>())), "--verbose");
+
+    init_args({"./run_tests", "3"});
+    (void) (int) arg(0);
+    EXPECT_EQ(helpful_name(identifier({}, optional<int>(0))), "<0>");
 }

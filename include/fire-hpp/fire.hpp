@@ -323,8 +323,8 @@ namespace fire {
         inline operator std::vector<T>();
     };
 
-    inline std::string _helpful_name(int pos);
-    inline std::string _helpful_name(const std::string &name);
+    inline std::string helpful_name(const identifier &id);
+    inline std::string helpful_name(int pos);
     inline std::string helpful_name(const std::string &name);
 
     void _instant_assert(bool pass, const std::string &msg, bool programmer_side) {
@@ -1102,6 +1102,14 @@ namespace fire {
         return ret;
     }
 
+
+    inline std::string helpful_name(const identifier &id) {
+        if(id.get_type() == identifier::type::positional)
+            return helpful_name(id.get_pos().value());
+
+        optional<std::string> matched_name = _::matcher.match_named(id);
+        return matched_name.value_or("");
+    }
 
     inline std::string helpful_name(int pos) {
         return identifier(std::vector<std::string>(), pos).help();
