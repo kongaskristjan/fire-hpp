@@ -303,7 +303,6 @@ v0.2 release is tested on:
     * Create a document describing the internals of this project
     * Document main parts of the code
 * Argument requirements: `fire::arg(identifier).bounds(min, max)`, `fire::arg(identifier).one_of({[option1], [option2], ...})` (condition checking with good error message, help generation)
-* Error messages with argument names
 
 #### v0.4 release
 

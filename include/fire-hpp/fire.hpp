@@ -949,17 +949,17 @@ namespace fire {
     inline optional<long long> arg::_get<long long>() {
         auto elem = _::matcher.get_and_mark_as_queried(_id);
         _::matcher.deferred_assert(_id, elem.second != _matcher::arg_type::bool_t,
-                                   "argument " + _id.help() + " must have value");
+                                   "argument " + helpful_name(_id) + " must have value");
         if(elem.second == _matcher::arg_type::string_t) {
             char *end_ptr;
             errno = 0;
             long long converted = std::strtoll(elem.first.data(), &end_ptr, 10);
 
             if(errno == ERANGE)
-                _::matcher.deferred_assert(_id, false, "value " + elem.first + " out of range");
+                _::matcher.deferred_assert(_id, false, "parameter " + helpful_name(_id) + " value " + elem.first + " out of range");
 
             _::matcher.deferred_assert(_id, end_ptr == elem.first.data() + elem.first.size(),
-                    "value " + elem.first + " is not an integer");
+                                       "parameter " + helpful_name(_id) + " value " + elem.first + " is not an integer");
 
             return converted;
         }
@@ -971,17 +971,17 @@ namespace fire {
     inline optional<long double> arg::_get<long double>() {
         auto elem = _::matcher.get_and_mark_as_queried(_id);
         _::matcher.deferred_assert(_id, elem.second != _matcher::arg_type::bool_t,
-                                   "argument " + _id.help() + " must have value");
+                                   "argument " + helpful_name(_id) + " must have a value");
         if(elem.second == _matcher::arg_type::string_t) {
             char *end_ptr;
             errno = 0;
             long double converted = std::strtold(elem.first.data(), &end_ptr);
 
             if(errno == ERANGE)
-                _::matcher.deferred_assert(_id, false, "value " + elem.first + " out of range");
+                _::matcher.deferred_assert(_id, false, "parameter " + helpful_name(_id) + " value " + elem.first + " out of range");
 
             _::matcher.deferred_assert(_id, end_ptr == elem.first.data() + elem.first.size(),
-                                       "value " + elem.first + " is not a real number");
+                                       "parameter " + helpful_name(_id) + " value " + elem.first + " is not a real number");
 
             return converted;
         }
@@ -995,7 +995,7 @@ namespace fire {
     inline optional<std::string> arg::_get<std::string>() {
         auto elem = _::matcher.get_and_mark_as_queried(_id);
         _::matcher.deferred_assert(_id, elem.second != _matcher::arg_type::bool_t,
-                                   "argument " + _id.help() + " must have value");
+                                   "argument " + helpful_name(_id) + " must have a value");
 
         if(elem.second == _matcher::arg_type::string_t)
             return elem.first;
@@ -1010,13 +1010,13 @@ namespace fire {
         long long value = opt_value.value();
 
         bool is_signed = std::numeric_limits<T>::is_signed;
-        T min = std::numeric_limits<T>::lowest();
-        T max = std::numeric_limits<T>::max();
+        T mn = std::numeric_limits<T>::lowest();
+        T mx = std::numeric_limits<T>::max();
 
         _::matcher.deferred_assert(_id, is_signed || value >= 0,
-                                   "argument " + _id.help() + " must be positive");
-        _::matcher.deferred_assert(_id, min <= value && value <= max,
-                                   "value " + std::to_string(value) + " out of range");
+                                   "argument " + helpful_name(_id) + " value " + std::to_string(value) + " must be positive");
+        _::matcher.deferred_assert(_id, mn <= value && value <= mx,
+                                   "argument " + helpful_name(_id) + " value " + std::to_string(value) + " out of range [" + std::to_string(mn) + ", " + std::to_string(mx) + "]");
 
         return (T) value;
     }
@@ -1032,7 +1032,7 @@ namespace fire {
         T max = std::numeric_limits<T>::max();
 
         _::matcher.deferred_assert(_id, min <= value && value <= max,
-                                   "value " + std::to_string(value) + " out of range");
+                                   "argument " + helpful_name(_id) + " value " + std::to_string(value) + " out of range");
 
         return (T) value;
     }
@@ -1087,7 +1087,7 @@ namespace fire {
         _log(_arg_logger::elem::type::none, true); // User sees this as flag, not boolean option
         auto elem = _::matcher.get_and_mark_as_queried(_id);
         _::matcher.deferred_assert(_id, elem.second != _matcher::arg_type::string_t,
-                                   "flag " + _id.help() + " must not have value");
+                                   "flag " + helpful_name(_id) + " must not have value");
         _::matcher.check(true);
         return elem.second == _matcher::arg_type::bool_t;
     }
