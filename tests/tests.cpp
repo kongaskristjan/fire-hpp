@@ -322,6 +322,16 @@ TEST(matcher, no_space_assignment) {
     EXPECT_EXIT_FAIL((void) (int) arg("-x"));
 }
 
+TEST(matcher, match_named) {
+    init_args({"./run_tests", "-s", "--longer"});
+    (void) (bool) arg({"-s", "--short"});
+    (void) (bool) arg({"-l", "--longer"});
+
+    EXPECT_EQ(_::matcher.match_named(identifier({"-s", "--short"}, optional<int>())), optional<string>("-s"));
+    EXPECT_EQ(_::matcher.match_named(identifier({"-l", "--longer"}, optional<int>())), optional<string>("--longer"));
+    EXPECT_EQ(_::matcher.match_named(identifier({"-n", "--not-listed"}, optional<int>())), optional<string>());
+}
+
 
 TEST(help, help_invocation) {
     EXPECT_EXIT_SUCCESS(init_args_strict({"./run_tests", "-h"}, 0));
@@ -361,13 +371,13 @@ TEST(help, no_space_assignment_help_invocation) {
     EXPECT_EXIT_SUCCESS(vector<string> v_undef = arg(variadic()));
 }
 
+TEST(help, helpful_name) {
+    init_args({"./run_tests", "3", "--longer"});
+    (void) (bool) arg({"-l", "--longer"});
+    (void) (int) arg(0);
 
-TEST(errors, post_call) {
-    init_args({"./run_tests"});
-
-    EXPECT_EXIT_FAIL(input_error("error"));
-    input_assert(true, "error");
-    EXPECT_EXIT_FAIL(input_assert(false, "error"));
+    EXPECT_EQ(_helpful_name("-l"), "--longer");
+    EXPECT_EQ(_helpful_name(0), "<0>");
 }
 
 
@@ -634,6 +644,17 @@ TEST(logger, assignement_arguments) {
     EXPECT_EQ(find(args.begin(), args.end(), "--bool"), args.end());
 }
 
+TEST(logger, match_identifier) {
+    init_args({"./run_tests"});
+    (void) (int) arg({"-i", "--int"}, 0);
+    (void) (long) arg({"-l", "--longer"}, 0);
+
+    EXPECT_EQ(_::logger.match_identifier(identifier({"-i"}, optional<int>())), identifier({"-i", "--int"}, optional<int>())); // The one declared in arg
+    EXPECT_EQ(_::logger.match_identifier(identifier({"--int"}, optional<int>())), identifier({"-i", "--int"}, optional<int>()));
+
+    EXPECT_EQ(_::logger.match_identifier(identifier({"--not-listed"}, optional<int>())), optional<identifier>());
+}
+
 bool ambiguous_args_inside1 = false;
 int ambiguous_args_main1(int x = arg("-x")) {
     EXPECT_EQ(x, 1);
@@ -675,4 +696,31 @@ TEST(introspection, ambiguous_args) {
     vector<string> args_c = {"./run_tests", "-xy"};
     CALL_WITH_INTROSPECTION(ambiguous_args_main3, args_c);
     EXPECT_TRUE(ambiguous_args_inside3);
+}
+
+
+TEST(post_call, error) {
+    init_args({"./run_tests"});
+
+    EXPECT_EXIT_FAIL(input_error("error"));
+    input_assert(true, "error");
+    EXPECT_EXIT_FAIL(input_assert(false, "error"));
+}
+
+TEST(post_call, called_name) {
+    init_args({"./run_tests"});
+    (void) (bool) arg({"-v", "--verbose"});
+    EXPECT_EQ(called_name("-v"), "");
+
+    init_args({"./run_tests", "-v"});
+    (void) (bool) arg({"-v", "--verbose"});
+    EXPECT_EQ(called_name("-v"), "-v");
+    EXPECT_EQ(called_name("--verbose"), "-v");
+
+    init_args({"./run_tests", "--verbose"});
+    (void) (bool) arg({"-v", "--verbose"});
+    EXPECT_EQ(called_name("-v"), "--verbose");
+    EXPECT_EQ(called_name("--verbose"), "--verbose");
+
+    EXPECT_EXIT_FAIL((void) called_name("--undefined"));
 }

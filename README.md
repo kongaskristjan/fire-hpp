@@ -191,11 +191,21 @@ In this case, identifier should be `fire::variadic()`. Description can be suppli
 
 ### <a id="post_functions"></a> D.4 Post fired_main() functions
 
-#### <a id=""></a> D.4.1 Print help or error message with fire formatting
+#### <a id=""></a> D.4.1.1 Print help or error message with fire formatting
 
 * `fire::print_help()` - print the help message
 * `fire::input_error(const string &msg)` - print error message and exit program
 * `fire::input_assert(bool pass, const std::string &msg)` - if `pass` is not satisfied, print error message and exit program
+
+#### <a id=""></a> D.4.1.2 Helper function for getting named argument names in assert messages:
+
+`std::string fire::called_name(const string &name)` - return user called name of the specified argument (given by one name) if it exists, otherwise return empty string.
+
+* Example: `int fired_main(optional<int> value = fire::arg({"-v", "--value"}));`
+  * CLI usage: `program` -> `fire::called_name("--value") == ""`
+  * CLI usage: `program -v=2` -> `fire::called_name("--value") == "-v"`
+  * CLI usage: `program --value=2` -> `fire::called_name("--value") == "--value"`
+* Typical usage: `fire::input_assert(value > 0, "Argument " + fire::called_name("--value") + " must be greater than 0")`
 
 #### <a id="raw_args"></a> D.4.2 Accessing raw arguments
 
@@ -290,12 +300,14 @@ v0.2 release is tested on:
 * Sufficient information for contributing
     * Create a document describing the internals of this project
     * Document main parts of the code
-* Argument requirements: `fire::arg(identifier).bounds(min, max)`, `fire::arg(identifier).one_of({[option1], [option2], ...})`
+* Argument requirements: `fire::arg(identifier).bounds(min, max)`, `fire::arg(identifier).one_of({[option1], [option2], ...})` (condition checking with good error message, help generation)
+* Error messages with argument names
 
 #### v0.4 release
 
 * Solve Windows non-ascii character input
 * Subcommands (eg. `git add` and `git show`, which may have different flags/options)
+* Parameter structs (eg. get all arguments as one struct with fire::arg initializations)
 
 #### v1.0 release
 

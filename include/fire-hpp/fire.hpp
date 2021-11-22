@@ -74,7 +74,7 @@ namespace fire {
         optional() = default;
         optional(T value): _value(std::move(value)), _exists(true) {}
         optional<T>& operator=(const T& value) { _value = value; _exists = true; return *this; }
-        bool operator==(const optional<T>& other) { return _exists == other._exists && _value == other._value; }
+        bool operator==(const optional<T>& other) const { return _exists == other._exists && _value == other._value; }
         explicit operator bool() const { return _exists; }
         bool has_value() const { return _exists; }
         T value_or(const T& def) const { return _exists ? _value : def; }
@@ -128,6 +128,7 @@ namespace fire {
 
         inline type get_type() const;
         inline bool operator<(const identifier &other) const;
+        inline bool operator==(const identifier &other) const;
         inline bool overlaps(const identifier &other) const;
         inline bool contains(const std::string &name) const;
         inline bool contains(int pos) const;
@@ -191,8 +192,9 @@ namespace fire {
 
         inline void set_introspect(bool introspect) { _introspect = introspect; }
         inline bool get_introspect() const { return _introspect; }
-    };
 
+        inline optional<std::string> match_named(const identifier &id) const;
+    };
 
     class _arg_logger { // Gathers function argument help info here
     public:
@@ -221,6 +223,7 @@ namespace fire {
         inline void set_program_descr(const std::string &program_descr) { _program_descr = program_descr; }
         inline int decrease_introspect_count();
         inline int get_introspect_count() const { return _introspect_count; }
+        inline optional<identifier> match_identifier(const identifier &id) const;
     };
 
     template <typename T_VOID = void>
@@ -319,6 +322,10 @@ namespace fire {
         template <typename T>
         inline operator std::vector<T>();
     };
+
+    inline std::string _helpful_name(int pos);
+    inline std::string _helpful_name(const std::string &name);
+    inline std::string called_name(const std::string &name);
 
     void _instant_assert(bool pass, const std::string &msg, bool programmer_side) {
         if (pass)
@@ -517,6 +524,10 @@ namespace fire {
         return _pos.value_or(1000000) < other._pos.value_or(1000000);
     }
 
+    bool identifier::operator==(const identifier &other) const {
+        return _pos == other._pos && _short_name == other._short_name && _long_name == other._long_name && _descr == other._descr && _variadic == other._variadic;
+    }
+
     bool identifier::overlaps(const identifier &other) const {
         if(_long_name.has_value() && other._long_name.has_value())
             if(_long_name.value() == other._long_name.value())
@@ -622,11 +633,10 @@ namespace fire {
     }
 
     std::pair<std::string, _matcher::arg_type> _matcher::get_and_mark_as_queried(const identifier &id) {
-        for(const auto& it: _queried)
-            _api_assert(!it.overlaps(id), "double query for argument " + id.longer());
-
-        if (_strict)
-            _queried.push_back(id);
+        if(_strict)
+            for(const auto& it: _queried)
+                _api_assert(!it.overlaps(id), "double query for argument " + id.longer());
+        _queried.push_back(id);
 
         for(auto it = _named.begin(); it != _named.end(); ++it) {
             if (id.contains(it->first)) {
@@ -791,6 +801,16 @@ namespace fire {
         return pass;
     }
 
+    optional<std::string> _matcher::match_named(const identifier &id) const {
+        for(const auto &p: _named) {
+            const std::string &name = p.first;
+            if(id.contains(name))
+                return name;
+        }
+        return optional<std::string>();
+    }
+
+
     std::string _arg_logger::_make_printable(const identifier &id, const elem &elem, bool verbose) {
         std::string printable;
         if(elem.optional) printable += "[";
@@ -910,6 +930,15 @@ namespace fire {
         --_introspect_count;
         _::matcher.set_introspect(_introspect_count > 0);
         return _introspect_count;
+    }
+
+    inline optional<identifier> _arg_logger::match_identifier(const identifier &id) const {
+        for(const std::pair<identifier, elem> &p: _params) {
+            const identifier &param_id = p.first;
+            if(id.overlaps(param_id))
+                return param_id;
+        }
+        return optional<identifier>();
     }
 
     inline void print_help() {
@@ -1071,6 +1100,24 @@ namespace fire {
         _log(_arg_logger::elem::type::none, true);
         _::matcher.check(true);
         return ret;
+    }
+
+
+    inline std::string _helpful_name(int pos) {
+        return identifier(std::vector<std::string>(), pos).help();
+    }
+
+    inline std::string _helpful_name(const std::string &name) {
+        return called_name(name);
+    }
+
+    inline std::string called_name(const std::string &name) {
+        identifier id({name}, optional<int>());
+        optional<identifier> matched_id = _::logger.match_identifier(id);
+        _api_assert(matched_id.has_value(), "Identifier " + name + " has not been declared");
+
+        optional<std::string> matched_name = _::matcher.match_named(matched_id.value());
+        return matched_name.value_or("");
     }
 }
 

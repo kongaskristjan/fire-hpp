@@ -113,6 +113,11 @@ def run_post_call(path_prefix):
 
     runner.handled_failure("--error")
 
+    _, e_err, _ = runner.run("-e")
+    _, error_err, _ = runner.run("--error")
+    assert e_err != error_err # Printed name must differ
+    assert_runner.check_count += 1
+
 
 def run_flag(path_prefix):
     runner = assert_runner(path_prefix / "flag")
