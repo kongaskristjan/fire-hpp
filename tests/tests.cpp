@@ -327,9 +327,9 @@ TEST(matcher, match_named) {
     (void) (bool) arg({"-s", "--short"});
     (void) (bool) arg({"-l", "--longer"});
 
-    EXPECT_EQ(_::matcher.match_named(identifier({"-s", "--short"}, optional<int>())), optional<string>("-s"));
-    EXPECT_EQ(_::matcher.match_named(identifier({"-l", "--longer"}, optional<int>())), optional<string>("--longer"));
-    EXPECT_EQ(_::matcher.match_named(identifier({"-n", "--not-listed"}, optional<int>())), optional<string>());
+    EXPECT_EQ(_::matcher.match_named(identifier({"-s", "--short"}, fire::optional<int>())), fire::optional<string>("-s"));
+    EXPECT_EQ(_::matcher.match_named(identifier({"-l", "--longer"}, fire::optional<int>())), fire::optional<string>("--longer"));
+    EXPECT_EQ(_::matcher.match_named(identifier({"-n", "--not-listed"}, fire::optional<int>())), fire::optional<string>());
 }
 
 
@@ -639,10 +639,10 @@ TEST(logger, match_identifier) {
     (void) (int) arg({"-i", "--int"}, 0);
     (void) (long) arg({"-l", "--longer"}, 0);
 
-    EXPECT_EQ(_::logger.match_identifier(identifier({"-i"}, optional<int>())), identifier({"-i", "--int"}, optional<int>())); // The one declared in arg
-    EXPECT_EQ(_::logger.match_identifier(identifier({"--int"}, optional<int>())), identifier({"-i", "--int"}, optional<int>()));
+    EXPECT_EQ(_::logger.match_identifier(identifier({"-i"}, fire::optional<int>())), identifier({"-i", "--int"}, fire::optional<int>())); // The one declared in arg
+    EXPECT_EQ(_::logger.match_identifier(identifier({"--int"}, fire::optional<int>())), identifier({"-i", "--int"}, fire::optional<int>()));
 
-    EXPECT_EQ(_::logger.match_identifier(identifier({"--not-listed"}, optional<int>())), optional<identifier>());
+    EXPECT_EQ(_::logger.match_identifier(identifier({"--not-listed"}, fire::optional<int>())), fire::optional<identifier>());
 }
 
 bool ambiguous_args_inside1 = false;
@@ -720,15 +720,17 @@ TEST(post_call, helpful_name) {
 }
 
 TEST(post_call, helpful_name_identifier) {
+    fire::optional<int> empty;
+
     init_args({"./run_tests", "-v"});
     (void) (bool) arg({"-v", "--verbose"});
-    EXPECT_EQ(helpful_name(identifier({"-v", "--verbose"}, optional<int>())), "-v");
+    EXPECT_EQ(helpful_name(identifier({"-v", "--verbose"}, empty)), "-v");
 
     init_args({"./run_tests", "--verbose"});
     (void) (bool) arg({"-v", "--verbose"});
-    EXPECT_EQ(helpful_name(identifier({"-v", "--verbose"}, optional<int>())), "--verbose");
+    EXPECT_EQ(helpful_name(identifier({"-v", "--verbose"}, empty)), "--verbose");
 
     init_args({"./run_tests", "3"});
     (void) (int) arg(0);
-    EXPECT_EQ(helpful_name(identifier({}, optional<int>(0))), "<0>");
+    EXPECT_EQ(helpful_name(identifier({}, fire::optional<int>(0))), "<0>");
 }
