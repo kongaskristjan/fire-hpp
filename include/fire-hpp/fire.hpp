@@ -45,6 +45,7 @@
 #include <type_traits>
 #include <limits>
 #include <cstring>
+#include <memory>
 
 #if defined(__EXCEPTIONS) || defined(_CPPUNWIND)
 #define FIRE_EXCEPTIONS_ENABLED_
@@ -122,6 +123,8 @@ namespace fire {
         inline identifier(const std::vector<std::string> &names, optional<int> pos, bool is_variadic = false);
 
         inline void set_as_flag() { flag = true; }
+
+        inline void append_descr(const std::string &s) { if(_descr.has_value()) _descr = _descr.value() + " " + s; else _descr = s; }
 
         inline optional<std::string> short_name() const { return _short_name; }
         inline optional<std::string> long_name() const { return _long_name; }
@@ -243,12 +246,38 @@ namespace fire {
     struct variadic {
     };
 
+    class _constraint {
+    public:
+        virtual std::unique_ptr<_constraint> clone() const = 0;
+        virtual void check_constraint(const identifier &, long long) { _api_assert(false, "Constraint applied to wrong type argument (integral type)"); }
+        virtual void check_constraint(const identifier &, long double) { _api_assert(false, "Constraint applied to wrong type argument (floating point type)"); }
+        virtual void check_constraint(const identifier &, const std::string &) { _api_assert(false, "Constraint applied to wrong type argument (string type)"); }
+    };
+
+    template<typename T>
+    class _bound : public _constraint {
+        T bound;
+        bool upper;
+
+    public:
+        inline _bound(T bound, bool upper): bound(bound), upper(upper) {}
+        std::unique_ptr<_constraint> clone() const override { return std::unique_ptr<_constraint>(new _bound(bound, upper)); }
+
+        inline void check_constraint(const identifier &id, long long val) override;
+        inline void check_constraint(const identifier &id, long double val) override;
+    };
+
     class arg {
         identifier _id; // No identifier implies vector positional arguments
 
         optional<long long> _int_value;
         optional<long double> _float_value;
         optional<std::string> _string_value;
+
+        std::vector<std::unique_ptr<_constraint>> _constraints;
+
+        template<typename T>
+        inline void check_constraints(T value) const;
 
         template <typename T>
         optional<T> _get() { T::unimplemented_function; } // no default function
@@ -284,6 +313,9 @@ namespace fire {
         };
 
     public:
+        inline arg(const arg &other) { *this = other; }
+        inline arg& operator=(const arg &other);
+
         template<typename T=std::nullptr_t>
         inline arg(std::initializer_list<convertible> init, T value=T()) {
             optional<int> int_value;
@@ -321,6 +353,14 @@ namespace fire {
 
         template <typename T>
         inline operator std::vector<T>();
+
+        // Add constraints
+        template <typename T>
+        arg min(T mn) const;
+        template <typename T>
+        arg max(T mx) const;
+        template <typename T_min, typename T_max>
+        arg bounds(T_min mn, T_max mx) const;
     };
 
     inline std::string helpful_name(const identifier &id);
@@ -525,7 +565,7 @@ namespace fire {
     }
 
     bool identifier::operator==(const identifier &other) const {
-        return _pos == other._pos && _short_name == other._short_name && _long_name == other._long_name && _descr == other._descr && _variadic == other._variadic;
+        return _pos == other._pos && _short_name == other._short_name && _long_name == other._long_name && _variadic == other._variadic;
     }
 
     bool identifier::overlaps(const identifier &other) const {
@@ -945,6 +985,28 @@ namespace fire {
         _::logger.print_help();
     }
 
+
+    template<typename T>
+    void _bound<T>::check_constraint(const identifier &id, long long val) {
+        if(std::is_floating_point<T>::value)
+            _constraint::check_constraint(id, val);
+        if(upper) input_assert(val <= bound, "argument " + helpful_name(id) + " value " + std::to_string(val) + " must be at most " + std::to_string(bound));
+        else input_assert(val >= bound, "argument " + helpful_name(id) + " value " + std::to_string(val) + " must be at least " + std::to_string(bound));
+    }
+
+    template<typename T>
+    void _bound<T>::check_constraint(const identifier &id, long double val) {
+        if(upper) input_assert(val <= bound, "argument " + helpful_name(id) + " value " + std::to_string(val) + " must be at most " + std::to_string(bound));
+        else input_assert(val >= bound, "argument " + helpful_name(id) + " value " + std::to_string(val) + " must be at least " + std::to_string(bound));
+    }
+
+
+    template<typename T>
+    inline void arg::check_constraints(T value) const {
+        for(const std::unique_ptr<_constraint> &c: _constraints)
+            c->check_constraint(_id, value);
+    }
+
     template <>
     inline optional<long long> arg::_get<long long>() {
         auto elem = _::matcher.get_and_mark_as_queried(_id);
@@ -997,8 +1059,11 @@ namespace fire {
         _::matcher.deferred_assert(_id, elem.second != _matcher::arg_type::bool_t,
                                    "argument " + helpful_name(_id) + " must have a value");
 
-        if(elem.second == _matcher::arg_type::string_t)
+        if(elem.second == _matcher::arg_type::string_t) {
+            check_constraints(elem.first);
             return elem.first;
+        }
+
         return _string_value;
     }
 
@@ -1008,6 +1073,7 @@ namespace fire {
         if(! opt_value.has_value())
             return optional<T>();
         long long value = opt_value.value();
+        check_constraints(value);
 
         bool is_signed = std::numeric_limits<T>::is_signed;
         T mn = std::numeric_limits<T>::lowest();
@@ -1027,6 +1093,7 @@ namespace fire {
         if(! opt_value.has_value())
             return optional<T>();
         long double value = opt_value.value();
+        check_constraints(value);
 
         T min = std::numeric_limits<T>::lowest();
         T max = std::numeric_limits<T>::max();
@@ -1080,6 +1147,19 @@ namespace fire {
         }
     }
 
+    inline arg& arg::operator=(const arg &other) {
+        _id = other._id;
+        _int_value = other._int_value;
+        _float_value = other._float_value;
+        _string_value = other._string_value;
+
+        _constraints.clear();
+        for(const std::unique_ptr<_constraint> &c: other._constraints)
+            _constraints.push_back(c->clone());
+
+        return *this;
+    }
+
     arg::operator bool() {
         _api_assert(!_int_value.has_value() && !_float_value.has_value() && !_string_value.has_value(),
                     _id.longer() + " flag parameter must not have default value");
@@ -1102,6 +1182,53 @@ namespace fire {
         return ret;
     }
 
+    template <typename T>
+    arg arg::min(T mn) const {
+        arg ret = *this;
+        ret._id.append_descr("[" + std::to_string(mn) + " <= " + without_hyphens(_id.longer()) + "]");
+        if(std::is_integral<T>::value)
+            ret._constraints.push_back(std::unique_ptr<_constraint>((_constraint *) (new _bound<long long>(mn, false))));
+        else if(std::is_floating_point<T>::value)
+            ret._constraints.push_back(std::unique_ptr<_constraint>((_constraint *) (new _bound<long double>(mn, false))));
+        else
+            _api_assert(false, "called min with improper argument (not integral or floating point type)");
+        return ret;
+    }
+
+    template <typename T>
+    arg arg::max(T mx) const {
+        arg ret = *this;
+        ret._id.append_descr("[" + without_hyphens(_id.longer()) + " <= " + std::to_string(mx) + "]");
+        if(std::is_integral<T>::value)
+            ret._constraints.push_back(std::unique_ptr<_constraint>((_constraint *) (new _bound<long long>(mx, true))));
+        else if(std::is_floating_point<T>::value)
+            ret._constraints.push_back(std::unique_ptr<_constraint>((_constraint *) (new _bound<long double>(mx, true))));
+        else
+            _api_assert(false, "called max with improper argument (not integral or floating point type)");
+        return ret;
+    }
+
+    template <typename T_min, typename T_max>
+    arg arg::bounds(T_min mn, T_max mx) const {
+        arg ret = *this;
+        ret._id.append_descr("[" + std::to_string(mn) + " <= " + without_hyphens(_id.longer()) + " <= " + std::to_string(mx) + "]");
+
+        if(std::is_integral<T_min>::value)
+            ret._constraints.push_back(std::unique_ptr<_constraint>((_constraint *) (new _bound<long long>(mn, false))));
+        else if(std::is_floating_point<T_min>::value)
+            ret._constraints.push_back(std::unique_ptr<_constraint>((_constraint *) (new _bound<long double>(mn, false))));
+        else
+            _api_assert(false, "called bounds with improper argument (not integral or floating point type)");
+
+        if(std::is_integral<T_max>::value)
+            ret._constraints.push_back(std::unique_ptr<_constraint>((_constraint *) (new _bound<long long>(mx, true))));
+        else if(std::is_floating_point<T_max>::value)
+            ret._constraints.push_back(std::unique_ptr<_constraint>((_constraint *) (new _bound<long double>(mx, true))));
+        else
+            _api_assert(false, "called bounds with improper argument (not integral or floating point type)");
+
+        return ret;
+    }
 
     inline std::string helpful_name(const identifier &id) {
         if(id.get_type() == identifier::type::positional)

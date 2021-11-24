@@ -101,6 +101,9 @@ def run_basic(path_prefix):
     runner.help_success("-x 0 -h")
     runner.help_success("-h --undefined")
 
+    runner.handled_failure("-x -1200 -y 0")
+    runner.handled_failure("-x 1200 -y 0")
+
 
 def run_post_call(path_prefix):
     runner = assert_runner(path_prefix / "post_call")

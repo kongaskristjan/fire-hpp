@@ -157,6 +157,18 @@ TEST(identifier, constructor) {
     EXPECT_EXIT_FAIL(identifier(vector<string>{"--l"}, empty));
 }
 
+TEST(identifier, append_descr) {
+    fire::optional<int> empty;
+
+    identifier id1 = identifier(vector<string>{"-l"}, empty);
+    id1.append_descr("appended");
+    EXPECT_EQ(id1.get_descr(), "appended");
+
+    identifier id2 = identifier(vector<string>{"-l", "descr"}, empty);
+    id2.append_descr("appended");
+    EXPECT_EQ(id2.get_descr(), "descr appended");
+}
+
 TEST(identifier, overlap) {
     fire::optional<int> empty;
 
@@ -506,6 +518,32 @@ TEST(arg, precision) {
 
     (void) (double) arg("-a", 1e100);
     EXPECT_EXIT_FAIL((void) (float) arg("-a", 1e100));
+}
+
+TEST(arg, constraints) {
+    init_args({"./run_tests", "0", "1", "2", "3"});
+    EXPECT_EXIT_FAIL((void) (int) arg(0).min(1));
+    (void) (int) arg(1).min(1);
+    EXPECT_EXIT_FAIL((void) (int) arg(2).max(1));
+    (void) (int) arg(3).max(3);
+
+    init_args({"./run_tests", "0", "1", "2", "3"});
+    EXPECT_EXIT_FAIL((void) (int) arg(0).bounds(1, 2));
+    (void) (int) arg(1).bounds(1, 2);
+    (void) (int) arg(2).bounds(1, 2);
+    EXPECT_EXIT_FAIL((void) (int) arg(3).bounds(1, 2));
+
+    init_args({"./run_tests", "0.5", "1.5", "2.5", "3.5"});
+    EXPECT_EXIT_FAIL((void) (double) arg(0).bounds(1.5, 2.5));
+    (void) (double) arg(1).bounds(1.5, 2.5);
+    (void) (double) arg(2).bounds(1.5, 2.5);
+    EXPECT_EXIT_FAIL((void) (double) arg(3).bounds(1.5, 2.5));
+
+    init_args({"./run_tests", "0"});
+    (void) (int) arg(0).bounds(-1, 1);
+    EXPECT_EXIT_FAIL((void) (int) arg(0).bounds(-1.5, 1));
+    EXPECT_EXIT_FAIL((void) (int) arg(0).bounds(-1, 1.5));
+    (void) (double) arg(0).bounds(-1, 1);
 }
 
 bool dashed_values_inside = false;
