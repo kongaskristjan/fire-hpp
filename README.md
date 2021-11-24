@@ -64,7 +64,7 @@ Steps to run examples:
 * Create build and change directory: `cd fire-hpp && mkdir build && cd build`
 * Configure/build: `cmake .. && cmake --build .` (or substitute the latter command with appropriate build system invocation, eg. `make -j8` or `ninja`)
 * If errors are encountered, clear the build directory and disable pedantic warnings as errors with `cmake -D DISABLE_PEDANTIC= ..` (you are encouraged to open an issue).
-* Run: `./examples/basic --help` or `./examples/basic -x=3 -y=5`
+* Run: `./examples/add --help` or `./examples/add -x=3 -y=5`
 
 ## T. Tutorial
 

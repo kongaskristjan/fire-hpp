@@ -85,8 +85,8 @@ def run_all_combinations(path_prefix):
     runner.equal("0 1 -i 0 --def-r 0.0 --opt-s string", "")
 
 
-def run_basic(path_prefix):
-    runner = assert_runner(path_prefix / "basic")
+def run_add(path_prefix):
+    runner = assert_runner(path_prefix / "add")
 
     runner.equal("-x 3 -y 4", "3 + 4 = 7")
     runner.equal("-x -3 -y 3", "-3 + 3 = 0")
@@ -197,7 +197,7 @@ def main():
     print("Running tests in {} ...".format(path_prefix), end="")
 
     run_all_combinations(path_prefix)
-    run_basic(path_prefix)
+    run_add(path_prefix)
     run_post_call(path_prefix)
     run_flag(path_prefix)
     run_optional_and_default(path_prefix)
