@@ -92,6 +92,8 @@ def run_add(path_prefix):
     runner.equal("-x -3 -y 3", "-3 + 3 = 0")
     runner.equal("-x=-3 -y=3", "-3 + 3 = 0")
     runner.equal("-x3 -y4", "3 + 4 = 7")
+    runner.equal("-x=3 -y=4 --mul=-1", "-1 * (3 + 4) = -7")
+    runner.handled_failure("-x=3 -y=4 --mul=2")
     runner.handled_failure("")
     runner.handled_failure("-x 3")
     runner.handled_failure("-y 4")

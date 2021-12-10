@@ -149,15 +149,20 @@ Constraints can be applied to arguments by calling `fire:arg`'s constraint metho
 * `fire::arg().min(T minimum)` - specifies minimum value
 * `fire::arg().max(T maximum)` - specifies maximum value
 * `fire::arg().bounds(T minimum, T maximum)` - specifies both minimum and maximum values
+* `fire::arg().one_of({...})` - specifies possible values
 
 These methods
 1) check whether user supplied value fits the constraint and emit a proper error message if condition is not met
 2) append the constraint to argument's help message
 
 * Example: `int fired_main(int x = fire::arg("-x").bounds(-1000, 1000));`
-    * CLI usage: `program 100` -> `x==100`
-    * CLI usage: `program -10000` -> `Error: argument -x value -10000 must be at least -1000`
-    * CLI usage: `program --help` -> `-x=INTEGER  description [-1000 <= x <= 1000]` (one of the lines)
+  * CLI usage: `program -x=100` -> `x==100`
+  * CLI usage: `program -x=-10000` -> `Error: argument -x value -10000 must be at least -1000`
+  * CLI usage: `program --help` -> `-x=INTEGER  description [-1000 <= x <= 1000]` (one of the lines)
+
+* Example: `int fired_main(std::string s = fire::arg("-s").one_of({"hi", "there"}));`
+  * CLI usage: `program -s=hi` -> `s==hi`
+  * CLI usage: `program -s=hello` -> `Error: argument -s value must be one of (hi, there), but given was 'hello'`
 
 ### <a id="conversions"></a> D.3 fire::arg conversions
 
@@ -318,7 +323,6 @@ v0.2 release is tested on:
 * Sufficient information for contributing
     * Create a document describing the internals of this project
     * Document main parts of the code
-* Argument requirements: `fire::arg(identifier).bounds(min, max)` (done), `fire::arg(identifier).one_of({[option1], [option2], ...})` (condition checking with good error message, help generation)
 
 #### v0.4 release
 

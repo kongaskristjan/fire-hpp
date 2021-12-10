@@ -19,8 +19,13 @@
 
 using namespace std;
 
-int fired_main(int x = fire::arg("-x").bounds(-1000, 1000), int y = fire::arg("-y").bounds(-1000, 1000)) {
-    cout << x << " + " << y << " = " << x + y << endl;
+int fired_main(int x = fire::arg("-x").bounds(-1000, 1000),
+               int y = fire::arg("-y").bounds(-1000, 1000),
+               fire::optional<int> mul = fire::arg("--mul").one_of({-1, 0, 1})) {
+    if(mul.has_value())
+        cout << mul.value() << " * (" << x << " + " << y << ") = " << mul.value() * (x + y) << endl;
+    else
+        cout << x << " + " << y << " = " << x + y << endl;
     return 0;
 }
 

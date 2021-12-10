@@ -34,6 +34,7 @@
 
 #include <string>
 #include <iostream>
+#include <sstream>
 #include <vector>
 #include <map>
 #include <unordered_map>
@@ -249,22 +250,48 @@ namespace fire {
     class _constraint {
     public:
         virtual std::unique_ptr<_constraint> clone() const = 0;
-        virtual void check_constraint(const identifier &, long long) { _api_assert(false, "Constraint applied to wrong type argument (integral type)"); }
-        virtual void check_constraint(const identifier &, long double) { _api_assert(false, "Constraint applied to wrong type argument (floating point type)"); }
-        virtual void check_constraint(const identifier &, const std::string &) { _api_assert(false, "Constraint applied to wrong type argument (string type)"); }
+        virtual void check_constraint(const identifier &, long long) const { _api_assert(false, "Constraint applied to wrong type argument (integral type)"); }
+        virtual void check_constraint(const identifier &, long double) const { _api_assert(false, "Constraint applied to wrong type argument (floating point type)"); }
+        virtual void check_constraint(const identifier &, const std::string &) const { _api_assert(false, "Constraint applied to wrong type argument (string type)"); }
     };
 
     template<typename T>
-    class _bound : public _constraint {
+    class _bound: public _constraint {
         T bound;
         bool upper;
 
     public:
         inline _bound(T bound, bool upper): bound(bound), upper(upper) {}
-        std::unique_ptr<_constraint> clone() const override { return std::unique_ptr<_constraint>(new _bound(bound, upper)); }
+        inline std::unique_ptr<_constraint> clone() const override { return std::unique_ptr<_constraint>(new _bound(bound, upper)); }
 
-        inline void check_constraint(const identifier &id, long long val) override;
-        inline void check_constraint(const identifier &id, long double val) override;
+        inline void check_constraint(const identifier &id, long long val) const override;
+        inline void check_constraint(const identifier &id, long double val) const override;
+    };
+
+    class _one_of: public _constraint {
+        std::vector<long long> ll_values;
+        std::vector<long double> ld_values;
+        std::vector<std::string> s_values;
+
+    public:
+        _one_of(std::vector<long long> ll_values, std::vector<long double> ld_values, std::vector<std::string> s_values):
+            ll_values(std::move(ll_values)), ld_values(std::move(ld_values)), s_values(std::move(s_values)) {}
+
+        template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+        explicit _one_of(std::vector<T> values): _one_of(std::vector<long long>(values.begin(), values.end()), {}, {}) {}
+        template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
+        explicit _one_of(std::vector<T> values): _one_of({}, std::vector<long double>(values.begin(), values.end()), {}) {}
+        template <typename T, typename std::enable_if<std::is_same<T, std::string>::value>::type* = nullptr>
+        explicit _one_of(std::vector<T> values): _one_of({}, {}, std::move(values)) {}
+
+        inline std::unique_ptr<_constraint> clone() const override { return std::unique_ptr<_constraint>(new _one_of(*this)); }
+
+        template<typename T1, typename T2>
+        inline void check_constraint_template(const identifier &id, const std::string &type_name, const std::vector<T1> &values, T2 cur_val) const;
+
+        inline void check_constraint(const identifier &id, long long val) const override { check_constraint_template<long long, long long>(id, "integer", ll_values, val); }
+        inline void check_constraint(const identifier &id, long double val) const override;
+        inline void check_constraint(const identifier &id, const std::string &val) const override { check_constraint_template<std::string, std::string>(id, "string", s_values, val); }
     };
 
     class arg {
@@ -361,6 +388,9 @@ namespace fire {
         arg max(T mx) const;
         template <typename T_min, typename T_max>
         arg bounds(T_min mn, T_max mx) const;
+
+        template<typename T>
+        arg one_of(const std::initializer_list<T> &values);
     };
 
     inline std::string helpful_name(const identifier &id);
@@ -987,7 +1017,7 @@ namespace fire {
 
 
     template<typename T>
-    void _bound<T>::check_constraint(const identifier &id, long long val) {
+    void _bound<T>::check_constraint(const identifier &id, long long val) const {
         if(std::is_floating_point<T>::value)
             _constraint::check_constraint(id, val);
         if(upper) input_assert(val <= bound, "argument " + helpful_name(id) + " value " + std::to_string(val) + " must be at most " + std::to_string(bound));
@@ -995,9 +1025,38 @@ namespace fire {
     }
 
     template<typename T>
-    void _bound<T>::check_constraint(const identifier &id, long double val) {
+    void _bound<T>::check_constraint(const identifier &id, long double val) const {
         if(upper) input_assert(val <= bound, "argument " + helpful_name(id) + " value " + std::to_string(val) + " must be at most " + std::to_string(bound));
         else input_assert(val >= bound, "argument " + helpful_name(id) + " value " + std::to_string(val) + " must be at least " + std::to_string(bound));
+    }
+
+
+    template<typename T1, typename T2>
+    inline void _one_of::check_constraint_template(const identifier &id, const std::string &type_name, const std::vector<T1> &values, T2 cur_val) const {
+        _api_assert(! values.empty(), "converting " + helpful_name(id) + " to " + type_name + ", but values specified in one_of() are not " + type_name + "s");
+
+        bool success = false;
+        std::stringstream lst;
+        lst << "(";
+        for(size_t i = 0; i < values.size(); ++i) {
+            if(values[i] == cur_val)
+                success = true;
+            if(i > 0)
+                lst << ", ";
+            lst << values[i];
+        }
+        lst << ")";
+
+        std::stringstream cur_val_str;
+        cur_val_str << cur_val;
+        input_assert(success, "argument " + helpful_name(id) + " value must be one of " + lst.str() + ", but given was `" + cur_val_str.str() + "`");
+    }
+
+    inline void _one_of::check_constraint(const identifier &id, long double val) const {
+        if(!ld_values.empty())
+            check_constraint_template<long double, long double>(id, "real number", ld_values, val);
+        else
+            check_constraint_template<long long, long double>(id, "real number", ll_values, val);
     }
 
 
@@ -1229,6 +1288,28 @@ namespace fire {
 
         return ret;
     }
+
+
+    template<typename T>
+    arg arg::one_of(const std::initializer_list<T> &init_values) {
+        using T_inter = typename std::conditional<std::is_same<T, const char *>::value, std::string, T>::type;
+
+        std::vector<T_inter> values(init_values.begin(), init_values.end());
+        _api_assert(! values.empty(), "one_of constraint with zero possible values supplied");
+
+        std::stringstream descr;
+        descr << "[Possible values: (";
+        descr << values[0];
+        for(size_t i = 1; i < values.size(); ++i)
+            descr << ", " << values[i];
+        descr << ")]";
+
+        arg ret = *this;
+        ret._id.append_descr(descr.str());
+        ret._constraints.push_back(std::unique_ptr<_constraint>((_constraint *) (new _one_of(values))));
+        return ret;
+    }
+
 
     inline std::string helpful_name(const identifier &id) {
         if(id.get_type() == identifier::type::positional)

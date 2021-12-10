@@ -520,7 +520,7 @@ TEST(arg, precision) {
     EXPECT_EXIT_FAIL((void) (float) arg("-a", 1e100));
 }
 
-TEST(arg, constraints) {
+TEST(arg, bounds) {
     init_args({"./run_tests", "0", "1", "2", "3"});
     EXPECT_EXIT_FAIL((void) (int) arg(0).min(1));
     (void) (int) arg(1).min(1);
@@ -544,6 +544,26 @@ TEST(arg, constraints) {
     EXPECT_EXIT_FAIL((void) (int) arg(0).bounds(-1.5, 1));
     EXPECT_EXIT_FAIL((void) (int) arg(0).bounds(-1, 1.5));
     (void) (double) arg(0).bounds(-1, 1);
+}
+
+TEST(arg, one_of) {
+    init_args({"./run_tests", "0", "0.5", "string"});
+
+    (void) (int) arg(0).one_of({0});
+    (void) (double) arg(0).one_of({0});
+    EXPECT_EXIT_FAIL((void) (int) arg(0).one_of({1}));
+    EXPECT_EXIT_FAIL((void) (double) arg(0).one_of({1}));
+
+    (void) (double) arg(1).one_of({0.5});
+    EXPECT_EXIT_FAIL((void) (double) arg(1).one_of({1.0}));
+
+    (void) (std::string) arg(2).one_of({"string"});
+    EXPECT_EXIT_FAIL((void) (std::string) arg(2).one_of({"other string"}));
+
+    // Type checking
+    EXPECT_EXIT_FAIL((void) (int) arg(0).one_of({1.0}));
+    EXPECT_EXIT_FAIL((void) (double) arg(1).one_of({"string"}));
+    EXPECT_EXIT_FAIL((void) (std::string) arg(2).one_of({1}));
 }
 
 bool dashed_values_inside = false;
