@@ -68,7 +68,7 @@ Steps to run examples:
 
 ### Q.3 Usage with cmake
 
-* [See here](https://github.com/kongaskristjan/fire-hpp/docs/cmake.md)
+* [See here](https://github.com/kongaskristjan/fire-hpp/tree/master/docs/cmake.md)
 
 ## T. Tutorial
 
@@ -259,6 +259,6 @@ You also need [`FIRE_ALLOW_UNUSED(...)`](#fire) if the third party library proce
 
 ## L. Links
 
-* [CMake usage](https://github.com/kongaskristjan/fire-hpp/docs/cmake.md)
-* [Conan usage](https://github.com/kongaskristjan/fire-hpp/docs/conan.md)
-* [Development](https://github.com/kongaskristjan/fire-hpp/docs/development.md)
+* [CMake usage](https://github.com/kongaskristjan/fire-hpp/blob/master/docs/cmake.md)
+* [Conan usage](https://github.com/kongaskristjan/fire-hpp/blob/master/docs/conan.md)
+* [Development](https://github.com/kongaskristjan/fire-hpp/blob/master/docs/development.md)
