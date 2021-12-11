@@ -2,7 +2,7 @@
 # Fire for C++
 
 Fire for C++, inspired by [python-fire](https://github.com/google/python-fire), is a single header library that creates a command line interface from a function signature. Here's the whole program for adding two numbers with command line:
- ```
+```c++
 #include <iostream>
 #include <fire-hpp/fire.hpp>
 
@@ -74,7 +74,7 @@ Steps to run examples:
 
 Let's go through each part of the following example.
 
-```
+```c++
 int fired_main(int x = fire::arg("-x"), int y = fire::arg("-y")) { // Define and convert arguments
     std::cout << x + y << std::endl; // Use x and y, they're ints!
     return 0;
@@ -240,14 +240,14 @@ Some third party libraries require access to raw argc/argv. This is gained throu
 Examples:
 
 * Usage without modification:
-```
+```c++
 int argc = fire::raw_args.argc();
 char ** argv = fire::raw_args.argv();
 non_modifying_call(argc, argv);
 ```
 
 * Usage with modification:
-```
+```c++
 fire::c_args raw_args_copy = fire::raw_args; 
 int& argc = raw_args_copy.argc();
 char ** argv = raw_args_copy.argv();
