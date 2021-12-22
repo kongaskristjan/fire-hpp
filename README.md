@@ -262,3 +262,4 @@ You also need [`FIRE_ALLOW_UNUSED(...)`](#fire) if the third party library proce
 * [CMake usage](https://github.com/kongaskristjan/fire-hpp/blob/master/docs/cmake.md)
 * [Conan usage](https://github.com/kongaskristjan/fire-hpp/blob/master/docs/conan.md)
 * [Development](https://github.com/kongaskristjan/fire-hpp/blob/master/docs/development.md)
+* [Fire-hpp's algorithm explanation (how does it work?)](https://github.com/kongaskristjan/fire-hpp/blob/master/docs/algorithm.md)

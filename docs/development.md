@@ -1,6 +1,10 @@
 
 ## Development
 
+The algorithm for introspecting and filling in arguments is rather complex, so I strongly suggest reading [this document](https://github.com/kongaskristjan/fire-hpp/blob/master/docs/algorithm.md) before trying to understand the included library file.
+
+### Testing
+
 This library uses extensive testing. Unit tests are located in `tests/`, while `examples/` are used as integration tests. The latter also ensures examples are up-to-date. Before committing, please verify `python3 ./build/tests/run_standard_tests.py` succeed. Releases are also tested on many platforms with `python3 ./tests/run_release_tests.py`.
 
 v0.2 release is tested on:
@@ -15,7 +19,6 @@ v0.2 release is tested on:
 #### v0.3 release
 
 * Sufficient information for contributing
-    * Create a document describing the internals of this project
     * Document main parts of the code
 
 #### v0.4 release
