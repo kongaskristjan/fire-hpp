@@ -58,9 +58,9 @@ namespace fire {
     template<typename R, typename ... Types>
     constexpr size_t _get_argument_count(R(*)(Types ...)) { return sizeof...(Types); }
 
-    inline int count_hyphens(const std::string &s);
-    inline std::string without_hyphens(const std::string &s);
-    inline std::string replace_all(const std::string &data, const std::string &from, const std::string &to);
+    inline int _count_hyphens(const std::string &s);
+    inline std::string _without_hyphens(const std::string &s);
+    inline std::string _replace_all(const std::string &data, const std::string &from, const std::string &to);
 
     inline void _instant_assert(bool pass, const std::string &msg, bool programmer_side);
     inline void _api_assert(bool pass, const std::string &msg);
@@ -111,7 +111,7 @@ namespace fire {
         optional<std::string> _short_name, _long_name, _pos_name, _descr;
         bool _variadic = false;
         bool _optional = false; // Only used for operator<
-        bool flag = false; // Only used for operator<
+        bool _flag = false; // Only used for operator<
 
         std::string _help, _longer;
 
@@ -123,7 +123,7 @@ namespace fire {
         identifier() = default;
         inline identifier(const std::vector<std::string> &names, optional<int> pos, bool is_variadic = false);
 
-        inline void set_as_flag() { flag = true; }
+        inline void set_as_flag() { _flag = true; }
 
         inline void append_descr(const std::string &s) { if(_descr.has_value()) _descr = _descr.value() + " " + s; else _descr = s; }
 
@@ -304,7 +304,7 @@ namespace fire {
         std::vector<std::unique_ptr<_constraint>> _constraints;
 
         template<typename T>
-        inline void check_constraints(T value) const;
+        inline void _check_constraints(T value) const;
 
         template <typename T>
         optional<T> _get() { T::unimplemented_function; } // no default function
@@ -321,11 +321,11 @@ namespace fire {
         inline void _log(_arg_logger::elem::type t, bool optional);
 
         template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-        inline void init_default(T value) { _int_value = value; }
+        inline void _init_default(T value) { _int_value = value; }
         template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
-        inline void init_default(T value) { _float_value = value; }
-        inline void init_default(const std::string &value) { _string_value = value; }
-        inline void init_default(std::nullptr_t) {}
+        inline void _init_default(T value) { _float_value = value; }
+        inline void _init_default(const std::string &value) { _string_value = value; }
+        inline void _init_default(std::nullptr_t) {}
 
         inline arg() = default;
 
@@ -358,7 +358,7 @@ namespace fire {
             }
 
             _id = identifier(string_values, int_value, is_variadic);
-            init_default(value);
+            _init_default(value);
         }
 
         template<typename T=std::nullptr_t>
@@ -415,20 +415,20 @@ namespace fire {
     inline void input_assert(bool pass, const std::string &msg) { _instant_assert(pass, msg, false); }
     inline void input_error(const std::string &msg) { _instant_assert(false, msg, false); }
 
-    int count_hyphens(const std::string &s) {
+    int _count_hyphens(const std::string &s) {
         int hyphens;
         for(hyphens = 0; hyphens < (int) s.size() && s[hyphens] == '-'; ++hyphens)
             ;
         return hyphens;
     }
 
-    std::string without_hyphens(const std::string &s) {
-        int hyphens = count_hyphens(s);
+    std::string _without_hyphens(const std::string &s) {
+        int hyphens = _count_hyphens(s);
         std::string wo_hyphens = s.substr(hyphens);
         return wo_hyphens;
     }
 
-    std::string replace_all(const std::string &data, const std::string &from, const std::string &to) {
+    std::string _replace_all(const std::string &data, const std::string &from, const std::string &to) {
         std::string ret = data.substr(0, data.find(from));
         if(data.find(from) == std::string::npos) return ret;
 
@@ -499,7 +499,7 @@ namespace fire {
                 continue;
             }
 
-            int hyphens = count_hyphens(name);
+            int hyphens = _count_hyphens(name);
             _api_assert(hyphens <= 2, "Identifier entry " + name + " must prefix either:"
                                                                    " 0 hyphens for description,"
                                                                    " 1 hyphen for short-hand name"
@@ -568,7 +568,7 @@ namespace fire {
     inline identifier::type identifier::get_type() const {
         if(_variadic || _pos.has_value())
             return type::positional;
-        if(flag)
+        if(_flag)
             return type::flag;
         return type::named;
     }
@@ -580,8 +580,8 @@ namespace fire {
         std::string name = _long_name.value_or(_short_name.value_or(""));
         std::string other_name = other._long_name.value_or(other._short_name.value_or(""));
 
-        name = without_hyphens(name);
-        other_name = without_hyphens(other_name);
+        name = _without_hyphens(name);
+        other_name = _without_hyphens(other_name);
 
         std::transform(name.begin(), name.end(), name.begin(), [](char c){ return (char) tolower(c); });
         std::transform(other_name.begin(), other_name.end(), other_name.begin(), [](char c){ return (char) tolower(c); });
@@ -763,7 +763,7 @@ namespace fire {
             }
 
             // Parse `make -j8` as `make -j=8`
-            if(count_hyphens(raw[i]) == 1 && raw[i].size() > 2 && raw[i][2] != '=') {
+            if(_count_hyphens(raw[i]) == 1 && raw[i].size() > 2 && raw[i][2] != '=') {
                 std::string prefix = raw[i].substr(0, 2);
                 if(std::find(assigned.begin(), assigned.end(), prefix) != assigned.end()) {
                     eqs.push_back(prefix + "=" + raw[i].substr(2));
@@ -793,7 +793,7 @@ namespace fire {
 
         for(size_t i = 0; i < eqs.size(); ++i) {
             const std::string &s = eqs[i];
-            int hyphens = count_hyphens(s);
+            int hyphens = _count_hyphens(s);
 
             if(s == "--") { // Double dash indicates that upcoming arguments are positional only
                 positional.insert(positional.end(), eqs.begin() + i + 1, eqs.end());
@@ -815,7 +815,7 @@ namespace fire {
     std::vector<std::string> _matcher::expand_single_hyphen(const std::vector<std::string> &named) {
         std::vector<std::string> new_named;
         for(const std::string &s: named) {
-            int hyphens = count_hyphens(s);
+            int hyphens = _count_hyphens(s);
             if(hyphens == 1 && s.find('=') != std::string::npos && s.find('=') >= 3) {
                 if(! _allow_unused)
                     deferred_assert(identifier(), false,
@@ -839,7 +839,7 @@ namespace fire {
 
         for(const std::string &eq: named) {
             size_t index = eq.find('=');
-            size_t hyphens = count_hyphens(eq);
+            size_t hyphens = _count_hyphens(eq);
             std::string name = eq;
             if(index == std::string::npos) {
                 args.emplace_back(eq, optional<std::string>());
@@ -948,7 +948,7 @@ namespace fire {
 
         std::string program_descr;
         if(! _program_descr.empty())
-            program_descr = "\n\nDescription:" + replace_all("\n" + _program_descr, "\n", "\n  ");
+            program_descr = "\n\nDescription:" + _replace_all("\n" + _program_descr, "\n", "\n  ");
 
         std::cerr << "\n" << usage;
         std::cerr << program_descr << "\n\n";
@@ -1061,7 +1061,7 @@ namespace fire {
 
 
     template<typename T>
-    inline void arg::check_constraints(T value) const {
+    inline void arg::_check_constraints(T value) const {
         for(const std::unique_ptr<_constraint> &c: _constraints)
             c->check_constraint(_id, value);
     }
@@ -1119,7 +1119,7 @@ namespace fire {
                                    "argument " + helpful_name(_id) + " must have a value");
 
         if(elem.second == _matcher::arg_type::string_t) {
-            check_constraints(elem.first);
+            _check_constraints(elem.first);
             return elem.first;
         }
 
@@ -1132,7 +1132,7 @@ namespace fire {
         if(! opt_value.has_value())
             return optional<T>();
         long long value = opt_value.value();
-        check_constraints(value);
+        _check_constraints(value);
 
         bool is_signed = std::numeric_limits<T>::is_signed;
         T mn = std::numeric_limits<T>::lowest();
@@ -1152,7 +1152,7 @@ namespace fire {
         if(! opt_value.has_value())
             return optional<T>();
         long double value = opt_value.value();
-        check_constraints(value);
+        _check_constraints(value);
 
         T min = std::numeric_limits<T>::lowest();
         T max = std::numeric_limits<T>::max();
@@ -1244,7 +1244,7 @@ namespace fire {
     template <typename T>
     arg arg::min(T mn) const {
         arg ret = *this;
-        ret._id.append_descr("[" + std::to_string(mn) + " <= " + without_hyphens(_id.longer()) + "]");
+        ret._id.append_descr("[" + std::to_string(mn) + " <= " + _without_hyphens(_id.longer()) + "]");
         if(std::is_integral<T>::value)
             ret._constraints.push_back(std::unique_ptr<_constraint>((_constraint *) (new _bound<long long>(mn, false))));
         else if(std::is_floating_point<T>::value)
@@ -1257,7 +1257,7 @@ namespace fire {
     template <typename T>
     arg arg::max(T mx) const {
         arg ret = *this;
-        ret._id.append_descr("[" + without_hyphens(_id.longer()) + " <= " + std::to_string(mx) + "]");
+        ret._id.append_descr("[" + _without_hyphens(_id.longer()) + " <= " + std::to_string(mx) + "]");
         if(std::is_integral<T>::value)
             ret._constraints.push_back(std::unique_ptr<_constraint>((_constraint *) (new _bound<long long>(mx, true))));
         else if(std::is_floating_point<T>::value)
@@ -1270,7 +1270,7 @@ namespace fire {
     template <typename T_min, typename T_max>
     arg arg::bounds(T_min mn, T_max mx) const {
         arg ret = *this;
-        ret._id.append_descr("[" + std::to_string(mn) + " <= " + without_hyphens(_id.longer()) + " <= " + std::to_string(mx) + "]");
+        ret._id.append_descr("[" + std::to_string(mn) + " <= " + _without_hyphens(_id.longer()) + " <= " + std::to_string(mx) + "]");
 
         if(std::is_integral<T_min>::value)
             ret._constraints.push_back(std::unique_ptr<_constraint>((_constraint *) (new _bound<long long>(mn, false))));

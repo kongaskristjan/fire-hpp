@@ -69,9 +69,9 @@ void init_args_strict(const vector<string> &args, int named_calls) {
 }
 
 
-TEST(functions, replace_all) {
-    EXPECT_EQ(replace_all("go karts are cool", " ", "--"), "go--karts--are--cool");
-    EXPECT_EQ(replace_all("go", " ", "--"), "go");
+TEST(functions, _replace_all) {
+    EXPECT_EQ(_replace_all("go karts are cool", " ", "--"), "go--karts--are--cool");
+    EXPECT_EQ(_replace_all("go", " ", "--"), "go");
 }
 
 TEST(optional, value) {
