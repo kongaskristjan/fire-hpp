@@ -29,6 +29,8 @@
 
 // See https://github.com/kongaskristjan/fire-hpp for library's documentation and updates
 
+// Please read /docs/algorithm.md to understand this file
+
 #ifndef FIRE_HPP_
 #define FIRE_HPP_
 
@@ -55,6 +57,8 @@
 namespace fire {
     constexpr int _failure_code = 1;
 
+    ///// Generic utility functions and classes /////
+
     template<typename R, typename ... Types>
     constexpr size_t _get_argument_count(R(*)(Types ...)) { return sizeof...(Types); }
 
@@ -63,10 +67,23 @@ namespace fire {
     inline std::string _replace_all(const std::string &data, const std::string &from, const std::string &to);
 
     inline void _instant_assert(bool pass, const std::string &msg, bool programmer_side);
-    inline void _api_assert(bool pass, const std::string &msg);
-    inline void input_assert(bool pass, const std::string &msg);
-    inline void input_error(const std::string &msg);
+    inline void _api_assert(bool pass, const std::string &msg); // Programmer side assert
+    inline void input_assert(bool pass, const std::string &msg); // CLI user side assert, can be called in fired_main
+    inline void input_error(const std::string &msg); // equivalent to input_assert with pass==false
 
+    template<typename ORDER, typename VALUE>
+    class _smallest {
+        ORDER _order;
+        VALUE _value;
+        bool _empty = true;
+
+    public:
+        void set(const ORDER &order, const VALUE &value);
+        const VALUE & get() const;
+        bool empty() const { return _empty; }
+    };
+
+    // Tear-down version of C++17 std::optional
     template <typename T>
     class optional {
         T _value = T();
@@ -83,9 +100,13 @@ namespace fire {
         T value() const { _api_assert(_exists, "accessing unassigned optional"); return _value; }
     };
 
+    ///// fire-hpp's mechanics /////
+
+    // Exception object used in introspection
     struct _escape_exception {
     };
 
+    // Get argc and argv from main() function
     class c_args {
         int _argc = 0;
         char ** _argv = nullptr;
@@ -106,6 +127,8 @@ namespace fire {
 
     static c_args raw_args;
 
+    // Tests whether argument information matches one specified for fire::arg, compare fire::arg-s (that they are not overlapping),
+    // create helpful names for fire::arg in help messages
     class identifier {
         optional<int> _pos;
         optional<std::string> _short_name, _long_name, _pos_name, _descr;
@@ -145,24 +168,13 @@ namespace fire {
         inline std::string get_descr() const { return _descr.value_or(""); }
     };
 
-    template<typename ORDER, typename VALUE>
-    class _first {
-        ORDER _order;
-        VALUE _value;
-        bool _empty = true;
-
-    public:
-        void set(const ORDER &order, const VALUE &value);
-        const VALUE & get() const;
-        bool empty() const { return _empty; }
-    };
-
+    // Matches identifiers (from fire::arg) to actual command line arguments
     class _matcher {
         std::string _executable;
         std::vector<std::string> _positional;
         std::vector<std::pair<std::string, optional<std::string>>> _named;
         std::vector<identifier> _queried;
-        _first<identifier, std::string> _deferred_error;
+        _smallest<identifier, std::string> _deferred_error;
         int _main_args = 0;
         bool _introspect = false;
         bool _strict = false;
@@ -192,7 +204,7 @@ namespace fire {
                 assign_named_values(const std::vector<std::string> &split);
         inline const std::string& get_executable() { return _executable; }
         inline size_t pos_args() { return _positional.size(); }
-        inline bool deferred_assert(const identifier &id, bool pass, const std::string &msg);
+        inline bool deferred_assert(const identifier &id, bool pass, const std::string &msg); // Non-immediate assert (signals user error)
 
         inline void set_introspect(bool introspect) { _introspect = introspect; }
         inline bool get_introspect() const { return _introspect; }
@@ -200,7 +212,8 @@ namespace fire {
         inline optional<std::string> match_named(const identifier &id) const;
     };
 
-    class _arg_logger { // Gathers function argument help info here
+    // Gather function argument info from introspection
+    class _arg_logger {
     public:
         struct elem {
             enum class type { none, string, integer, real };
@@ -230,6 +243,7 @@ namespace fire {
         inline optional<identifier> match_identifier(const identifier &id) const;
     };
 
+    // Static storage for matcher and logger
     template <typename T_VOID = void>
     struct _storage {
         static _matcher matcher;
@@ -246,6 +260,8 @@ namespace fire {
 
     struct variadic {
     };
+
+    ///// Constraint classes for bound and one_of /////
 
     class _constraint {
     public:
@@ -294,6 +310,9 @@ namespace fire {
         inline void check_constraint(const identifier &id, const std::string &val) const override { check_constraint_template<std::string, std::string>(id, "string", s_values, val); }
     };
 
+    ///// fire-hpp's mechanics /////
+
+    // Can be converted to various types to get command line arguments. Actual conversion mechanics happen at _get() and _get_with_precision()
     class arg {
         identifier _id; // No identifier implies vector positional arguments
 
@@ -437,6 +456,21 @@ namespace fire {
             ret += to + data.substr(shifted_pos, data.find(from, shifted_pos) - shifted_pos);
         }
         return ret;
+    }
+
+
+    template<typename ORDER, typename VALUE>
+    void _smallest<ORDER, VALUE>::set(const ORDER &order, const VALUE &value) {
+        if(_empty || order < _order) {
+            _order = order;
+            _value = value;
+            _empty = false;
+        }
+    }
+
+    template<typename ORDER, typename VALUE>
+    const VALUE & _smallest<ORDER, VALUE>::get() const {
+        return _value;
     }
 
 
@@ -619,21 +653,6 @@ namespace fire {
 
     bool identifier::contains(int pos) const {
         return _pos.has_value() && pos == _pos.value();
-    }
-
-
-    template<typename ORDER, typename VALUE>
-    void _first<ORDER, VALUE>::set(const ORDER &order, const VALUE &value) {
-        if(_empty || order < _order) {
-            _order = order;
-            _value = value;
-            _empty = false;
-        }
-    }
-
-    template<typename ORDER, typename VALUE>
-    const VALUE & _first<ORDER, VALUE>::get() const {
-        return _value;
     }
 
 
