@@ -498,7 +498,7 @@ namespace fire {
 
         for(int i = 0; i < _argc; ++i) {
             _argv[i] = new char[strlen(other._argv[i]) + 1]();
-            strcpy_s(_argv[i], strlen(other._argv[i]) + 1, other._argv[i]);
+            strcpy(_argv[i], other._argv[i]);
         }
 
         return *this;
