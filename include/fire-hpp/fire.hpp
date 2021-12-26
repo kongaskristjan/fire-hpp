@@ -269,6 +269,7 @@ namespace fire {
         virtual void check_constraint(const identifier &, long long) const { _api_assert(false, "Constraint applied to wrong type argument (integral type)"); }
         virtual void check_constraint(const identifier &, long double) const { _api_assert(false, "Constraint applied to wrong type argument (floating point type)"); }
         virtual void check_constraint(const identifier &, const std::string &) const { _api_assert(false, "Constraint applied to wrong type argument (string type)"); }
+        virtual ~_constraint() = default;
     };
 
     template<typename T>
