@@ -480,7 +480,7 @@ namespace fire {
         all_args.push_back(executable);
         all_args.insert(all_args.end(), args.begin(), args.end());
 
-        _argc = all_args.size();
+        _argc = (int) all_args.size();
         _argv = new char*[all_args.size() + 1]();
 
         for(size_t i = 0; i < all_args.size(); ++i) {
@@ -498,7 +498,7 @@ namespace fire {
 
         for(int i = 0; i < _argc; ++i) {
             _argv[i] = new char[strlen(other._argv[i]) + 1]();
-            strcpy(_argv[i], other._argv[i]);
+            strcpy_s(_argv[i], strlen(other._argv[i]) + 1, other._argv[i]);
         }
 
         return *this;
@@ -1293,16 +1293,16 @@ namespace fire {
         ret._id.append_descr("[" + std::to_string(mn) + " <= " + _without_hyphens(_id.longer()) + " <= " + std::to_string(mx) + "]");
 
         if(std::is_integral<T_min>::value)
-            ret._constraints.push_back(std::unique_ptr<_constraint>((_constraint *) (new _bound<long long>(mn, false))));
+            ret._constraints.push_back(std::unique_ptr<_constraint>((_constraint *) (new _bound<long long>((long long) mn, false))));
         else if(std::is_floating_point<T_min>::value)
-            ret._constraints.push_back(std::unique_ptr<_constraint>((_constraint *) (new _bound<long double>(mn, false))));
+            ret._constraints.push_back(std::unique_ptr<_constraint>((_constraint *) (new _bound<long double>((long double) mn, false))));
         else
             _api_assert(false, "called bounds with improper argument (not integral or floating point type)");
 
         if(std::is_integral<T_max>::value)
-            ret._constraints.push_back(std::unique_ptr<_constraint>((_constraint *) (new _bound<long long>(mx, true))));
+            ret._constraints.push_back(std::unique_ptr<_constraint>((_constraint *) (new _bound<long long>((long long) mx, true))));
         else if(std::is_floating_point<T_max>::value)
-            ret._constraints.push_back(std::unique_ptr<_constraint>((_constraint *) (new _bound<long double>(mx, true))));
+            ret._constraints.push_back(std::unique_ptr<_constraint>((_constraint *) (new _bound<long double>((long double) mx, true))));
         else
             _api_assert(false, "called bounds with improper argument (not integral or floating point type)");
 
