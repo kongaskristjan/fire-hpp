@@ -29,7 +29,7 @@ Almost ready!
 
 #### Solve Windows non-ascii character input (+ perhaps add conversion to wstrings)
 
-Non-ascii characters aren't handled correctly in Windows. The solution is to use wmain() instead of main() in Windows, and convert wstrings to utf-8 strings. Optional: also add wstring as a valid conversion type, though [usage should probably be discouraged](http://utf8everywhere.org/).
+Non-ascii characters aren't handled in Windows right now. The solution is to use ifdefs to determine whether to use `wmain()` or `main()`, and convert wide strings to utf-8 strings. Optional: also add wstring as a valid conversion type, though [its usage should probably be discouraged](http://utf8everywhere.org/).
 
 Note that this would be a more portable solution than most libraries can have, as usually the library has no control on whether to use main or wmain.
 
@@ -80,7 +80,7 @@ FIRE(fired_main)
 Structures can be nested (eg. in struct `A`, you could write `C c = fire::object();`, pointing to another struct).
 
 Parameter structs are useful for
-* passing parameter groups to functions
+* passing many parameters to other functions
 * combining with subcommands, eg. if two subcommands have a similar set of parameters
 * avoiding too many arguments in fired_main
 
