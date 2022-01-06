@@ -270,6 +270,4 @@ Other libraries you might find useful:
 
 * [python-fire](https://github.com/google/python-fire): something similar in Python, I got my inspiration from there
 * [fire-llvm](https://github.com/Time0o/fire-llvm): an even neater interface (you can write parameters as `(int x, int y)` instead of `(int x = fire::arg("-x"), int y = fire::arg("-y"))`). Also adds subcommands support. The downside is that it's not pure C++, and requires you to compile an llvm plugin to actually compile your code.
-* [CLI11](https://github.com/CLIUtils/CLI11): A somewhat more conventional type of C++ library. A very good interface while avoiding unconventional trickery (like hijacking `main()`).
-  * Pros: Doesn't hijack `main()`. Right now it's also more feature complete and probably more convenient if dealing with many parameters.
-  * Cons: Slightly more verbose and less convenient for the simple case. Also, the licence states that "Redistributions in binary form must reproduce the above copyright notice", which IMHO is too much to ask for a CLI library.
+* [CLI11](https://github.com/CLIUtils/CLI11): A somewhat more conventional C++ CLI library. IMHO A very good interface while avoiding unconventional trickery (like hijacking `main()`).

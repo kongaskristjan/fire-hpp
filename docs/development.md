@@ -13,7 +13,7 @@ v0.3 release is tested on:
 * Ubuntu 18.04: clang=={3.5, 3.6, 3.7, 3.8, 3.9, 4.0}: C++11, C++14 and clang=={5.0, 6.0, 7.0, 8.0, 9.0}: C++11, C++14, C++17
 * Ubuntu 20.04: gcc=={9.3, 10.3} and clang=={10.0, 11.0, 12.0}: C++11, C++14, C++17, C++20
 * Windows 10: MSVC=={22.??} (2022 Build Tools): C++11, C++14, C++17, C++20
-* (not done!!) Mac OS: XCode=={12.0} (requires CMake 3.18.1+): C++11, C++14, C++17, C++20
+* Mac OS: XCode AppleClang=={13.0.0}: C++11, C++14, C++17
 
 ## Roadmap:
 
