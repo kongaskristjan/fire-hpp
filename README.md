@@ -1,4 +1,6 @@
 
+[![CI status](https://github.com/kongaskristjan/fire-hpp/actions/workflows/cmake.yml/badge.svg)](https://github.com/kongaskristjan/fire-hpp/actions/workflows/cmake.yml)
+
 # Fire for C++
 
 Fire for C++ is a single header library that creates a command line interface from a function signature. Here's the whole program for adding two numbers with command line:
