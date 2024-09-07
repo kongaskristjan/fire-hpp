@@ -1,6 +1,10 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5)
 
-if(${CMAKE_VERSION} VERSION_GREATER "3.11.0")
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
+if(${CMAKE_VERSION} VERSION_GREATER "3.14.0")
     include(CTest)
     include(FetchContent)
     include(GoogleTest)
@@ -9,14 +13,13 @@ if(${CMAKE_VERSION} VERSION_GREATER "3.11.0")
 
     FetchContent_Declare(
             googletest
-            URL https://github.com/google/googletest/archive/release-1.11.0.tar.gz
-            URL_HASH SHA3_224=78cfdd81a73fa617bcf0e5f13d9d825c6ea069106757fb51cc8120eb
+            URL https://github.com/google/googletest/releases/download/v1.15.2/googletest-1.15.2.tar.gz
+            URL_HASH SHA3_224=f3d058b3e9a9c1eb53c40e8fd9adfc31047a7eb7189d4e4e49647ef0
     )
 
     FetchContent_GetProperties(googletest)
     if(NOT googletest_POPULATED)
-        FetchContent_Populate(googletest)
-        add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_ALL)
+        FetchContent_MakeAvailable(googletest)
     endif()
 
     add_executable(run_tests tests.cpp)

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5)
 
 add_executable(all_combinations all_combinations.cpp)
 target_link_libraries(all_combinations fire-hpp)

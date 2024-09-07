@@ -35,9 +35,8 @@ description = """Batch-test combinations of compilers and cmake settings. CMake 
 {
   "compiler_prefix": "/usr/bin/",
   "compilers": [
-    {"cc": "gcc", "cxx": "g++", "standards": [11, 14, 17, 20]},
-    {"cc": "clang", "cxx": "clang++", "standards": [11, 14, 17, 20]},
-    {"generator": "Unix Makefiles", "standards": [11, 14, 17, 20]}
+    {"cc": "gcc", "cxx": "g++", "standards": [11, 14, 17, 20, 23]},
+    {"cc": "clang", "cxx": "clang++", "standards": [11, 14, 17, 20, 23]}
   ],
   "cmake_build_types": ["Debug", "", "Release"]
 }
