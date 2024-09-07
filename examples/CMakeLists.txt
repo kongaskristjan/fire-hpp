@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.5)
 add_executable(all_combinations all_combinations.cpp)
 target_link_libraries(all_combinations fire-hpp)
 
-add_executable(add add.cpp)
-target_link_libraries(add fire-hpp)
+add_executable(constraints constraints.cpp)
+target_link_libraries(constraints fire-hpp)
 
 add_executable(post_call post_call.cpp)
 target_link_libraries(post_call fire-hpp)
@@ -34,4 +34,4 @@ else()
     target_compile_options(no_exceptions PRIVATE -fno-exceptions)
 endif()
 
-set(EXAMPLES_BUILD_DIR $<TARGET_FILE_DIR:add> PARENT_SCOPE)
+set(EXAMPLES_BUILD_DIR $<TARGET_FILE_DIR:constraints> PARENT_SCOPE)
