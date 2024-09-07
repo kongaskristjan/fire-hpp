@@ -86,7 +86,7 @@ def run_all_combinations(path_prefix):
 
 
 def run_add(path_prefix):
-    runner = assert_runner(path_prefix / "add")
+    runner = assert_runner(path_prefix / "constraints")
 
     runner.equal("-x 3 -y 4", "3 + 4 = 7")
     runner.equal("-x -3 -y 3", "-3 + 3 = 0")
