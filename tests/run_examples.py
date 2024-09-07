@@ -1,6 +1,6 @@
 
 """
-    Copyright Kristjan Kongas 2022
+    Copyright Kristjan Kongas 2020-2024
 
     Boost Software License - Version 1.0 - August 17th, 2003
 
