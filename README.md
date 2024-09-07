@@ -55,9 +55,9 @@ With fire-hpp, you only call `FIRE(fired_main)` and define arguments as function
 
 ### Q.1 Requirements
 
-* Using fire.hpp: C++11 compatible compiler.
-* Compiling examples: CMake 3.1+.
-* Compiling/running tests: CMake 3.11+ and Python 3.5+. GTest is downloaded, compiled and linked automatically.
+* Using fire.hpp: compiler compatible with C++ version 11, 14, 17, 20, or 23.
+* Compiling examples: CMake 3.5+.
+* Compiling/running tests: CMake 3.14+ and Python 3.5-3.12. GTest is downloaded, compiled and linked automatically.
 
 ### Q.2 Running examples
 
